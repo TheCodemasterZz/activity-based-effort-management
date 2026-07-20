@@ -11,6 +11,14 @@ dist/
 dist-ssr/
 *.local
 
+# ---- Logs ----
+logs/
+*.log
+
+# ---- Local dev / verification scratch files ----
+verify*.cjs
+ss-*.png
+
 # ---- Editor ----
 .vscode/*
 !.vscode/extensions.json
@@ -23,3 +31,6 @@ Thumbs.db
 # ---- Env ----
 .env
 .env.local
+.env.development
+.env.production
+.env.*.local

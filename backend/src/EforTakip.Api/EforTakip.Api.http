@@ -1,6 +1,21 @@
 @EforTakip.Api_HostAddress = http://localhost:5298
 
-GET {{EforTakip.Api_HostAddress}}/weatherforecast/
+GET {{EforTakip.Api_HostAddress}}/health
 Accept: application/json
+
+###
+
+GET {{EforTakip.Api_HostAddress}}/api/v1/projects
+Accept: application/json
+
+###
+
+POST {{EforTakip.Api_HostAddress}}/api/v1/projects
+Content-Type: application/json
+
+{
+  "name": "Efor Takip Platformu",
+  "description": "Kurumsal efor takip yazılımı"
+}
 
 ###
