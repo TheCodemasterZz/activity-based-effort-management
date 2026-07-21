@@ -1,3 +1,5 @@
+using EforTakip.Application.Directories.Ldap;
+using EforTakip.Infrastructure.Ldap;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace EforTakip.Infrastructure;
@@ -6,8 +8,8 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddInfrastructure(this IServiceCollection services)
     {
-        // Dış sistem entegrasyonları (e-posta, dosya depolama, mesajlaşma vb.) gerçek
-        // bir ihtiyaç doğduğunda burada kaydedilir.
+        services.AddScoped<ILdapService, LdapService>();
+
         return services;
     }
 }
