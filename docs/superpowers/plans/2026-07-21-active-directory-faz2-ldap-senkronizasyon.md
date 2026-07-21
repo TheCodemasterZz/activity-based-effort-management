@@ -77,6 +77,7 @@
   - `DirectoryUser.Attributes` → `IReadOnlyCollection<DirectoryUserAttribute>`
   - `DirectoryUser.SetAttribute(Guid attributeMappingId, string? value)` — varsa günceller, yoksa ekler
   - `DirectoryUser.ClearAttributes()`
+  - `DirectoryUser.UpdateFromSync(string? firstName, string? lastName, string? displayName, string? email, bool isEnabled, DateTime syncedUtc)` — **imza değişikliği:** `isEnabled` eklendi; aktiflik artık dizinden gelir, koşulsuz `true` yapılmaz
   - `Directory.LastSyncedUtc` → `DateTime?`
   - `Directory.MarkSynced(DateTime syncedUtc)`
   - `Directory.IsSyncDue(DateTime nowUtc)` → `bool`
@@ -125,6 +126,34 @@
 
         user.Attributes.Should().BeEmpty();
     }
+
+    [Fact]
+    public void UpdateFromSync_WhenDisabledInDirectory_DeactivatesUser()
+    {
+        var user = DirectoryUser.CreateFromActiveDirectory(
+            Guid.NewGuid(), "serkan.gultepe", "Serkan", "Gültepe", "Serkan Gültepe", null, "guid");
+
+        user.UpdateFromSync("Serkan", "Gültepe", "Serkan Gültepe", null, isEnabled: false, DateTime.UtcNow);
+
+        user.IsActive.Should().BeFalse();
+    }
+
+    [Fact]
+    public void UpdateFromSync_WhenReEnabledInDirectory_ReactivatesUser()
+    {
+        var user = DirectoryUser.CreateFromActiveDirectory(
+            Guid.NewGuid(), "serkan.gultepe", "Serkan", "Gültepe", "Serkan Gültepe", null, "guid");
+        user.Deactivate();
+
+        user.UpdateFromSync("Serkan", "Gültepe", "Serkan Gültepe", null, isEnabled: true, DateTime.UtcNow);
+
+        user.IsActive.Should().BeTrue();
+    }
+```
+
+**Mevcut testte imza değişikliği:** `DirectoryUserTests.UpdateFromSync_UpdatesFieldsAndLastSynced` testindeki çağrıyı güncelle:
+```csharp
+        user.UpdateFromSync("Serkan", "Yeni", "Serkan Yeni", "yeni@x.com", isEnabled: true, syncTime);
 ```
 
 `backend/tests/EforTakip.Domain.Tests/Directories/DirectoryTests.cs` — dosyanın sonuna, son `}` işaretinden önce ekle:
@@ -227,6 +256,22 @@ public sealed class DirectoryUserAttribute : Entity
 ```csharp
     private readonly List<DirectoryUserAttribute> _attributes = [];
     public IReadOnlyCollection<DirectoryUserAttribute> Attributes => _attributes.AsReadOnly();
+```
+
+Mevcut `UpdateFromSync` metodunu değiştir — aktiflik artık dizinden gelir:
+```csharp
+    public void UpdateFromSync(
+        string? firstName, string? lastName, string? displayName, string? email,
+        bool isEnabled, DateTime syncedUtc)
+    {
+        FirstName = firstName;
+        LastName = lastName;
+        DisplayName = displayName;
+        Email = email;
+        LastSyncedUtc = syncedUtc;
+        // Dizinde devre dışı bırakılan hesap sistemde de pasife alınır.
+        IsActive = isEnabled;
+    }
 ```
 
 Ve `Activate()` metodundan sonra, `private static void ValidateDirectoryId` satırından önce ekle:
@@ -419,6 +464,10 @@ git commit -m "feat: persist directory user attributes"
 namespace EforTakip.Application.Directories.Ldap;
 
 /// <summary>LDAP dizininden okunan tek bir kullanıcı. Attributes anahtarları AD attribute adlarıdır.</summary>
+/// <param name="IsEnabled">
+/// Hesabın dizinde etkin olup olmadığı. Microsoft AD'de devre dışı bırakılan hesaplar dizinde
+/// kalmaya devam eder, yalnızca userAccountControl alanının ACCOUNTDISABLE biti işaretlenir.
+/// </param>
 public sealed record LdapUser(
     string Username,
     string? FirstName,
@@ -426,6 +475,7 @@ public sealed record LdapUser(
     string? DisplayName,
     string? Email,
     string ObjectGuid,
+    bool IsEnabled,
     IReadOnlyDictionary<string, string?> Attributes);
 ```
 
@@ -522,6 +572,12 @@ namespace EforTakip.Infrastructure.Ldap;
 public sealed class LdapService : ILdapService
 {
     private const int PageSize = 500;
+
+    /// <summary>Microsoft AD userAccountControl bayrağı: hesap devre dışı.</summary>
+    private const int AccountDisabledFlag = 0x2;
+
+    private const string UserAccountControlAttribute = "userAccountControl";
+
     private static readonly TimeSpan ConnectionTimeout = TimeSpan.FromSeconds(30);
 
     public Task<LdapConnectionTestResult> TestConnectionAsync(
@@ -597,6 +653,9 @@ public sealed class LdapService : ILdapService
         // NOT: BindPasswordEncrypted Faz 2'de düz metin tutulur; Faz 3'te çözülmüş değer geçilecek.
         var credential = new NetworkCredential(directory.BindUsername, directory.BindPasswordEncrypted);
 
+        // AuthType.Basic = simple bind. Microsoft AD'ye simple bind ile bağlanırken şifre,
+        // SSL kapalıysa ağ üzerinde düz metin gider — üretimde LDAPS (636) kullanılmalıdır.
+
         var connection = new LdapConnection(identifier, credential, AuthType.Basic)
         {
             Timeout = ConnectionTimeout
@@ -620,7 +679,8 @@ public sealed class LdapService : ILdapService
             directory.LastNameAttribute,
             directory.DisplayNameAttribute,
             directory.EmailAttribute,
-            directory.UniqueIdAttribute
+            directory.UniqueIdAttribute,
+            UserAccountControlAttribute
         };
         names.AddRange(extraAttributeNames);
 
@@ -652,7 +712,21 @@ public sealed class LdapService : ILdapService
             ReadString(entry, directory.DisplayNameAttribute),
             ReadString(entry, directory.EmailAttribute),
             objectGuid,
+            ReadIsEnabled(entry),
             attributes);
+    }
+
+    /// <summary>
+    /// Microsoft AD'de devre dışı bırakılan hesap dizinden silinmez; userAccountControl alanının
+    /// ACCOUNTDISABLE biti işaretlenir. Alan okunamazsa hesap etkin kabul edilir.
+    /// </summary>
+    private static bool ReadIsEnabled(SearchResultEntry entry)
+    {
+        var raw = ReadString(entry, UserAccountControlAttribute);
+        if (!int.TryParse(raw, out var flags))
+            return true;
+
+        return (flags & AccountDisabledFlag) == 0;
     }
 
     private static string? ReadString(SearchResultEntry entry, string? attributeName)
@@ -909,8 +983,9 @@ git commit -m "feat: add directory connection test command"
 2. `IsSynced == true` olan alan eşlemeleri LDAP'ten çekilecek ek attribute listesini belirler.
 3. Eşleştirme `ObjectGuid` üzerinden yapılır (kullanıcı adı değişse bile kimlik korunur).
 4. LDAP'te olup DB'de olmayan → eklenir. İkisinde de olan → güncellenir. DB'de olup LDAP'te olmayan → pasife alınır (silinmez).
-5. Her kullanıcı için yalnızca senkronize edilecek attribute'lar yazılır.
-6. Dizin `MarkSynced` ile damgalanır.
+5. **Dizinde devre dışı bırakılan hesap (Microsoft AD `userAccountControl` ACCOUNTDISABLE biti) sistemde de pasife alınır.** Hesap dizinde durmaya devam ettiği için 4. kural bunu yakalamaz; aktiflik her senkronda dizinden okunur.
+6. Her kullanıcı için yalnızca senkronize edilecek attribute'lar yazılır.
+7. Dizin `MarkSynced` ile damgalanır.
 
 - [ ] **Step 1: DTO'yu yaz**
 
@@ -987,8 +1062,9 @@ public class SyncDirectoryCommandHandlerTests : IAsyncDisposable
             "sAMAccountName", "cn", "givenName", "sn", "displayName", "mail", "objectGUID",
             SyncScheduleKind.Daily, 0);
 
-    private static LdapUser LdapUserOf(string username, string guid, string? company = null) =>
-        new(username, "Serkan", "Gültepe", "Serkan Gültepe", $"{username}@kizilay.org.tr", guid,
+    private static LdapUser LdapUserOf(
+        string username, string guid, string? company = null, bool isEnabled = true) =>
+        new(username, "Serkan", "Gültepe", "Serkan Gültepe", $"{username}@kizilay.org.tr", guid, isEnabled,
             company is null
                 ? new Dictionary<string, string?>()
                 : new Dictionary<string, string?> { ["company"] = company });
@@ -1057,6 +1133,38 @@ public class SyncDirectoryCommandHandlerTests : IAsyncDisposable
 
         result.Deactivated.Should().Be(1);
         _db.DirectoryUsers.Should().ContainSingle();
+        _db.DirectoryUsers.Single().IsActive.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task Handle_UserDisabledInDirectory_IsStoredAsInactive()
+    {
+        var directory = ValidAd();
+        _directoryRepository.GetByIdAsync(directory.Id, Arg.Any<CancellationToken>()).Returns(directory);
+        _ldapService.SearchUsersAsync(directory, Arg.Any<IReadOnlyCollection<string>>(), Arg.Any<CancellationToken>())
+            .Returns(new List<LdapUser> { LdapUserOf("pasif.kullanici", "guid-2", isEnabled: false) });
+
+        var result = await CreateHandler().Handle(new SyncDirectoryCommand(directory.Id), CancellationToken.None);
+
+        result.Added.Should().Be(1);
+        _db.DirectoryUsers.Single().IsActive.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task Handle_ExistingUserDisabledInDirectory_BecomesInactive()
+    {
+        var directory = ValidAd();
+        var existing = DirectoryUser.CreateFromActiveDirectory(
+            directory.Id, "serkan.gultepe", "Serkan", "Gültepe", "Serkan Gültepe", null, "guid-1");
+        _db.DirectoryUsers.Add(existing);
+        await _db.SaveChangesAsync();
+
+        _directoryRepository.GetByIdAsync(directory.Id, Arg.Any<CancellationToken>()).Returns(directory);
+        _ldapService.SearchUsersAsync(directory, Arg.Any<IReadOnlyCollection<string>>(), Arg.Any<CancellationToken>())
+            .Returns(new List<LdapUser> { LdapUserOf("serkan.gultepe", "guid-1", isEnabled: false) });
+
+        await CreateHandler().Handle(new SyncDirectoryCommand(directory.Id), CancellationToken.None);
+
         _db.DirectoryUsers.Single().IsActive.Should().BeFalse();
     }
 
@@ -1280,7 +1388,8 @@ public sealed class SyncDirectoryCommandHandler(
             if (byObjectGuid.TryGetValue(ldapUser.ObjectGuid, out var existing))
             {
                 existing.UpdateFromSync(
-                    ldapUser.FirstName, ldapUser.LastName, ldapUser.DisplayName, ldapUser.Email, syncedAtUtc);
+                    ldapUser.FirstName, ldapUser.LastName, ldapUser.DisplayName, ldapUser.Email,
+                    ldapUser.IsEnabled, syncedAtUtc);
                 ApplyAttributes(existing, ldapUser, syncedMappings);
                 updated++;
             }
@@ -1289,6 +1398,8 @@ public sealed class SyncDirectoryCommandHandler(
                 var created = DirectoryUser.CreateFromActiveDirectory(
                     directory.Id, ldapUser.Username, ldapUser.FirstName, ldapUser.LastName,
                     ldapUser.DisplayName, ldapUser.Email, ldapUser.ObjectGuid);
+                if (!ldapUser.IsEnabled)
+                    created.Deactivate();
                 ApplyAttributes(created, ldapUser, syncedMappings);
                 db.DirectoryUsers.Add(created);
                 added++;
@@ -1875,8 +1986,9 @@ git commit -m "feat: add scheduled directory sync background service"
 
 ## Faz 2 Tamamlanma Kriteri
 
-- [ ] Domain testleri geçiyor (Faz 1'in 59 testi + Faz 2'nin 8 testi).
-- [ ] `SyncDirectoryCommandHandlerTests` (8 test) ve `TestDirectoryConnectionCommandHandlerTests` (4 test) geçiyor.
+- [ ] Domain testleri geçiyor (Faz 1'in 59 testi + Faz 2'nin 10 testi).
+- [ ] `SyncDirectoryCommandHandlerTests` (10 test) ve `TestDirectoryConnectionCommandHandlerTests` (4 test) geçiyor.
+- [ ] Dizinde devre dışı bırakılan hesap sistemde pasif görünüyor.
 - [ ] `dotnet build backend/EforTakip.sln` başarılı.
 - [ ] Migration oluşturuldu (`AddDirectoryUserAttributes`).
 - [ ] Swagger'da 6 dizin route'u görünüyor (2 yeni komut + 2 yeni kullanıcı endpoint'i dahil).
