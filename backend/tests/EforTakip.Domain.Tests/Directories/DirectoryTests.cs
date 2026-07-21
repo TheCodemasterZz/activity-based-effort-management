@@ -110,4 +110,53 @@ public class DirectoryTests
 
         directory.IsActive.Should().BeFalse();
     }
+
+    [Fact]
+    public void IsSyncDue_WithScheduleOff_ReturnsFalse()
+    {
+        var directory = Directory.CreateActiveDirectory(
+            "Ad", "Microsoft Active Directory", "kizilay.local", 389, false, "u", "ENC(x)",
+            "DC=kizilay,DC=local", null, null, DirectoryPermission.ReadOnly, "user", "(x)",
+            "sAMAccountName", "cn", "givenName", "sn", "displayName", "mail", "objectGUID",
+            SyncScheduleKind.Off, 0);
+
+        directory.IsSyncDue(DateTime.UtcNow).Should().BeFalse();
+    }
+
+    [Fact]
+    public void IsSyncDue_NeverSynced_ReturnsTrue()
+    {
+        var directory = CreateValidAd();
+
+        directory.IsSyncDue(DateTime.UtcNow).Should().BeTrue();
+    }
+
+    [Fact]
+    public void IsSyncDue_DailyAndSyncedRecently_ReturnsFalse()
+    {
+        var directory = CreateValidAd();
+        var now = DateTime.UtcNow;
+        directory.MarkSynced(now.AddHours(-2));
+
+        directory.IsSyncDue(now).Should().BeFalse();
+    }
+
+    [Fact]
+    public void IsSyncDue_DailyAndSyncedLongAgo_ReturnsTrue()
+    {
+        var directory = CreateValidAd();
+        var now = DateTime.UtcNow;
+        directory.MarkSynced(now.AddDays(-2));
+
+        directory.IsSyncDue(now).Should().BeTrue();
+    }
+
+    [Fact]
+    public void IsSyncDue_InactiveDirectory_ReturnsFalse()
+    {
+        var directory = CreateValidAd();
+        directory.Deactivate();
+
+        directory.IsSyncDue(DateTime.UtcNow).Should().BeFalse();
+    }
 }

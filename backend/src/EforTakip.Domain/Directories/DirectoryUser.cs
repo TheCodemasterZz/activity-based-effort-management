@@ -17,6 +17,9 @@ public sealed class DirectoryUser : Entity, IAggregateRoot
     public bool IsActive { get; private set; }
     public DateTime? LastSyncedUtc { get; private set; }
 
+    private readonly List<DirectoryUserAttribute> _attributes = [];
+    public IReadOnlyCollection<DirectoryUserAttribute> Attributes => _attributes.AsReadOnly();
+
     private DirectoryUser()
     {
         // EF Core
@@ -70,19 +73,35 @@ public sealed class DirectoryUser : Entity, IAggregateRoot
     }
 
     public void UpdateFromSync(
-        string? firstName, string? lastName, string? displayName, string? email, DateTime syncedUtc)
+        string? firstName, string? lastName, string? displayName, string? email,
+        bool isEnabled, DateTime syncedUtc)
     {
         FirstName = firstName;
         LastName = lastName;
         DisplayName = displayName;
         Email = email;
         LastSyncedUtc = syncedUtc;
-        IsActive = true;
+        // Dizinde devre dışı bırakılan hesap sistemde de pasife alınır.
+        IsActive = isEnabled;
     }
 
     public void Deactivate() => IsActive = false;
 
     public void Activate() => IsActive = true;
+
+    public void SetAttribute(Guid attributeMappingId, string? value)
+    {
+        var existing = _attributes.FirstOrDefault(a => a.AttributeMappingId == attributeMappingId);
+        if (existing is not null)
+        {
+            existing.SetValue(value);
+            return;
+        }
+
+        _attributes.Add(DirectoryUserAttribute.Create(Id, attributeMappingId, value));
+    }
+
+    public void ClearAttributes() => _attributes.Clear();
 
     private static void ValidateDirectoryId(Guid directoryId)
     {

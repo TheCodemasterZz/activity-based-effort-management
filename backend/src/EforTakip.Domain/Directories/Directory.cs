@@ -29,6 +29,7 @@ public sealed class Directory : Entity, IAggregateRoot
     public SyncScheduleKind SyncSchedule { get; private set; }
     public bool IsActive { get; private set; }
     public int SortOrder { get; private set; }
+    public DateTime? LastSyncedUtc { get; private set; }
 
     private Directory()
     {
@@ -122,6 +123,28 @@ public sealed class Directory : Entity, IAggregateRoot
     public void Activate() => IsActive = true;
 
     public void Deactivate() => IsActive = false;
+
+    public void MarkSynced(DateTime syncedUtc) => LastSyncedUtc = syncedUtc;
+
+    /// <summary>Zamanlanmış senkronizasyonun bu dizin için çalışma zamanının gelip gelmediğini söyler.</summary>
+    public bool IsSyncDue(DateTime nowUtc)
+    {
+        if (!IsActive || Source != DirectorySource.ActiveDirectory)
+            return false;
+
+        var interval = SyncSchedule switch
+        {
+            SyncScheduleKind.Hourly => TimeSpan.FromHours(1),
+            SyncScheduleKind.Daily => TimeSpan.FromDays(1),
+            SyncScheduleKind.Weekly => TimeSpan.FromDays(7),
+            _ => TimeSpan.Zero
+        };
+
+        if (interval == TimeSpan.Zero)
+            return false;
+
+        return LastSyncedUtc is null || nowUtc - LastSyncedUtc.Value >= interval;
+    }
 
     private void ApplyActiveDirectorySettings(
         string directoryType, string hostname, int port, bool useSsl, string bindUsername,

@@ -54,10 +54,74 @@ public class DirectoryUserTests
             Guid.NewGuid(), "serkan.gultepe", "Serkan", "Eski", "x", "eski@x.com", "guid");
         var syncTime = DateTime.UtcNow;
 
-        user.UpdateFromSync("Serkan", "Yeni", "Serkan Yeni", "yeni@x.com", syncTime);
+        user.UpdateFromSync("Serkan", "Yeni", "Serkan Yeni", "yeni@x.com", isEnabled: true, syncTime);
 
         user.LastName.Should().Be("Yeni");
         user.Email.Should().Be("yeni@x.com");
         user.LastSyncedUtc.Should().Be(syncTime);
+    }
+
+    [Fact]
+    public void SetAttribute_WithNewMapping_AddsAttribute()
+    {
+        var user = DirectoryUser.CreateFromActiveDirectory(
+            Guid.NewGuid(), "serkan.gultepe", "Serkan", "Gültepe", "Serkan Gültepe", null, "guid");
+        var mappingId = Guid.NewGuid();
+
+        user.SetAttribute(mappingId, "Kızılay");
+
+        user.Attributes.Should().ContainSingle();
+        user.Attributes.Single().AttributeMappingId.Should().Be(mappingId);
+        user.Attributes.Single().Value.Should().Be("Kızılay");
+    }
+
+    [Fact]
+    public void SetAttribute_WithExistingMapping_UpdatesInPlace()
+    {
+        var user = DirectoryUser.CreateFromActiveDirectory(
+            Guid.NewGuid(), "serkan.gultepe", "Serkan", "Gültepe", "Serkan Gültepe", null, "guid");
+        var mappingId = Guid.NewGuid();
+        user.SetAttribute(mappingId, "Eski Kurum");
+
+        user.SetAttribute(mappingId, "Yeni Kurum");
+
+        user.Attributes.Should().ContainSingle();
+        user.Attributes.Single().Value.Should().Be("Yeni Kurum");
+    }
+
+    [Fact]
+    public void ClearAttributes_RemovesAll()
+    {
+        var user = DirectoryUser.CreateFromActiveDirectory(
+            Guid.NewGuid(), "serkan.gultepe", "Serkan", "Gültepe", "Serkan Gültepe", null, "guid");
+        user.SetAttribute(Guid.NewGuid(), "a");
+        user.SetAttribute(Guid.NewGuid(), "b");
+
+        user.ClearAttributes();
+
+        user.Attributes.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void UpdateFromSync_WhenDisabledInDirectory_DeactivatesUser()
+    {
+        var user = DirectoryUser.CreateFromActiveDirectory(
+            Guid.NewGuid(), "serkan.gultepe", "Serkan", "Gültepe", "Serkan Gültepe", null, "guid");
+
+        user.UpdateFromSync("Serkan", "Gültepe", "Serkan Gültepe", null, isEnabled: false, DateTime.UtcNow);
+
+        user.IsActive.Should().BeFalse();
+    }
+
+    [Fact]
+    public void UpdateFromSync_WhenReEnabledInDirectory_ReactivatesUser()
+    {
+        var user = DirectoryUser.CreateFromActiveDirectory(
+            Guid.NewGuid(), "serkan.gultepe", "Serkan", "Gültepe", "Serkan Gültepe", null, "guid");
+        user.Deactivate();
+
+        user.UpdateFromSync("Serkan", "Gültepe", "Serkan Gültepe", null, isEnabled: true, DateTime.UtcNow);
+
+        user.IsActive.Should().BeTrue();
     }
 }
