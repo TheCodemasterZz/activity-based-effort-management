@@ -6,39 +6,40 @@ gerekli kuralları ve alışkanlıkları tanımlar.
 
 ## Branch stratejisi
 
-- **`main` korumalı.** Doğrudan push kapalı — GitHub'da branch protection kuruldu:
-  - PR olmadan `main`'e push edilemez.
-  - Merge edilmeden önce en az **1 onay (review)** zorunlu.
-  - Yeni commit push edildiğinde eski onaylar otomatik düşer (`dismiss_stale_reviews`).
-  - Force-push ve branch silme `main` üzerinde kapalı.
-- Her iş bir **feature branch**'te yapılır, `main`'den açılır:
+- **`main`'e doğrudan push serbest.** İki kişilik ekibin ikisi de PR açmadan doğrudan
+  `main`'e push edebilir — GitHub'daki zorunlu PR/review kuralı kaldırıldı. Sadece şu iki
+  koruma açık kalıyor (yanlışlıkla geçmişi bozmayı engellemek için):
+  - Force-push `main` üzerinde kapalı.
+  - Branch silme `main` üzerinde kapalı.
+- Küçük/orta değişiklikler için doğrudan `main`'e commit+push yeterlidir. Büyük veya riskli
+  bir işi (ör. Plan Work gibi çok dosyalı bir özellik) yine de bir **feature branch**'te
+  yapıp PR ile merge etmek isterseniz bu hâlâ mümkün — PR artık zorunlu değil, seçime bağlı:
   ```
   feature/<kısa-açıklama>       ör. feature/plan-work-sayfasi
   fix/<kısa-açıklama>           ör. fix/onay-renklendirme
   chore/<kısa-açıklama>         ör. chore/gitignore-guncelle
   ```
-- Bir branch **tek bir konuya** odaklanır. "Plan Work sayfası" ve "SSO entegrasyonu" aynı
-  branch'te olmaz — ayrı PR'lar, ayrı review'lar, ayrı merge'ler.
 
 ## Çakışmayı önlemek — asıl kural
 
-İki kişi aynı anda çalışırken en büyük risk **aynı dosyayı** paralel değiştirmek. Bunun için:
+İki kişi aynı anda çalışırken en büyük risk **aynı dosyayı** paralel değiştirmek — PR zorunlu
+olmadığı için bu artık daha kolay gerçekleşebilir, o yüzden aşağıdaki disiplin daha önemli:
 
-1. **İşe başlamadan önce** `main`'i güncelleyin ve yeni branch'i oradan açın:
+1. **Push etmeden hemen önce** her zaman `main`'i çekin, sonra push edin — sırayla push eden
+   ikinci kişi conflict'i hemen görür ve yerelde çözer:
    ```
-   git checkout main
-   git pull origin main
-   git checkout -b feature/ne-yapiyorsan
+   git pull origin main --rebase
+   git push origin main
    ```
-2. **Günde en az bir kez** kendi branch'inizi `main`'in üzerine rebase edin (özellikle
-   diğer kişinin PR'ı merge olduysa) — çakışmayı küçük parçalar halinde, erken görün:
+2. Büyük veya birden çok gün sürecek bir işi feature branch'te yapıyorsanız, **günde en az
+   bir kez** `main`'in üzerine rebase edin — çakışmayı küçük parçalar halinde, erken görün:
    ```
    git fetch origin
    git rebase origin/main
    ```
-3. **Kısa ömürlü branch'ler.** Bir PR ne kadar uzun açık kalırsa, `main` o kadar uzaklaşır
-   ve çakışma riski o kadar büyür. Büyük bir işi (ör. Plan Work gibi) tek dev'de bile
-   mantıklı alt-adımlara bölüp arka arkaya küçük PR'lar halinde merge edin.
+3. **Sık ve küçük push'lar.** Değişiklik ne kadar uzun süre local'de/branch'te bekletilirse,
+   `main` o kadar uzaklaşır ve çakışma riski o kadar büyür. Büyük bir işi (ör. Plan Work
+   gibi) mantıklı alt-adımlara bölüp arka arkaya küçük commit'ler halinde push edin.
 4. **Kim ne üzerinde çalışıyor, konuşun.** Aynı dosyayı (ör. `ReportPage.tsx`,
    `WorkLogTable.tsx` gibi paylaşılan/merkezi dosyalar) aynı anda iki kişi değiştirmeyecekse
    en azından haberdar olun — GitHub Issues'ta "şu an X üzerinde çalışıyorum" notu bırakmak
@@ -47,22 +48,18 @@ gerekli kuralları ve alışkanlıkları tanımlar.
    aynı anda migration eklerse ikinci kişi `main`'i çekip migration'ını **yeniden** üretmeli
    (elle birleştirmeye çalışmayın). Bkz. aşağıdaki "Backend'e özel kurallar".
 
-## Commit ve PR alışkanlıkları
+## Commit alışkanlıkları
 
 - Commit mesajları **neden** yapıldığını anlatır, sadece ne değiştiğini değil (kod diff'i
   zaten "ne"yi gösteriyor).
-- Bir PR, tek bir mantıksal değişikliği temsil eder. "Bu arada şunu da düzelttim" tarzı
-  ilgisiz değişiklikleri ayrı PR'a taşıyın — review'ı zorlaştırıyor ve geri almayı
-  (revert) riskli hale getiriyor.
-- PR açıklamasına şunları yazın: ne değişti, neden, nasıl test edildi (bu projede genelde
-  Playwright ile uçtan uca doğrulama yapılıyor — ekran görüntüsü/adım listesi eklemek
-  review'ı hızlandırır).
-- Review isteyen kişi, karşı taraftan **gerçek bir okuma** bekler — sadece "LGTM" değil,
-  en azından değişen dosyaları gözden geçirin. 2 kişilik bir ekipte review'ın asıl amacı
-  budur: birbirinizin kör noktalarını yakalamak.
-- Merge yöntemi: **Squash and merge** önerilir (her PR, `main`'de tek bir temiz commit
-  olarak görünür; feature branch içindeki "wip", "fix typo" gibi ara commit'ler `main`
-  geçmişini kirletmez).
+- Bir commit (veya push öncesi commit grubu), tek bir mantıksal değişikliği temsil eder.
+  "Bu arada şunu da düzelttim" tarzı ilgisiz değişiklikleri ayrı bir commit'e taşıyın —
+  geri almayı (revert) ve geçmişi okumayı kolaylaştırır.
+- PR zorunlu olmadığı için kod review artık **isteğe bağlı** — ama riskli/karmaşık bir
+  değişiklik yaptıysanız (ör. paylaşılan bir bileşeni veya migration'ı etkiliyorsa), push
+  etmeden önce yine de bir PR açıp karşı taraftan hızlı bir göz atmasını istemek makul bir
+  seçenek. Bunu yapmak isterseniz PR açıklamasına ne değişti, neden, nasıl test edildiğini
+  yazın (bu projede genelde Playwright ile uçtan uca doğrulama yapılıyor).
 
 ## Backend'e özel kurallar
 
@@ -78,7 +75,7 @@ gerekli kuralları ve alışkanlıkları tanımlar.
 
 ## Frontend'e özel kurallar
 
-- `npx tsc -b` **0 hata** vermeden PR açmayın.
+- `npx tsc -b` **0 hata** vermeden `main`'e push etmeyin.
 - Paylaşılan bileşenleri (`WorkLogTable.tsx`, `SummaryCards.tsx`, `MqlFilterInput.tsx` gibi)
   değiştirirken, bu bileşeni kullanan **her sayfayı** (Work Log, Plan Work) gözden geçirin
   — bir sayfa için yapılan düzeltme diğerini görünmez şekilde bozabilir.
