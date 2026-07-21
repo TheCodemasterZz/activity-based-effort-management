@@ -1,0 +1,63 @@
+using EforTakip.Domain.Directories;
+using EforTakip.Domain.Exceptions;
+using FluentAssertions;
+
+namespace EforTakip.Domain.Tests.Directories;
+
+public class DirectoryUserTests
+{
+    [Fact]
+    public void CreateFromActiveDirectory_WithValidData_CreatesUser()
+    {
+        var directoryId = Guid.NewGuid();
+
+        var user = DirectoryUser.CreateFromActiveDirectory(
+            directoryId, "serkan.gultepe", "Serkan", "Gültepe",
+            "Serkan Gültepe", "serkan@kizilay.org.tr", "guid-123");
+
+        user.DirectoryId.Should().Be(directoryId);
+        user.Source.Should().Be(DirectorySource.ActiveDirectory);
+        user.Username.Should().Be("serkan.gultepe");
+        user.ObjectGuid.Should().Be("guid-123");
+        user.PasswordHash.Should().BeNull();
+        user.IsActive.Should().BeTrue();
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    [InlineData(null)]
+    public void CreateFromActiveDirectory_WithEmptyUsername_Throws(string? username)
+    {
+        var act = () => DirectoryUser.CreateFromActiveDirectory(
+            Guid.NewGuid(), username!, "a", "b", "c", "d", "guid");
+
+        act.Should().Throw<BusinessRuleValidationException>();
+    }
+
+    [Fact]
+    public void CreateInternal_WithValidData_CreatesUserWithPasswordHash()
+    {
+        var user = DirectoryUser.CreateInternal(
+            Guid.NewGuid(), "sanal.kullanici", "Sanal", "Kullanıcı",
+            "Sanal Kullanıcı", null, "HASHED");
+
+        user.Source.Should().Be(DirectorySource.Internal);
+        user.PasswordHash.Should().Be("HASHED");
+        user.ObjectGuid.Should().BeNull();
+    }
+
+    [Fact]
+    public void UpdateFromSync_UpdatesFieldsAndLastSynced()
+    {
+        var user = DirectoryUser.CreateFromActiveDirectory(
+            Guid.NewGuid(), "serkan.gultepe", "Serkan", "Eski", "x", "eski@x.com", "guid");
+        var syncTime = DateTime.UtcNow;
+
+        user.UpdateFromSync("Serkan", "Yeni", "Serkan Yeni", "yeni@x.com", syncTime);
+
+        user.LastName.Should().Be("Yeni");
+        user.Email.Should().Be("yeni@x.com");
+        user.LastSyncedUtc.Should().Be(syncTime);
+    }
+}
