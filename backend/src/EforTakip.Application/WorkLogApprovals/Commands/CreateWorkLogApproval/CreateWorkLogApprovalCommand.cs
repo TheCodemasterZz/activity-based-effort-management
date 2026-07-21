@@ -7,4 +7,5 @@ public sealed record CreateWorkLogApprovalCommand(
     Guid EmployeeId,
     ApprovalPeriodType PeriodType,
     DateOnly PeriodStart,
-    DateOnly PeriodEnd) : IRequest<Guid>;
+    DateOnly PeriodEnd,
+    string Description) : IRequest<Guid>;

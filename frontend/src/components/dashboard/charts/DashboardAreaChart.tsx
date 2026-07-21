@@ -5,7 +5,7 @@ interface DashboardAreaChartProps {
   data: { label: string; value: number }[];
   color: string;
   unit?: string;
-  height?: number;
+  height?: number | `${number}%`;
 }
 
 export function DashboardAreaChart({ data, color, unit, height = 220 }: DashboardAreaChartProps) {

@@ -3,6 +3,7 @@ import { ApiError } from '../api/client';
 export interface AppNotification {
   id: string;
   message: string;
+  type: 'error' | 'success';
 }
 
 type Listener = () => void;
@@ -36,7 +37,14 @@ export function pushErrorNotification(message: string): void {
   if (notifications.some((n) => n.message === message)) return;
 
   const id = crypto.randomUUID();
-  notifications = [...notifications, { id, message }];
+  notifications = [...notifications, { id, message, type: 'error' }];
+  emit();
+  setTimeout(() => dismissNotification(id), AUTO_DISMISS_MS);
+}
+
+export function pushSuccessNotification(message: string): void {
+  const id = crypto.randomUUID();
+  notifications = [...notifications, { id, message, type: 'success' }];
   emit();
   setTimeout(() => dismissNotification(id), AUTO_DISMISS_MS);
 }

@@ -30,18 +30,18 @@ interface StatCardShellProps {
 
 function StatCardShell({ icon, iconBg, label, value, caption, trendPercent, chart }: StatCardShellProps) {
   return (
-    <div className="flex flex-1 flex-col justify-between gap-3 overflow-hidden rounded-xl border border-slate-200 bg-white p-4">
+    <div className="flex flex-1 flex-col justify-between gap-2 overflow-hidden rounded-xl border border-slate-200 bg-white p-3">
       <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2">
-          <span className={`flex h-8 w-8 items-center justify-center rounded-lg text-base ${iconBg}`}>{icon}</span>
+        <div className="flex items-center gap-1.5">
+          <span className={`flex h-6 w-6 items-center justify-center rounded-lg text-sm ${iconBg}`}>{icon}</span>
           <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">{label}</span>
         </div>
         <TrendBadge percent={trendPercent} />
       </div>
       <div className="flex items-end justify-between gap-3">
         <div>
-          <div className="text-2xl font-bold text-slate-800">{value}</div>
-          <div className="mt-1 text-xs text-slate-400">{caption}</div>
+          <div className="text-xl font-bold text-slate-800">{value}</div>
+          <div className="mt-0.5 text-xs text-slate-400">{caption}</div>
         </div>
         {chart}
       </div>
@@ -88,7 +88,7 @@ export function SummaryCards({
         value={`${totalHours.toFixed(1)}h`}
         caption={periodLabel}
         trendPercent={computeTrendPercent(hoursSeries)}
-        chart={<TrendAreaWidget data={hoursSeries} color="#4f46e5" unit="h" />}
+        chart={<TrendAreaWidget data={hoursSeries} color="#4f46e5" unit="h" height={34} />}
       />
       <StatCardShell
         icon="📄"
@@ -97,7 +97,7 @@ export function SummaryCards({
         value={String(totalCount)}
         caption="Girilen log sayısı"
         trendPercent={computeTrendPercent(countSeries)}
-        chart={<TrendBarWidget data={countSeries} color="#2563eb" />}
+        chart={<TrendBarWidget data={countSeries} color="#2563eb" height={34} />}
       />
       <StatCardShell
         icon="👥"
@@ -107,7 +107,7 @@ export function SummaryCards({
         caption={totalEmployeeCount > 0 ? `${totalEmployeeCount} kişiden` : 'Log giren kişi sayısı'}
         chart={
           totalEmployeeCount > 0 ? (
-            <RatioGaugeWidget percent={activeRatio} color="#059669" label="Aktif kişi oranı" />
+            <RatioGaugeWidget percent={activeRatio} color="#059669" label="Aktif kişi oranı" size={44} />
           ) : undefined
         }
       />
@@ -118,7 +118,7 @@ export function SummaryCards({
         value={`${avgDailyHours.toFixed(1)}h`}
         caption="Kişi başı ortalama"
         trendPercent={computeTrendPercent(avgSeries)}
-        chart={<TrendBarWidget data={avgSeries} color="#f59e0b" unit="h" />}
+        chart={<TrendBarWidget data={avgSeries} color="#f59e0b" unit="h" height={34} />}
       />
       <StatCardShell
         icon="🔒"
@@ -127,7 +127,7 @@ export function SummaryCards({
         value={`${approvedHours.toFixed(1)}h`}
         caption={totalHours > 0 ? `Toplamın %${approvedRatio.toFixed(0)}'i` : 'Henüz onay yok'}
         trendPercent={computeTrendPercent(approvedHoursSeries)}
-        chart={<TrendAreaWidget data={approvedHoursSeries} color="#0d9488" unit="h" />}
+        chart={<TrendAreaWidget data={approvedHoursSeries} color="#0d9488" unit="h" height={34} />}
       />
     </div>
   );

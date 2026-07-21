@@ -1,5 +1,6 @@
 using EforTakip.Application.Common.Interfaces;
 using EforTakip.Domain.Customers;
+using EforTakip.Domain.EmployeeLeaves;
 using EforTakip.Domain.Employees;
 using EforTakip.Domain.Holidays;
 using EforTakip.Domain.Notifications;
@@ -45,6 +46,8 @@ public sealed class EforTakipDbContext(DbContextOptions<EforTakipDbContext> opti
     public DbSet<WorkCalendarDay> WorkCalendarDays => Set<WorkCalendarDay>();
 
     public DbSet<WorkLogApproval> WorkLogApprovals => Set<WorkLogApproval>();
+
+    public DbSet<EmployeeLeave> EmployeeLeaves => Set<EmployeeLeave>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

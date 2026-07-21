@@ -50,9 +50,21 @@ function buildLevel(
   resolveDimension: ResolveDimension,
   depth: number,
   parentPath: string,
+  /** Sadece en üst seviyede (levelIndex 0) ve o seviyenin boyutu 'employee' ise kullanılır:
+   * görüntülenen dönemde hiç kaydı olmayan çalışanlar da (boş/sıfır saatlik bir satır olarak)
+   * listeye eklensin diye tüm çalışan kadrosu burada önceden gruplara tohumlanır — böylece
+   * kullanıcı, o kişi için o dönemde hiç log girilmemiş olsa bile satırı görüp hücreye
+   * tıklayarak yeni kayıt ekleyebilir. */
+  employeeRoster?: { id: string; name: string }[],
 ): GroupedRow[] {
   const dimension = dimensions[levelIndex];
   const groups = new Map<string, { label: string; logs: EmployeeWorkLogDto[] }>();
+
+  if (employeeRoster && dimension === 'employee') {
+    for (const employee of employeeRoster) {
+      groups.set(employee.id, { label: employee.name, logs: [] });
+    }
+  }
 
   for (const log of logs) {
     const resolved = resolveDimension(dimension, log);
@@ -104,9 +116,12 @@ export function groupWorkLogs(
   columns: PeriodColumn[],
   dimensions: GroupByDimension[],
   resolveDimension: ResolveDimension,
+  /** Görüntülenen dönemde hiç kaydı olmasa bile satır listesinde görünmesi gereken çalışan
+   * kadrosu — bkz. buildLevel'daki employeeRoster açıklaması. */
+  employeeRoster?: { id: string; name: string }[],
 ): GroupedResult {
   const rows = dimensions.length > 0
-    ? buildLevel(logs, dimensions, 0, columns, resolveDimension, 0, 'root')
+    ? buildLevel(logs, dimensions, 0, columns, resolveDimension, 0, 'root', employeeRoster)
     : [];
 
   const grandTotalByColumn: Record<string, number> = {};

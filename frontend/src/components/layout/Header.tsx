@@ -45,7 +45,14 @@ export function Header({ activePage, onNavigate }: HeaderProps) {
           Test Mode
         </span>
         <NotificationBell />
-        <button type="button" className="text-slate-400 hover:text-slate-600" aria-label="Yönetim">
+        <button
+          type="button"
+          onClick={() => onNavigate('admin')}
+          className={
+            'text-slate-400 hover:text-slate-600' + (activePage === 'admin' ? ' text-indigo-600' : '')
+          }
+          aria-label="Yönetim"
+        >
           ⚙️
         </button>
         <ProfileMenu />

@@ -4,13 +4,15 @@ import { MonthNavigator } from '../components/dashboard/MonthNavigator';
 import { GroupByMultiSelect } from '../components/dashboard/GroupByMultiSelect';
 import { MqlFilterInput } from '../components/dashboard/MqlFilterInput';
 import { SummaryCards } from '../components/dashboard/SummaryCards';
-import { WorkLogTable } from '../components/dashboard/WorkLogTable';
+import { TableLegend } from '../components/dashboard/TableLegend';
+import { WorkLogTable, type LeaveRange } from '../components/dashboard/WorkLogTable';
 import { WorkLogFormModal, type WorkLogFormInitialValues } from '../components/logentry/WorkLogFormModal';
 import { CellWorkLogsModal } from '../components/logentry/CellWorkLogsModal';
 import { WorkLogApprovalModal } from '../components/dashboard/WorkLogApprovalModal';
 import {
   buildCustomDailyRange,
   dateKey,
+  eachDateKeyInRange,
   getPeriodRange,
   navigatePeriod,
   shiftCustomRange,
@@ -20,8 +22,10 @@ import {
 } from '../lib/dateUtils';
 import { groupWorkLogs, type GroupByDimension, type GroupedRow } from '../lib/groupWorkLogs';
 import { evaluateMql, type MqlNode } from '../lib/mql';
+import { pushErrorNotification } from '../lib/notifications';
 import { useWorkLogs } from '../hooks/useWorkLogs';
 import { useWorkLogApprovals } from '../hooks/useWorkLogApprovals';
+import { useEmployeeLeaves } from '../hooks/useEmployeeLeaves';
 import { useEmployees } from '../hooks/useEmployees';
 import { useProjects } from '../hooks/useProjects';
 import { useCustomers } from '../hooks/useCustomers';
@@ -52,6 +56,7 @@ export function ReportPage() {
   );
   const workLogs = useWorkLogs(periodRange.startKey, periodRange.endKey);
   const workLogApprovals = useWorkLogApprovals();
+  const employeeLeaves = useEmployeeLeaves();
 
   const employees = useEmployees();
   const projects = useProjects();
@@ -80,6 +85,17 @@ export function ReportPage() {
     }
     return map;
   }, [workLogApprovals.data]);
+
+  // Çalışan bazlı izin dönemleri — tam gün veya saatlik (kısmi) olabilir.
+  const leaveRangesByEmployee = useMemo(() => {
+    const map = new Map<string, LeaveRange[]>();
+    for (const leave of employeeLeaves.data?.items ?? []) {
+      const list = map.get(leave.employeeId) ?? [];
+      list.push({ start: leave.startDate, end: leave.endDate, isFullDay: leave.isFullDay });
+      map.set(leave.employeeId, list);
+    }
+    return map;
+  }, [employeeLeaves.data]);
 
   // MQL otomatik tamamlama için alan bazlı bilinen değerler — mevcut work log'larla sınırlı
   // değil, tüm çalışan/proje/müşteri/aktivite kataloğunu kapsar.
@@ -134,8 +150,8 @@ export function ReportPage() {
   }, [logs, mqlAst, employeesById, projectsById, customersById, activitiesById]);
 
   const grouped = useMemo(
-    () => groupWorkLogs(filteredLogs, periodRange.columns, groupBy, resolveDimension),
-    [filteredLogs, periodRange.columns, groupBy, resolveDimension],
+    () => groupWorkLogs(filteredLogs, periodRange.columns, groupBy, resolveDimension, employees.data?.items),
+    [filteredLogs, periodRange.columns, groupBy, resolveDimension, employees.data],
   );
 
   const totalHours = filteredLogs.reduce((sum, l) => sum + l.hours, 0);
@@ -205,18 +221,39 @@ export function ReportPage() {
     return prefill;
   };
 
+  // Bir satır (çalışan) + tarih aralığının bir kısmı onaylı bir döneme denk geliyor mu — boş
+  // hücreler dahil, çünkü backend onaylı bir haftaya yeni kayıt eklenmesine zaten izin vermiyor;
+  // bu kontrol, kullanıcıyı zaten reddedilecek bir formu doldurmaktan kurtarır.
+  const isRangeApprovedForRow = (row: GroupedRow, startKey: string, endKey: string): boolean => {
+    if (!row.employeeId) return false;
+    const ranges = approvedRangesByEmployee.get(row.employeeId);
+    if (!ranges || ranges.length === 0) return false;
+    return eachDateKeyInRange(startKey, endKey).some((d) => ranges.some((r) => d >= r.start && d <= r.end));
+  };
+
   const handleCellClick = (row: GroupedRow, column: PeriodColumn) => {
     const cellLogs = row.cellLogs[column.key] ?? [];
     const prefill = buildPrefillFromRow(row);
 
     if (cellLogs.length > 0) {
       setCellModal({ logs: cellLogs, date: column.startKey, prefill });
-    } else {
-      setCreateModal({ initial: { ...prefill, date: column.startKey } });
+      return;
     }
+
+    if (isRangeApprovedForRow(row, column.startKey, column.endKey)) {
+      pushErrorNotification('Bu gün onaylı bir döneme denk geliyor, yeni kayıt eklenemez.');
+      return;
+    }
+
+    setCreateModal({ initial: { ...prefill, date: column.startKey } });
   };
 
   const handleRangeSelect = (row: GroupedRow, startColumn: PeriodColumn, endColumn: PeriodColumn) => {
+    if (isRangeApprovedForRow(row, startColumn.startKey, endColumn.endKey)) {
+      pushErrorNotification('Seçilen aralığın bir kısmı onaylı bir döneme denk geliyor, yeni kayıt eklenemez.');
+      return;
+    }
+
     const prefill = buildPrefillFromRow(row);
     setCreateModal({ initial: { ...prefill, date: startColumn.startKey, endDate: endColumn.endKey } });
   };
@@ -299,6 +336,8 @@ export function ReportPage() {
           />
         </div>
 
+        <TableLegend />
+
         {workLogs.isLoading ? (
           <div className="rounded-xl border border-slate-200 bg-white p-8 text-center text-slate-400">
             Yükleniyor…
@@ -321,6 +360,7 @@ export function ReportPage() {
             grandTotal={grouped.grandTotal}
             holidayDateKeys={holidayDateKeys}
             approvedRangesByEmployee={approvedRangesByEmployee}
+            leaveRangesByEmployee={leaveRangesByEmployee}
             onCellClick={handleCellClick}
             onRangeSelect={handleRangeSelect}
           />
@@ -337,7 +377,12 @@ export function ReportPage() {
       )}
 
       {isApprovalModalOpen && (
-        <WorkLogApprovalModal onClose={() => setIsApprovalModalOpen(false)} />
+        <WorkLogApprovalModal
+          onClose={() => setIsApprovalModalOpen(false)}
+          resolveProject={resolveProject}
+          resolveCustomer={resolveCustomer}
+          resolveActivity={resolveActivity}
+        />
       )}
 
       {cellModal && (

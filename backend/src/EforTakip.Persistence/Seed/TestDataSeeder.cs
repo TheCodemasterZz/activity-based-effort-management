@@ -1,8 +1,10 @@
 using Bogus;
 using EforTakip.Domain.Customers;
+using EforTakip.Domain.EmployeeLeaves;
 using EforTakip.Domain.Employees;
 using EforTakip.Domain.Projects;
 using EforTakip.Domain.ValueStreams;
+using EforTakip.Domain.WorkLogApprovals;
 using EforTakip.Domain.WorkLogs;
 using Microsoft.EntityFrameworkCore;
 
@@ -103,6 +105,65 @@ public static class TestDataSeeder
             }
         }
         context.EmployeeWorkLogs.AddRange(workLogs);
+
+        // İzin (leave) örnek verisi — projelere atanmış (yani tabloda görünen) çalışanlar
+        // arasından bir kısmına tam günlük, bir kısmına saatlik (kısmi) izin atanır. Tarihler
+        // work log'ların kapsadığı son 14 günlük aralığa ve önümüzdeki haftaya yayılır.
+        var assignedEmployeeIdsPool = projects.SelectMany(p => p.EmployeeIds).Distinct().ToList();
+        var leaveCandidates = assignedEmployeeIdsPool.OrderBy(_ => random.Next()).Take(8).ToList();
+        var leaves = new List<EmployeeLeave>();
+
+        for (var i = 0; i < leaveCandidates.Count; i++)
+        {
+            var employeeId = leaveCandidates[i];
+            var isFullDay = i % 2 == 0;
+            var dayOffset = random.Next(-13, 7);
+            var date = DateOnly.FromDateTime(DateTime.Today.AddDays(dayOffset));
+            if (date.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday)
+                date = date.AddDays(2);
+
+            if (isFullDay)
+            {
+                var spanDays = random.Next(0, 3); // tek gün ya da 2-3 günlük tam izin
+                leaves.Add(EmployeeLeave.Create(
+                    employeeId, date, date.AddDays(spanDays), isFullDay: true, startTime: null, endTime: null,
+                    description: "Yıllık izin"));
+            }
+            else
+            {
+                var startHour = random.Next(9, 15);
+                var duration = random.Next(1, 4);
+                leaves.Add(EmployeeLeave.Create(
+                    employeeId, date, date, isFullDay: false,
+                    startTime: new TimeOnly(startHour, 0), endTime: new TimeOnly(Math.Min(startHour + duration, 18), 0),
+                    description: "Kısmi mazeret izni"));
+            }
+        }
+        context.EmployeeLeaves.AddRange(leaves);
+
+        // Onaylı hafta örnekleri — geçen haftanın tamamı (Pazartesi–Pazar) birkaç çalışan için
+        // önceden onaylanmış olarak seed edilir; böylece onay renklendirmesi ("Onaylı"/"Onaylanan
+        // Efor Süresi") demo'da elle onaylamaya gerek kalmadan doğrudan görülebilir.
+        var todayDate = DateOnly.FromDateTime(DateTime.Today);
+        var daysSinceMonday = ((int)todayDate.DayOfWeek + 6) % 7;
+        var thisWeekMonday = todayDate.AddDays(-daysSinceMonday);
+        var approvedWeekStart = thisWeekMonday.AddDays(-7);
+        var approvedWeekEnd = approvedWeekStart.AddDays(6);
+
+        var approvalCandidates = assignedEmployeeIdsPool.OrderBy(_ => random.Next()).Take(3).ToList();
+        var approvals = new List<WorkLogApproval>();
+        foreach (var employeeId in approvalCandidates)
+        {
+            var approval = WorkLogApproval.Create(
+                employeeId, ApprovalPeriodType.Weekly, approvedWeekStart, approvedWeekEnd, "Demo: haftalık onay örneği");
+
+            foreach (var log in workLogs.Where(l =>
+                l.EmployeeId == employeeId && l.WorkDate >= approvedWeekStart && l.WorkDate <= approvedWeekEnd))
+                log.MarkApproved(approval.Id);
+
+            approvals.Add(approval);
+        }
+        context.WorkLogApprovals.AddRange(approvals);
 
         // "Software Delivery" value stream'i (aşama + L1/L2 aktiviteleri) ve Türkiye resmi
         // tatil günleri artık SoftwareDeliverySeedData üzerinden EF Core HasData ile modele

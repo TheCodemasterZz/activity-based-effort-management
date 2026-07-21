@@ -19,7 +19,8 @@ public sealed class CreateWorkLogApprovalCommandHandler(IApplicationDbContext db
         if (hasOverlap)
             throw new BusinessRuleValidationException("Bu dönemin bir kısmı zaten onaylanmış.");
 
-        var approval = WorkLogApproval.Create(request.EmployeeId, request.PeriodType, request.PeriodStart, request.PeriodEnd);
+        var approval = WorkLogApproval.Create(
+            request.EmployeeId, request.PeriodType, request.PeriodStart, request.PeriodEnd, request.Description);
 
         var logsToApprove = await db.EmployeeWorkLogs
             .Where(l => l.EmployeeId == request.EmployeeId

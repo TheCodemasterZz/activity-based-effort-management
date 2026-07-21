@@ -5,7 +5,7 @@ interface DashboardRankingBarProps {
   data: { label: string; value: number }[];
   color: string;
   unit?: string;
-  height?: number;
+  height?: number | `${number}%`;
 }
 
 /** Yatay sıralama çubuğu — en çok efor harcanan proje/çalışan/aktivite gibi Top-N listeleri için. */

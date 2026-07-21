@@ -38,12 +38,12 @@ interface PanelProps {
 
 function Panel({ title, caption, children }: PanelProps) {
   return (
-    <div className="flex-1 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-      <div className="mb-3">
+    <div className="flex flex-1 flex-col overflow-hidden rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+      <div className="mb-3 shrink-0">
         <div className="text-sm font-semibold text-slate-700">{title}</div>
         {caption && <div className="text-xs text-slate-400">{caption}</div>}
       </div>
-      {children}
+      <div className="min-h-0 flex-1">{children}</div>
     </div>
   );
 }
@@ -126,9 +126,9 @@ export function HomePage() {
   const isLoading = employees.isLoading || projects.isLoading || customers.isLoading || workLogs.isLoading;
 
   return (
-    <div className="flex flex-1 overflow-y-auto bg-slate-50 p-6">
-      <div className="mx-auto w-full max-w-6xl">
-        <div className="mb-5">
+    <div className="flex flex-1 flex-col overflow-hidden bg-slate-50 p-6">
+      <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col overflow-hidden">
+        <div className="mb-4 shrink-0">
           <h1 className="text-xl font-bold text-slate-800">Ana Sayfa</h1>
           <p className="text-sm text-slate-500">Organizasyon genelinde efor takibine genel bakış — {monthRange.label}</p>
         </div>
@@ -136,28 +136,28 @@ export function HomePage() {
         {isLoading ? (
           <div className="rounded-xl border border-slate-200 bg-white p-8 text-center text-slate-400">Yükleniyor…</div>
         ) : (
-          <div className="flex flex-col gap-4">
-            <div className="flex flex-col gap-3 sm:flex-row">
+          <div className="flex flex-1 flex-col gap-4 overflow-hidden">
+            <div className="flex shrink-0 flex-col gap-3 sm:flex-row">
               <KpiCard icon="👥" iconBg="bg-indigo-50 text-indigo-600" label="Toplam Çalışan" value={String(totalEmployeeCount)} caption="Sistemde kayıtlı" />
               <KpiCard icon="📁" iconBg="bg-blue-50 text-blue-600" label="Toplam Proje" value={String(totalProjectCount)} caption="Aktif ve tamamlanan" />
               <KpiCard icon="🏢" iconBg="bg-emerald-50 text-emerald-600" label="Toplam Müşteri" value={String(totalCustomerCount)} caption="Sistemde kayıtlı" />
               <KpiCard icon="⏱" iconBg="bg-amber-50 text-amber-600" label="Bu Ay Toplam Efor" value={`${totalHours.toFixed(1)}h`} caption={`${activeEmployeeCount} kişi log girdi`} />
             </div>
 
-            <div className="flex flex-col gap-4 lg:flex-row">
-              <div className="lg:w-2/3">
+            <div className="flex flex-1 flex-col gap-4 overflow-hidden lg:flex-row">
+              <div className="flex flex-1 overflow-hidden lg:w-2/3">
                 <Panel title="Aylık Efor Trendi" caption={`${monthRange.label} — güne göre toplam saat`}>
-                  <DashboardAreaChart data={dailyTrend} color="#4f46e5" unit="h" />
+                  <DashboardAreaChart data={dailyTrend} color="#4f46e5" unit="h" height="100%" />
                 </Panel>
               </div>
-              <div className="lg:w-1/3">
+              <div className="flex flex-1 overflow-hidden lg:w-1/3">
                 <Panel title="Yaklaşan Tatiller" caption="Resmi tatil takviminden">
                   {upcomingHolidays.length === 0 ? (
-                    <div className="flex h-[220px] items-center justify-center text-sm text-slate-400">
+                    <div className="flex h-full items-center justify-center text-sm text-slate-400">
                       Yaklaşan tatil yok
                     </div>
                   ) : (
-                    <ul className="flex h-[220px] flex-col justify-center gap-3">
+                    <ul className="flex h-full flex-col justify-center gap-3">
                       {upcomingHolidays.map((h) => (
                         <li key={h.id} className="flex items-center gap-3 rounded-lg bg-red-50 px-3 py-2.5">
                           <span className="text-lg">🎌</span>
@@ -173,15 +173,15 @@ export function HomePage() {
               </div>
             </div>
 
-            <div className="flex flex-col gap-4 md:flex-row">
+            <div className="flex flex-1 flex-col gap-4 overflow-hidden md:flex-row">
               <Panel title="En Çok Efor Harcanan Projeler" caption="Bu ay, saat bazında">
-                <DashboardRankingBar data={topProjects} color="#2563eb" />
+                <DashboardRankingBar data={topProjects} color="#2563eb" height="100%" />
               </Panel>
               <Panel title="En Aktif Çalışanlar" caption="Bu ay, saat bazında">
-                <DashboardRankingBar data={topEmployees} color="#059669" />
+                <DashboardRankingBar data={topEmployees} color="#059669" height="100%" />
               </Panel>
               <Panel title="Aktivite Dağılımı" caption="Activity L1, bu ay saat bazında">
-                <DashboardRankingBar data={topActivities} color="#f59e0b" />
+                <DashboardRankingBar data={topActivities} color="#f59e0b" height="100%" />
               </Panel>
             </div>
           </div>

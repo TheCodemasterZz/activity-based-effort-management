@@ -65,7 +65,7 @@ export function GroupByMultiSelect({ value, onChange }: GroupByMultiSelectProps)
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 z-20 mt-2 w-72 rounded-lg border border-slate-200 bg-white p-3 shadow-lg">
+        <div className="absolute right-0 z-40 mt-2 w-72 rounded-lg border border-slate-200 bg-white p-3 shadow-lg">
           <div className="mb-2 flex items-center justify-between text-sm font-semibold text-slate-700">
             <span>Group by</span>
             <span className="text-xs font-normal text-slate-400">Sıralamak için sürükle</span>

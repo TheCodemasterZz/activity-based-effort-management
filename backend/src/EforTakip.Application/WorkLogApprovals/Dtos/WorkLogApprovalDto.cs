@@ -6,4 +6,5 @@ public sealed class WorkLogApprovalDto
     public Guid EmployeeId { get; init; }
     public DateOnly PeriodStart { get; init; }
     public DateOnly PeriodEnd { get; init; }
+    public string? Description { get; init; }
 }
