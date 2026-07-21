@@ -56,6 +56,8 @@ public sealed class EforTakipDbContext(DbContextOptions<EforTakipDbContext> opti
 
     public DbSet<DirectoryAttributeMapping> DirectoryAttributeMappings => Set<DirectoryAttributeMapping>();
 
+    public DbSet<DirectoryUserAttribute> DirectoryUserAttributes => Set<DirectoryUserAttribute>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(EforTakipDbContext).Assembly);

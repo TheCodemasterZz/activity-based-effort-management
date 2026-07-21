@@ -23,6 +23,15 @@ public sealed class DirectoryUserConfiguration : IEntityTypeConfiguration<Direct
 
         builder.HasIndex(u => u.Username).IsUnique();
 
+        builder.HasMany(u => u.Attributes)
+            .WithOne()
+            .HasForeignKey(a => a.DirectoryUserId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.Metadata
+            .FindNavigation(nameof(DirectoryUser.Attributes))!
+            .SetPropertyAccessMode(PropertyAccessMode.Field);
+
         builder.HasOne<Directory>()
             .WithMany()
             .HasForeignKey(u => u.DirectoryId)

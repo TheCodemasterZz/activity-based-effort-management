@@ -53,4 +53,6 @@ public interface IApplicationDbContext
     DbSet<DirectoryUser> DirectoryUsers { get; }
 
     DbSet<DirectoryAttributeMapping> DirectoryAttributeMappings { get; }
+
+    DbSet<DirectoryUserAttribute> DirectoryUserAttributes { get; }
 }
