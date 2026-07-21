@@ -3,6 +3,7 @@ using Asp.Versioning;
 using EforTakip.Api.Middleware;
 using EforTakip.Infrastructure.Security;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
@@ -64,7 +65,14 @@ public static class ApiServiceCollectionExtensions
                 };
             });
 
-        services.AddAuthorization();
+        // Fallback policy: [AllowAnonymous] ile işaretlenmemiş her endpoint kimlik doğrulama ister.
+        // Yeni eklenen bir controller'ın yanlışlıkla korumasız kalmasını engeller.
+        services.AddAuthorization(options =>
+        {
+            options.FallbackPolicy = new AuthorizationPolicyBuilder()
+                .RequireAuthenticatedUser()
+                .Build();
+        });
 
         services.AddSwaggerGen(options =>
         {

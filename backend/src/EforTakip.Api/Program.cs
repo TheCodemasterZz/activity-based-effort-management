@@ -1,6 +1,7 @@
 using EforTakip.Api.Extensions;
 using EforTakip.Api.Middleware;
 using EforTakip.Application;
+using EforTakip.Application.Common.Interfaces;
 using EforTakip.Infrastructure;
 using EforTakip.Persistence;
 using EforTakip.Persistence.Seed;
@@ -29,6 +30,24 @@ if (builder.Configuration.GetValue<bool>("UseTestMode"))
     await TestDataSeeder.SeedAsync(db);
 }
 
+// Endpoint'ler kimlik doğrulama istediğinden, sistemde hiç kullanıcı yoksa kimse giriş
+// yapıp ilk hesabı oluşturamaz — bu yüzden açılışta bir yönetici hesabı hazırlanır.
+using (var bootstrapScope = app.Services.CreateScope())
+{
+    var db = bootstrapScope.ServiceProvider.GetRequiredService<EforTakipDbContext>();
+    var passwordHasher = bootstrapScope.ServiceProvider.GetRequiredService<IPasswordHasher>();
+    var logger = bootstrapScope.ServiceProvider.GetRequiredService<ILoggerFactory>()
+        .CreateLogger(nameof(BootstrapAdminSeeder));
+
+    await BootstrapAdminSeeder.SeedAsync(
+        db,
+        passwordHasher,
+        builder.Configuration["Bootstrap:AdminUsername"],
+        builder.Configuration["Bootstrap:AdminPassword"],
+        logger,
+        CancellationToken.None);
+}
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -43,7 +62,7 @@ app.UseCors(ApiServiceCollectionExtensions.FrontendCorsPolicy);
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
-app.MapHealthChecks("/health");
+app.MapHealthChecks("/health").AllowAnonymous();
 
 app.Run();
 
