@@ -15,4 +15,10 @@ public interface ILdapService
         Directory directory,
         IReadOnlyCollection<string> extraAttributeNames,
         CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Kullanıcının dizindeki şifresini doğrular. Şifre hiçbir yerde saklanmaz veya loglanmaz.
+    /// </summary>
+    Task<bool> AuthenticateAsync(
+        Directory directory, string username, string password, CancellationToken cancellationToken);
 }

@@ -102,6 +102,83 @@ public sealed class LdapService(ISettingsEncryptor settingsEncryptor) : ILdapSer
         return users;
     }
 
+    public Task<bool> AuthenticateAsync(
+        Directory directory, string username, string password, CancellationToken cancellationToken)
+        => Task.Run(() =>
+        {
+            // Boş şifre ile simple bind, sunucuda anonim bind'e dönüşüp "başarılı" sayılabilir.
+            // Bu bir kimlik doğrulama atlatmasıdır — bind denemeden önce reddedilir.
+            if (string.IsNullOrWhiteSpace(password))
+                return false;
+
+            try
+            {
+                var userDn = FindUserDistinguishedName(directory, username);
+                if (userDn is null)
+                    return false;
+
+                var identifier = new LdapDirectoryIdentifier(
+                    directory.Hostname, directory.Port, fullyQualifiedDnsHostName: false, connectionless: false);
+
+                using var connection = new LdapConnection(
+                    identifier, new NetworkCredential(userDn, password), AuthType.Basic)
+                {
+                    Timeout = ConnectionTimeout
+                };
+                connection.SessionOptions.ProtocolVersion = 3;
+                connection.SessionOptions.SecureSocketLayer = directory.UseSsl;
+
+                connection.Bind();
+                return true;
+            }
+            catch (LdapException)
+            {
+                // Hatalı şifre de dahil tüm bind hataları "doğrulanamadı" demektir.
+                return false;
+            }
+        }, cancellationToken);
+
+    /// <summary>Servis hesabıyla bağlanıp kullanıcının DN'ini bulur.</summary>
+    private string? FindUserDistinguishedName(Directory directory, string username)
+    {
+        using var connection = CreateConnection(directory);
+        connection.Bind();
+
+        var searchBase = BuildSearchBase(directory);
+        var usernameAttribute = string.IsNullOrWhiteSpace(directory.UsernameAttribute)
+            ? "sAMAccountName"
+            : directory.UsernameAttribute;
+
+        var filter = $"({usernameAttribute}={EscapeLdapFilterValue(username)})";
+        var request = new SearchRequest(searchBase, filter, SearchScope.Subtree, usernameAttribute);
+
+        var response = (SearchResponse)connection.SendRequest(request);
+        if (response.Entries.Count != 1)
+            return null;
+
+        return response.Entries[0].DistinguishedName;
+    }
+
+    /// <summary>RFC 4515 — kullanıcı girdisinin LDAP filtresini bozmasını/enjeksiyonu önler.</summary>
+    private static string EscapeLdapFilterValue(string value)
+    {
+        var builder = new StringBuilder(value.Length);
+        foreach (var c in value)
+        {
+            switch (c)
+            {
+                case '\\': builder.Append("\\5c"); break;
+                case '*': builder.Append("\\2a"); break;
+                case '(': builder.Append("\\28"); break;
+                case ')': builder.Append("\\29"); break;
+                case '\0': builder.Append("\\00"); break;
+                case '/': builder.Append("\\2f"); break;
+                default: builder.Append(c); break;
+            }
+        }
+        return builder.ToString();
+    }
+
     private LdapConnection CreateConnection(Directory directory)
     {
         var identifier = new LdapDirectoryIdentifier(
