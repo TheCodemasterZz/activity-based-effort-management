@@ -27,7 +27,7 @@ public sealed class UpdateWorkLogCommandHandler(
             request.ActivityL1Id, request.ActivityL2Id, cancellationToken);
 
         await WorkLogApprovalGuard.EnsureRangeNotApprovedAsync(
-            db, request.EmployeeId, request.WorkDate, request.WorkDate, cancellationToken);
+            db, request.EmployeeId, request.WorkDate, request.WorkDate, log.EntryType, cancellationToken);
 
         log.Update(
             request.EmployeeId, request.ProjectId, request.CustomerId,

@@ -290,7 +290,9 @@ export function WorkLogTable({
 }: WorkLogTableProps) {
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
   const [drag, setDrag] = useState<DragState | null>(null);
-  const [nameSort, setNameSort] = useState<NameSort>(null);
+  // Varsayılan olarak her zaman A-Z sıralı başlar — kullanıcı sütun başlığına tıklayarak
+  // sırayı değiştirebilir/kapatabilir.
+  const [nameSort, setNameSort] = useState<NameSort>('asc');
   const todayKey = new Date().toISOString().slice(0, 10);
   const displayRows = nameSort ? sortRowsByLabel(rows, nameSort) : rows;
 

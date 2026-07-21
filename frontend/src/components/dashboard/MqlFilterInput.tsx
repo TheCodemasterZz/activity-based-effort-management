@@ -274,6 +274,15 @@ export function MqlFilterInput({ onApply, fieldValues = {} }: MqlFilterInputProp
                 <code className="rounded bg-slate-100 px-1">&gt;=</code>{' '}
                 <code className="rounded bg-slate-100 px-1">&lt;=</code>
               </div>
+              <div className="mb-1 font-semibold text-slate-600">Parantez ile Gruplama</div>
+              <div className="mb-2 text-slate-500">
+                <code className="rounded bg-slate-100 px-1">AND</code>, <code className="rounded bg-slate-100 px-1">OR</code>'dan
+                önce değerlendirilir. Farklı bir öncelik istediğinizde koşulları <code className="rounded bg-slate-100 px-1">( )</code>{' '}
+                ile gruplayın; parantezler iç içe de kullanılabilir.
+              </div>
+              <code className="mb-2 block rounded bg-slate-100 px-1.5 py-1 text-indigo-700">
+                (project = "X" OR customer = "Y") AND hours &gt; 5
+              </code>
               <div className="mb-1 font-semibold text-slate-600">Örnek</div>
               <code className="block rounded bg-slate-100 px-1.5 py-1 text-indigo-700">{EXAMPLE}</code>
             </div>

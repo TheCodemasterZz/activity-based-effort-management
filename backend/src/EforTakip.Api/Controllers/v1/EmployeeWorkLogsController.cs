@@ -22,7 +22,8 @@ public sealed class EmployeeWorkLogsController(ISender mediator) : ControllerBas
     {
         var command = new LogWorkCommand(
             body.EmployeeId, body.ProjectId, body.CustomerId,
-            body.ActivityL1Id, body.ActivityL2Id, body.StartDate, body.EndDate, body.Hours, body.Description);
+            body.ActivityL1Id, body.ActivityL2Id, body.StartDate, body.EndDate, body.Hours, body.Description,
+            body.EntryType);
 
         var ids = await mediator.Send(command, cancellationToken);
         return CreatedAtAction(nameof(GetAll), new { version = "1.0" }, new { ids });

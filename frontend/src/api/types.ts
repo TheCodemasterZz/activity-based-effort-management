@@ -67,6 +67,12 @@ export interface ValueStreamDetailDto extends ValueStreamDto {
   stages: ValueStreamStageDto[];
 }
 
+// Backend'de global bir JsonStringEnumConverter yok — WorkLogEntryType JSON'da sayısal enum
+// değeri olarak taşınır (WorkLogEntryType.cs: Actual=0, Planned=1). Log Work ekranı Actual,
+// Plan Work ekranı Planned kayıtlarla çalışır — aynı tablo/API, sadece bu alanla ayrışıyorlar.
+export const WORK_LOG_ENTRY_TYPE = { Actual: 0, Planned: 1 } as const;
+export type WorkLogEntryType = (typeof WORK_LOG_ENTRY_TYPE)[keyof typeof WORK_LOG_ENTRY_TYPE];
+
 export interface EmployeeWorkLogDto {
   id: string;
   employeeId: string;
@@ -78,6 +84,7 @@ export interface EmployeeWorkLogDto {
   hours: number;
   description: string;
   isApproved: boolean;
+  entryType: WorkLogEntryType;
 }
 
 // Backend'de global bir JsonStringEnumConverter yok — ApprovalPeriodType JSON'da sayısal enum

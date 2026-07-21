@@ -14,7 +14,8 @@ public sealed class GetEmployeeWorkLogsQueryHandler(IApplicationDbContext db)
     public async Task<PagedResult<EmployeeWorkLogDto>> Handle(
         GetEmployeeWorkLogsQuery request, CancellationToken cancellationToken)
     {
-        IQueryable<EmployeeWorkLog> query = db.EmployeeWorkLogs.AsNoTracking();
+        IQueryable<EmployeeWorkLog> query = db.EmployeeWorkLogs.AsNoTracking()
+            .Where(l => l.EntryType == request.EntryType);
 
         if (request.EmployeeId is { } employeeId)
             query = query.Where(l => l.EmployeeId == employeeId);

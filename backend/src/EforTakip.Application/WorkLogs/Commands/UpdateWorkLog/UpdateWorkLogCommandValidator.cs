@@ -13,8 +13,9 @@ public sealed class UpdateWorkLogCommandValidator : AbstractValidator<UpdateWork
         RuleFor(x => x.ActivityL1Id).NotEmpty();
         RuleFor(x => x.ActivityL2Id).NotEmpty().WithMessage("Activity L2 seçimi zorunludur.");
 
-        RuleFor(x => x.WorkDate)
-            .LessThanOrEqualTo(DateOnly.FromDateTime(DateTime.UtcNow)).WithMessage("Tarih gelecekte olamaz.");
+        // "Gelecekte olamaz" kuralı burada YOK: bu komut EntryType bilmiyor (kayıt zaten var,
+        // türü değişmiyor) — kural EmployeeWorkLog.Update() içinde, kaydın kendi EntryType'ına
+        // bakılarak (sadece Actual için) uygulanıyor.
 
         RuleFor(x => x.Hours)
             .GreaterThan(0).WithMessage("Efor saati 0'dan büyük olmalıdır.")

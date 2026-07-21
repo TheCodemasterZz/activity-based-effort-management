@@ -1,5 +1,5 @@
 import { apiClient } from './client';
-import type { EmployeeWorkLogDto, PagedResult } from './types';
+import { WORK_LOG_ENTRY_TYPE, type EmployeeWorkLogDto, type PagedResult, type WorkLogEntryType } from './types';
 
 export interface GetWorkLogsParams {
   dateFrom?: string;
@@ -8,6 +8,7 @@ export interface GetWorkLogsParams {
   projectId?: string;
   pageNumber?: number;
   pageSize?: number;
+  entryType?: WorkLogEntryType;
 }
 
 export function getWorkLogs(params: GetWorkLogsParams) {
@@ -18,6 +19,7 @@ export function getWorkLogs(params: GetWorkLogsParams) {
     projectId: params.projectId,
     pageNumber: params.pageNumber ?? 1,
     pageSize: params.pageSize ?? 1000,
+    entryType: params.entryType ?? WORK_LOG_ENTRY_TYPE.Actual,
   });
 }
 
@@ -31,6 +33,7 @@ export interface LogWorkPayload {
   endDate: string;
   hours: number;
   description: string;
+  entryType?: WorkLogEntryType;
 }
 
 export function logWork(payload: LogWorkPayload) {

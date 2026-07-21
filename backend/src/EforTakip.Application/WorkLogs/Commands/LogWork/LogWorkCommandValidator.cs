@@ -1,3 +1,4 @@
+using EforTakip.Domain.WorkLogs;
 using FluentValidation;
 
 namespace EforTakip.Application.WorkLogs.Commands.LogWork;
@@ -13,8 +14,13 @@ public sealed class LogWorkCommandValidator : AbstractValidator<LogWorkCommand>
         RuleFor(x => x.ActivityL2Id).NotEmpty().WithMessage("Activity L2 seçimi zorunludur.");
 
         RuleFor(x => x.EndDate)
-            .GreaterThanOrEqualTo(x => x.StartDate).WithMessage("Bitiş tarihi başlangıç tarihinden önce olamaz.")
-            .LessThanOrEqualTo(DateOnly.FromDateTime(DateTime.UtcNow)).WithMessage("Bitiş tarihi gelecekte olamaz.");
+            .GreaterThanOrEqualTo(x => x.StartDate).WithMessage("Bitiş tarihi başlangıç tarihinden önce olamaz.");
+
+        // Gerçekleşen (Actual) efor gelecekte loglanamaz; planlanan (Planned) efor için ise
+        // gelecek tarih zaten planlamanın asıl amacı olduğundan bu kural uygulanmaz.
+        RuleFor(x => x.EndDate)
+            .LessThanOrEqualTo(DateOnly.FromDateTime(DateTime.UtcNow)).WithMessage("Bitiş tarihi gelecekte olamaz.")
+            .When(x => x.EntryType == WorkLogEntryType.Actual);
 
         RuleFor(x => x.Hours)
             .GreaterThan(0).WithMessage("Efor saati 0'dan büyük olmalıdır.")

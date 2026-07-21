@@ -1,4 +1,5 @@
 using EforTakip.Domain.WorkLogApprovals;
+using EforTakip.Domain.WorkLogs;
 
 namespace EforTakip.Api.Contracts.WorkLogApprovals;
 
@@ -7,4 +8,5 @@ public sealed record CreateWorkLogApprovalRequestBody(
     ApprovalPeriodType PeriodType,
     DateOnly PeriodStart,
     DateOnly PeriodEnd,
-    string Description);
+    string Description,
+    WorkLogEntryType EntryType = WorkLogEntryType.Actual);

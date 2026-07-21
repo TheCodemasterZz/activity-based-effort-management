@@ -14,6 +14,7 @@ dist-ssr/
 # ---- Logs ----
 logs/
 *.log
+backend_log.txt
 
 # ---- Local dev / verification scratch files ----
 verify*.cjs

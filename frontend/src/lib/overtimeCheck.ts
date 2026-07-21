@@ -1,5 +1,5 @@
 import { getWorkLogs } from '../api/workLogs';
-import type { WorkCalendarDetailDto } from '../api/types';
+import { WORK_LOG_ENTRY_TYPE, type WorkCalendarDetailDto, type WorkLogEntryType } from '../api/types';
 
 export interface OvertimeCheckParams {
   employeeId: string;
@@ -9,6 +9,9 @@ export interface OvertimeCheckParams {
   hoursPerDay: number;
   /** Düzenleme modunda, güncellenmekte olan kaydın kendisi toplam saatten hariç tutulur. */
   excludeWorkLogId?: string;
+  /** Aşım kontrolü, hangi türdeki mevcut kayıtlara göre yapılacak — Planned formunda Actual
+   * kayıtlarla karışmasın diye. */
+  entryType?: WorkLogEntryType;
 }
 
 function toMinutes(time: string): number {
@@ -47,6 +50,7 @@ export async function findOvertimeDates(params: OvertimeCheckParams): Promise<st
     dateFrom: params.startDate,
     dateTo: params.endDate,
     pageSize: 1000,
+    entryType: params.entryType ?? WORK_LOG_ENTRY_TYPE.Actual,
   });
 
   const existingHoursByDate = new Map<string, number>();

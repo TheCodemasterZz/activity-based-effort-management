@@ -5,7 +5,13 @@ import { useProjectSearch } from '../hooks/useProjects';
 import { pushSuccessNotification } from '../lib/notifications';
 
 const PARAM_ROWS: { param: string; description: string; required: boolean }[] = [
-  { param: 'widget', description: 'Sabit değer: log-work — sayfanın widget modunda (menüsüz/chrome\'suz) açılmasını sağlar.', required: true },
+  {
+    param: 'widget',
+    description:
+      'log-work (gerçekleşen efor) veya plan-work (planlanan efor) — sayfanın hangi modda ve widget ' +
+      'olarak (menüsüz/chrome\'suz) açılacağını belirler.',
+    required: true,
+  },
   {
     param: 'token',
     description:
@@ -23,9 +29,11 @@ const PARAM_ROWS: { param: string; description: string; required: boolean }[] = 
   { param: 'description', description: 'Önceden doldurulacak açıklama metni.', required: false },
 ];
 
-function buildWidgetUrl(params: Record<string, string | undefined>): string {
+type WidgetMode = 'log-work' | 'plan-work';
+
+function buildWidgetUrl(mode: WidgetMode, params: Record<string, string | undefined>): string {
   const url = new URL(window.location.origin + window.location.pathname);
-  url.searchParams.set('widget', 'log-work');
+  url.searchParams.set('widget', mode);
   for (const [key, value] of Object.entries(params)) {
     if (value) url.searchParams.set(key, value);
   }
@@ -42,6 +50,7 @@ function generateDemoToken(): string {
 }
 
 export function WidgetsPage() {
+  const [mode, setMode] = useState<WidgetMode>('log-work');
   const [token, setToken] = useState(generateDemoToken);
   const [employeeId, setEmployeeId] = useState('');
   const [employeeLabel, setEmployeeLabel] = useState('');
@@ -58,11 +67,11 @@ export function WidgetsPage() {
   const [description, setDescription] = useState('');
 
   const generatedUrl = useMemo(
-    () => buildWidgetUrl({ token, employeeId, projectId, date, hours, description }),
-    [token, employeeId, projectId, date, hours, description],
+    () => buildWidgetUrl(mode, { token, employeeId, projectId, date, hours, description }),
+    [mode, token, employeeId, projectId, date, hours, description],
   );
 
-  const exampleUrl = buildWidgetUrl({
+  const exampleUrl = buildWidgetUrl(mode, {
     token: '<erişim-token\'ınız>',
     employeeId: '00000000-0000-0000-0000-000000000000',
     projectId: '00000000-0000-0000-0000-000000000000',
@@ -80,9 +89,10 @@ export function WidgetsPage() {
       <div>
         <h1 className="text-xl font-semibold text-slate-800">Widgets</h1>
         <p className="mt-1 text-sm text-slate-500">
-          Work Log giriş formunu, uygulamanın geri kalanı olmadan (menüsüz, tek başına) URL parametreleriyle
-          önceden doldurulmuş şekilde açan gömülebilir bir sayfa. Örneğin Jira'daki bir "Log Work" butonuna bu
-          linki bağlayarak, kişi ve proje bilgisi önceden dolu şekilde doğrudan efor girişine yönlendirebilirsiniz.
+          Efor giriş formunu (gerçekleşen — Log Work, ya da planlanan — Plan Work), uygulamanın geri kalanı olmadan
+          (menüsüz, tek başına) URL parametreleriyle önceden doldurulmuş şekilde açan gömülebilir bir sayfa.
+          Örneğin Jira'daki bir "Log Work" butonuna bu linki bağlayarak, kişi ve proje bilgisi önceden dolu şekilde
+          doğrudan efor girişine yönlendirebilirsiniz.
         </p>
       </div>
 
@@ -106,6 +116,27 @@ export function WidgetsPage() {
             ))}
           </tbody>
         </table>
+      </div>
+
+      <div className="rounded-xl border border-slate-200 bg-white p-4">
+        <h2 className="mb-2 text-sm font-semibold text-slate-700">Mod</h2>
+        <div className="flex gap-1.5">
+          {(['log-work', 'plan-work'] as const).map((m) => (
+            <button
+              key={m}
+              type="button"
+              onClick={() => setMode(m)}
+              className={
+                'rounded-lg border px-3 py-1.5 text-sm font-medium ' +
+                (mode === m
+                  ? 'border-indigo-600 bg-indigo-600 text-white'
+                  : 'border-slate-200 text-slate-600 hover:bg-slate-50')
+              }
+            >
+              {m === 'log-work' ? 'Log Work (gerçekleşen)' : 'Plan Work (planlanan)'}
+            </button>
+          ))}
+        </div>
       </div>
 
       <div className="rounded-xl border border-slate-200 bg-white p-4">

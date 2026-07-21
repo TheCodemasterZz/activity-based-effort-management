@@ -10,12 +10,16 @@ import { useHolidays } from '../../hooks/useHolidays';
 import { useWorkCalendar } from '../../hooks/useWorkCalendar';
 import { useCreateWorkLogApprovalMutation } from '../../hooks/useCreateWorkLogApprovalMutation';
 import { pushSuccessNotification } from '../../lib/notifications';
+import { WORK_LOG_ENTRY_TYPE, type WorkLogEntryType } from '../../api/types';
 
 interface WorkLogApprovalModalProps {
   onClose: () => void;
   resolveProject: (id: string) => string;
   resolveCustomer: (id: string) => string;
   resolveActivity: (id: string) => string;
+  /** Gerçekleşen (Log Work, varsayılan) mı yoksa planlanan (Plan Work) haftayı mı onaylıyoruz.
+   * Planned onaylarda "sonraki hafta" engeli kalkar — planlama zaten geleceğe dönüktür. */
+  entryType?: WorkLogEntryType;
 }
 
 function dateKey(d: Date): string {
@@ -56,7 +60,9 @@ export function WorkLogApprovalModal({
   resolveProject,
   resolveCustomer,
   resolveActivity,
+  entryType = WORK_LOG_ENTRY_TYPE.Actual,
 }: WorkLogApprovalModalProps) {
+  const isPlanned = entryType === WORK_LOG_ENTRY_TYPE.Planned;
   const [employeeId, setEmployeeId] = useState('');
   const [employeeLabel, setEmployeeLabel] = useState('');
   const [employeeQuery, setEmployeeQuery] = useState('');
@@ -79,7 +85,7 @@ export function WorkLogApprovalModal({
     };
   }, [weekOffset]);
 
-  const previewLogs = useEmployeeWorkLogs(employeeId || null, week.startKey, week.endKey);
+  const previewLogs = useEmployeeWorkLogs(employeeId || null, week.startKey, week.endKey, entryType);
   const previewItems = previewLogs.data?.items ?? [];
   const previewTotalHours = previewItems.reduce((sum, l) => sum + l.hours, 0);
   const previewApprovedCount = previewItems.filter((l) => l.isApproved).length;
@@ -162,6 +168,7 @@ export function WorkLogApprovalModal({
         periodStart: week.startKey,
         periodEnd: week.endKey,
         description: description.trim(),
+        entryType,
       });
       pushSuccessNotification(`${employeeLabel} için ${week.label} haftası onaylandı.`);
       onClose();
@@ -174,7 +181,7 @@ export function WorkLogApprovalModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4">
       <div className="w-full max-w-4xl rounded-xl bg-white p-6 shadow-xl">
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-slate-800">Efor Onayı</h2>
+          <h2 className="text-lg font-semibold text-slate-800">{isPlanned ? 'Plan Onayı' : 'Efor Onayı'}</h2>
           <button type="button" onClick={onClose} className="text-slate-400 hover:text-slate-600">
             ✕
           </button>
@@ -217,10 +224,14 @@ export function WorkLogApprovalModal({
                   <button
                     type="button"
                     onClick={() => setWeekOffset((prev) => prev + 1)}
-                    disabled={weekOffset >= 0}
+                    disabled={!isPlanned && weekOffset >= 0}
                     className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent"
                     aria-label="Sonraki hafta"
-                    title={weekOffset >= 0 ? 'Henüz gerçekleşmemiş bir haftaya efor onayı verilemez.' : undefined}
+                    title={
+                      !isPlanned && weekOffset >= 0
+                        ? 'Henüz gerçekleşmemiş bir haftaya efor onayı verilemez.'
+                        : undefined
+                    }
                   >
                     ›
                   </button>
