@@ -103,3 +103,12 @@ export interface ProblemDetails {
   detail?: string;
   errors?: Record<string, string[]>;
 }
+
+export interface LoginResultDto {
+  token: string;
+  expiresAtUtc: string;
+  userId: string;
+  username: string;
+  displayName: string | null;
+  source: number;
+}
