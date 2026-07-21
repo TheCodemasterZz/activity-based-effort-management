@@ -1,5 +1,6 @@
 using EforTakip.Application.Common.Interfaces;
 using EforTakip.Domain.Customers;
+using EforTakip.Domain.Directories;
 using EforTakip.Domain.EmployeeLeaves;
 using EforTakip.Domain.Employees;
 using EforTakip.Domain.Holidays;
@@ -48,6 +49,12 @@ public sealed class EforTakipDbContext(DbContextOptions<EforTakipDbContext> opti
     public DbSet<WorkLogApproval> WorkLogApprovals => Set<WorkLogApproval>();
 
     public DbSet<EmployeeLeave> EmployeeLeaves => Set<EmployeeLeave>();
+
+    public DbSet<Domain.Directories.Directory> Directories => Set<Domain.Directories.Directory>();
+
+    public DbSet<DirectoryUser> DirectoryUsers => Set<DirectoryUser>();
+
+    public DbSet<DirectoryAttributeMapping> DirectoryAttributeMappings => Set<DirectoryAttributeMapping>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
