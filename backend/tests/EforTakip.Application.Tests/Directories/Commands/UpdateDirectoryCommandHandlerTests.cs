@@ -12,6 +12,7 @@ public class UpdateDirectoryCommandHandlerTests
 {
     private readonly IRepository<Directory> _repository = Substitute.For<IRepository<Directory>>();
     private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>();
+    private readonly ISettingsEncryptor _settingsEncryptor = Substitute.For<ISettingsEncryptor>();
 
     private static Directory ExistingAd() =>
         Directory.CreateActiveDirectory(
@@ -31,7 +32,7 @@ public class UpdateDirectoryCommandHandlerTests
     {
         var directory = ExistingAd();
         _repository.GetByIdAsync(directory.Id, Arg.Any<CancellationToken>()).Returns(directory);
-        var handler = new UpdateDirectoryCommandHandler(_repository, _unitOfWork);
+        var handler = new UpdateDirectoryCommandHandler(_repository, _unitOfWork, _settingsEncryptor);
 
         await handler.Handle(Command(directory.Id), CancellationToken.None);
 
@@ -45,7 +46,7 @@ public class UpdateDirectoryCommandHandlerTests
     public async Task Handle_NonExisting_ThrowsNotFound()
     {
         _repository.GetByIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>()).Returns((Directory?)null);
-        var handler = new UpdateDirectoryCommandHandler(_repository, _unitOfWork);
+        var handler = new UpdateDirectoryCommandHandler(_repository, _unitOfWork, _settingsEncryptor);
 
         var act = async () => await handler.Handle(Command(Guid.NewGuid()), CancellationToken.None);
 

@@ -2,6 +2,7 @@ using System.DirectoryServices.Protocols;
 using System.Net;
 using System.Text;
 using EforTakip.Application.Common.Exceptions;
+using EforTakip.Application.Common.Interfaces;
 using EforTakip.Application.Directories.Ldap;
 using Directory = EforTakip.Domain.Directories.Directory;
 
@@ -11,7 +12,7 @@ namespace EforTakip.Infrastructure.Ldap;
 /// System.DirectoryServices.Protocols üzerinden LDAP erişimi. Kütüphanenin API'si senkron
 /// olduğundan çağrılar Task.Run ile arka plana alınır.
 /// </summary>
-public sealed class LdapService : ILdapService
+public sealed class LdapService(ISettingsEncryptor settingsEncryptor) : ILdapService
 {
     private const int PageSize = 500;
 
@@ -57,7 +58,7 @@ public sealed class LdapService : ILdapService
             }
         }, cancellationToken);
 
-    private static List<LdapUser> SearchUsers(
+    private List<LdapUser> SearchUsers(
         Directory directory, IReadOnlyCollection<string> extraAttributeNames, CancellationToken cancellationToken)
     {
         using var connection = CreateConnection(directory);
@@ -101,13 +102,16 @@ public sealed class LdapService : ILdapService
         return users;
     }
 
-    private static LdapConnection CreateConnection(Directory directory)
+    private LdapConnection CreateConnection(Directory directory)
     {
         var identifier = new LdapDirectoryIdentifier(
             directory.Hostname, directory.Port, fullyQualifiedDnsHostName: false, connectionless: false);
 
-        // NOT: BindPasswordEncrypted Faz 2'de düz metin tutulur; Faz 3'te çözülmüş değer geçilecek.
-        var credential = new NetworkCredential(directory.BindUsername, directory.BindPasswordEncrypted);
+        var bindPassword = string.IsNullOrEmpty(directory.BindPasswordEncrypted)
+            ? string.Empty
+            : settingsEncryptor.Decrypt(directory.BindPasswordEncrypted);
+
+        var credential = new NetworkCredential(directory.BindUsername, bindPassword);
 
         // AuthType.Basic = simple bind. Microsoft AD'ye simple bind ile bağlanırken şifre,
         // SSL kapalıysa ağ üzerinde düz metin gider — üretimde LDAPS (636) kullanılmalıdır.
