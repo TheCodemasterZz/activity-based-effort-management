@@ -1,6 +1,7 @@
 using System.DirectoryServices.Protocols;
 using System.Net;
 using System.Text;
+using EforTakip.Application.Common.Exceptions;
 using EforTakip.Application.Directories.Ldap;
 using Directory = EforTakip.Domain.Directories.Directory;
 
@@ -45,46 +46,60 @@ public sealed class LdapService : ILdapService
         Directory directory, IReadOnlyCollection<string> extraAttributeNames, CancellationToken cancellationToken)
         => Task.Run<IReadOnlyList<LdapUser>>(() =>
         {
-            using var connection = CreateConnection(directory);
-            connection.Bind();
-
-            var attributesToLoad = BuildAttributeList(directory, extraAttributeNames);
-            var searchBase = BuildSearchBase(directory);
-            var filter = string.IsNullOrWhiteSpace(directory.UserObjectFilter)
-                ? "(objectClass=*)"
-                : directory.UserObjectFilter;
-
-            var request = new SearchRequest(searchBase, filter, SearchScope.Subtree, attributesToLoad);
-            var pageControl = new PageResultRequestControl(PageSize);
-            request.Controls.Add(pageControl);
-
-            var users = new List<LdapUser>();
-
-            while (true)
+            try
             {
-                cancellationToken.ThrowIfCancellationRequested();
+                return SearchUsers(directory, extraAttributeNames, cancellationToken);
+            }
+            catch (LdapException ex)
+            {
+                // Ham LDAP hatası dışarı sızmaz; yönetici için anlamlı bir mesaja çevrilir.
+                throw new DirectoryConnectionException(DescribeLdapError(ex));
+            }
+        }, cancellationToken);
 
-                var response = (SearchResponse)connection.SendRequest(request);
+    private static List<LdapUser> SearchUsers(
+        Directory directory, IReadOnlyCollection<string> extraAttributeNames, CancellationToken cancellationToken)
+    {
+        using var connection = CreateConnection(directory);
+        connection.Bind();
 
-                foreach (SearchResultEntry entry in response.Entries)
-                {
-                    var user = MapUser(entry, directory, extraAttributeNames);
-                    if (user is not null)
-                        users.Add(user);
-                }
+        var attributesToLoad = BuildAttributeList(directory, extraAttributeNames);
+        var searchBase = BuildSearchBase(directory);
+        var filter = string.IsNullOrWhiteSpace(directory.UserObjectFilter)
+            ? "(objectClass=*)"
+            : directory.UserObjectFilter;
 
-                var pageResponse = response.Controls
-                    .OfType<PageResultResponseControl>()
-                    .FirstOrDefault();
+        var request = new SearchRequest(searchBase, filter, SearchScope.Subtree, attributesToLoad);
+        var pageControl = new PageResultRequestControl(PageSize);
+        request.Controls.Add(pageControl);
 
-                if (pageResponse is null || pageResponse.Cookie.Length == 0)
-                    break;
+        var users = new List<LdapUser>();
 
-                pageControl.Cookie = pageResponse.Cookie;
+        while (true)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            var response = (SearchResponse)connection.SendRequest(request);
+
+            foreach (SearchResultEntry entry in response.Entries)
+            {
+                var user = MapUser(entry, directory, extraAttributeNames);
+                if (user is not null)
+                    users.Add(user);
             }
 
-            return users;
-        }, cancellationToken);
+            var pageResponse = response.Controls
+                .OfType<PageResultResponseControl>()
+                .FirstOrDefault();
+
+            if (pageResponse is null || pageResponse.Cookie.Length == 0)
+                break;
+
+            pageControl.Cookie = pageResponse.Cookie;
+        }
+
+        return users;
+    }
 
     private static LdapConnection CreateConnection(Directory directory)
     {

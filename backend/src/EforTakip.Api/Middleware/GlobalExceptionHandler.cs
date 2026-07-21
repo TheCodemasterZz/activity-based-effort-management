@@ -32,6 +32,13 @@ public sealed class GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logge
                 Title = "İş kuralı ihlali",
                 Detail = businessRuleException.Message
             },
+            // Dizin sunucusuna ulaşılamaması bizim değil, üst sistemin hatasıdır.
+            Application.Common.Exceptions.DirectoryConnectionException directoryConnectionException => new ProblemDetails
+            {
+                Status = StatusCodes.Status502BadGateway,
+                Title = "Dizin sunucusuna bağlanılamadı",
+                Detail = directoryConnectionException.Message
+            },
             _ => new ProblemDetails
             {
                 Status = StatusCodes.Status500InternalServerError,

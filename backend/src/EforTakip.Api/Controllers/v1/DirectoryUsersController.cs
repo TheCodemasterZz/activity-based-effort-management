@@ -1,0 +1,26 @@
+using Asp.Versioning;
+using EforTakip.Application.Common.Models;
+using EforTakip.Application.Directories.Dtos;
+using EforTakip.Application.Directories.Queries.GetDirectoryUserById;
+using EforTakip.Application.Directories.Queries.GetDirectoryUsers;
+using MediatR;
+using Microsoft.AspNetCore.Mvc;
+
+namespace EforTakip.Api.Controllers.v1;
+
+[ApiController]
+[ApiVersion("1.0")]
+[Route("api/v{version:apiVersion}/[controller]")]
+public sealed class DirectoryUsersController(ISender mediator) : ControllerBase
+{
+    [HttpGet]
+    [ProducesResponseType(typeof(PagedResult<DirectoryUserDto>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<PagedResult<DirectoryUserDto>>> GetAll(
+        [FromQuery] GetDirectoryUsersQuery query, CancellationToken cancellationToken)
+        => Ok(await mediator.Send(query, cancellationToken));
+
+    [HttpGet("{id:guid}")]
+    [ProducesResponseType(typeof(DirectoryUserDetailDto), StatusCodes.Status200OK)]
+    public async Task<ActionResult<DirectoryUserDetailDto>> GetById(Guid id, CancellationToken cancellationToken)
+        => Ok(await mediator.Send(new GetDirectoryUserByIdQuery(id), cancellationToken));
+}

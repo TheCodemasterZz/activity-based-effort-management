@@ -2,8 +2,11 @@ using Asp.Versioning;
 using EforTakip.Application.Common.Models;
 using EforTakip.Application.Directories.Commands.CreateDirectory;
 using EforTakip.Application.Directories.Commands.DeleteDirectory;
+using EforTakip.Application.Directories.Commands.SyncDirectory;
+using EforTakip.Application.Directories.Commands.TestDirectoryConnection;
 using EforTakip.Application.Directories.Commands.UpdateDirectory;
 using EforTakip.Application.Directories.Dtos;
+using EforTakip.Application.Directories.Ldap;
 using EforTakip.Application.Directories.Queries.GetDirectories;
 using EforTakip.Application.Directories.Queries.GetDirectoryById;
 using MediatR;
@@ -52,4 +55,15 @@ public sealed class DirectoriesController(ISender mediator) : ControllerBase
         await mediator.Send(new DeleteDirectoryCommand(id), cancellationToken);
         return NoContent();
     }
+
+    [HttpPost("{id:guid}/sync")]
+    [ProducesResponseType(typeof(DirectorySyncResultDto), StatusCodes.Status200OK)]
+    public async Task<ActionResult<DirectorySyncResultDto>> Sync(Guid id, CancellationToken cancellationToken)
+        => Ok(await mediator.Send(new SyncDirectoryCommand(id), cancellationToken));
+
+    [HttpPost("{id:guid}/test-connection")]
+    [ProducesResponseType(typeof(LdapConnectionTestResult), StatusCodes.Status200OK)]
+    public async Task<ActionResult<LdapConnectionTestResult>> TestConnection(
+        Guid id, CancellationToken cancellationToken)
+        => Ok(await mediator.Send(new TestDirectoryConnectionCommand(id), cancellationToken));
 }
