@@ -149,9 +149,19 @@ export function ReportPage() {
     );
   }, [logs, mqlAst, employeesById, projectsById, customersById, activitiesById]);
 
+  // Boş satırları tamamlamak için tüm çalışan kadrosu (bkz. groupWorkLogs) yalnızca MQL
+  // filtresi yokken enjekte edilir — aksi halde ör. "employee = X" filtresi girildiğinde
+  // filtrelenmiş kayıtların yanına yine tüm 100 çalışan satır olarak eklenmiş olurdu.
   const grouped = useMemo(
-    () => groupWorkLogs(filteredLogs, periodRange.columns, groupBy, resolveDimension, employees.data?.items),
-    [filteredLogs, periodRange.columns, groupBy, resolveDimension, employees.data],
+    () =>
+      groupWorkLogs(
+        filteredLogs,
+        periodRange.columns,
+        groupBy,
+        resolveDimension,
+        mqlAst ? undefined : employees.data?.items,
+      ),
+    [filteredLogs, periodRange.columns, groupBy, resolveDimension, employees.data, mqlAst],
   );
 
   const totalHours = filteredLogs.reduce((sum, l) => sum + l.hours, 0);
