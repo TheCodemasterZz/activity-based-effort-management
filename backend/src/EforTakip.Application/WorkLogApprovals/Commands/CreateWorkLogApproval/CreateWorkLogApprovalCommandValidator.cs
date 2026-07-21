@@ -16,5 +16,9 @@ public sealed class CreateWorkLogApprovalCommandValidator : AbstractValidator<Cr
         RuleFor(x => x.PeriodEnd)
             .Equal(x => x.PeriodStart.AddDays(6))
             .WithMessage("Onay dönemi tam bir hafta (Pazartesi–Pazar) olmalıdır.");
+
+        RuleFor(x => x.Description)
+            .NotEmpty().WithMessage("Onay açıklaması zorunludur.")
+            .MaximumLength(1000).WithMessage("Onay açıklaması en fazla 1000 karakter olabilir.");
     }
 }

@@ -1,5 +1,6 @@
 using EforTakip.Domain.Activities;
 using EforTakip.Domain.Customers;
+using EforTakip.Domain.EmployeeLeaves;
 using EforTakip.Domain.Employees;
 using EforTakip.Domain.Holidays;
 using EforTakip.Domain.Notifications;
@@ -43,4 +44,6 @@ public interface IApplicationDbContext
     DbSet<WorkCalendarDay> WorkCalendarDays { get; }
 
     DbSet<WorkLogApproval> WorkLogApprovals { get; }
+
+    DbSet<EmployeeLeave> EmployeeLeaves { get; }
 }

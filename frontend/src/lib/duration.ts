@@ -29,8 +29,12 @@ export function parseDuration(input: string): number | null {
     return Math.round(totalHours * 100) / 100;
   }
 
-  const plain = parseFloat(trimmed.replace(',', '.'));
-  return Number.isNaN(plain) ? null : Math.round(plain * 100) / 100;
+  // parseFloat() burada kullanılmıyor çünkü baştaki geçerli sayısal kısmı ayrıştırıp sondaki
+  // anlamsız karakterleri sessizce yok sayar (ör. parseFloat("5dfjksdjfsd") === 5) — tüm girdi
+  // tam olarak bir sayıya eşleşmezse geçersiz sayılmalı.
+  const normalized = trimmed.replace(',', '.');
+  if (!/^\d+(\.\d+)?$/.test(normalized)) return null;
+  return Math.round(parseFloat(normalized) * 100) / 100;
 }
 
 /** Ondalık saati "1h 30m" gibi Jira tarzı kısayol formatına çevirir (düzenleme modunda geri göstermek için). */

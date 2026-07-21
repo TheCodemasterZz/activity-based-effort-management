@@ -45,7 +45,7 @@ export function NotificationBell() {
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 z-20 mt-2 w-80 rounded-lg border border-slate-200 bg-white p-2 shadow-lg">
+        <div className="absolute right-0 z-40 mt-2 w-80 rounded-lg border border-slate-200 bg-white p-2 shadow-lg">
           <div className="mb-1 px-2 py-1 text-sm font-semibold text-slate-700">Bildirimler</div>
 
           {items.length === 0 && (

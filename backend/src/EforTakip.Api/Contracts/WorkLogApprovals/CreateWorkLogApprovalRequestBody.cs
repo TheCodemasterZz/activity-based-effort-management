@@ -6,4 +6,5 @@ public sealed record CreateWorkLogApprovalRequestBody(
     Guid EmployeeId,
     ApprovalPeriodType PeriodType,
     DateOnly PeriodStart,
-    DateOnly PeriodEnd);
+    DateOnly PeriodEnd,
+    string Description);

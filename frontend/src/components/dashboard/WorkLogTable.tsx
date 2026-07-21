@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useState } from 'react';
+import { Fragment, useEffect, useState, type CSSProperties } from 'react';
 import { eachDateKeyInRange, isCurrentColumn, type PeriodColumn } from '../../lib/dateUtils';
 import type { GroupedRow } from '../../lib/groupWorkLogs';
 import type { EmployeeWorkLogDto } from '../../api/types';
@@ -12,6 +12,8 @@ interface WorkLogTableProps {
   /** employeeId'ye göre onaylı [start,end] dönemleri — kaydı olmayan ama onaylı bir haftaya
    * denk gelen boş günleri de doğru renklendirebilmek için (bkz. cellApprovalStatus). */
   approvedRangesByEmployee?: Map<string, { start: string; end: string }[]>;
+  /** employeeId'ye göre izin dönemleri — tam gün veya saatlik (kısmi) olabilir. */
+  leaveRangesByEmployee?: Map<string, LeaveRange[]>;
   onCellClick: (row: GroupedRow, column: PeriodColumn) => void;
   /** Aynı satırda birden fazla hücre sürüklenerek seçildiğinde tetiklenir (toplu tarih aralığı ekleme). */
   onRangeSelect: (row: GroupedRow, startColumn: PeriodColumn, endColumn: PeriodColumn) => void;
@@ -35,6 +37,43 @@ function isWeekendColumn(column: PeriodColumn): boolean {
 }
 
 type ApprovalStatus = 'none' | 'partial' | 'full';
+
+export interface LeaveRange {
+  start: string;
+  end: string;
+  isFullDay: boolean;
+}
+
+type LeaveStatus = 'none' | 'partial' | 'full';
+
+/** Bir hücrenin kapsadığı gün(ler) içinde çalışanın tam günlük veya kısmi (saatlik) izni var mı.
+ * Tam gün izin varsa 'full', sadece kısmi izin varsa 'partial' döner. */
+function cellLeaveStatus(
+  employeeId: string | undefined,
+  column: PeriodColumn,
+  leaveRangesByEmployee: Map<string, LeaveRange[]> | undefined,
+): LeaveStatus {
+  if (!employeeId || !leaveRangesByEmployee) return 'none';
+  const ranges = leaveRangesByEmployee.get(employeeId);
+  if (!ranges || ranges.length === 0) return 'none';
+
+  const days = eachDateKeyInRange(column.startKey, column.endKey);
+  let hasFullDay = false;
+  let hasPartial = false;
+
+  for (const day of days) {
+    for (const range of ranges) {
+      if (day >= range.start && day <= range.end) {
+        if (range.isFullDay) hasFullDay = true;
+        else hasPartial = true;
+      }
+    }
+  }
+
+  if (hasFullDay) return 'full';
+  if (hasPartial) return 'partial';
+  return 'none';
+}
 
 /** Verilen günü kapsayan bir onay dönemi var mı. */
 function isDateWithinRanges(dateKeyValue: string, ranges: { start: string; end: string }[] | undefined): boolean {
@@ -79,6 +118,14 @@ function isHolidayColumn(column: PeriodColumn, holidayDateKeys: Set<string>): bo
   return column.startKey === column.endKey && holidayDateKeys.has(column.startKey);
 }
 
+/** Tam onaylı hücrelerde günün kendi rengini (tatil/hafta sonu/bugün/normal) koruyarak üzerine
+ * ince diyagonal çizgiler bindiren arka plan — metni ezmeyecek şekilde düşük opaklık ve geniş
+ * aralık kullanır. */
+const APPROVED_STRIPE_STYLE: CSSProperties = {
+  backgroundImage:
+    'repeating-linear-gradient(45deg, rgba(13,148,136,0.3) 0px, rgba(13,148,136,0.3) 2px, transparent 2px, transparent 9px)',
+};
+
 function columnHeaderClass(column: PeriodColumn, holidayDateKeys: Set<string>, todayKey: string): string {
   const isWeekend = isWeekendColumn(column);
   const isCurrent = isCurrentColumn(column, todayKey);
@@ -100,6 +147,7 @@ interface RowsProps {
   holidayDateKeys: Set<string>;
   todayKey: string;
   approvedRangesByEmployee?: Map<string, { start: string; end: string }[]>;
+  leaveRangesByEmployee?: Map<string, LeaveRange[]>;
 }
 
 function TableRows({
@@ -113,6 +161,7 @@ function TableRows({
   holidayDateKeys,
   todayKey,
   approvedRangesByEmployee,
+  leaveRangesByEmployee,
 }: RowsProps) {
   return (
     <>
@@ -146,30 +195,58 @@ function TableRows({
                   drag.row.path === row.path &&
                   index >= Math.min(drag.anchorIndex, drag.currentIndex) &&
                   index <= Math.max(drag.anchorIndex, drag.currentIndex);
-                const approval = clickable
+                // İzin/tatil/onay renklendirmesi kasıtlı olarak 'clickable'a değil, satırın kendi
+                // 'employeeId'sine bağlı: sadece Group by'daki gerçek Kişi (employee) satırında
+                // görünsün istendi — Kişi satırı çocuklu (parent/non-leaf) olsa bile renklenir,
+                // ama altındaki Proje/Müşteri gibi farklı boyuttaki satırlarda hiç görünmez.
+                const hasEmployeeContext = !!row.employeeId;
+                const approval = hasEmployeeContext
                   ? cellApprovalStatus(row.cellLogs[column.key], row.employeeId, column, approvedRangesByEmployee)
                   : 'none';
+                const leave = hasEmployeeContext
+                  ? cellLeaveStatus(row.employeeId, column, leaveRangesByEmployee)
+                  : 'none';
                 const isHoliday = isHolidayColumn(column, holidayDateKeys);
+
+                const title =
+                  leave === 'full'
+                    ? 'İzinli (Tam Gün)'
+                    : leave === 'partial'
+                      ? 'İzinli (Kısmi/Saatlik)'
+                      : approval === 'full'
+                        ? 'Onaylandı — değiştirilemez'
+                        : approval === 'partial'
+                          ? 'Kısmen onaylı'
+                          : undefined;
+
+                // Tam onay: günün kendi rengi (tatil/hafta sonu/izin/bugün/normal) korunur,
+                // üzerine diyagonal çizgi deseni bindirilir — izinli bir gün aynı zamanda
+                // onaylı bir haftaya denk gelse bile onay durumu ayrıca görünür kalır.
+                const showApprovedStripe = approval === 'full' && !isSelected;
+                const baseBgClass = isSelected
+                  ? 'bg-indigo-100'
+                  : leave === 'full'
+                    ? 'bg-violet-200'
+                    : leave === 'partial'
+                      ? 'bg-violet-100'
+                      : isHoliday
+                        ? 'bg-red-50'
+                        : approval === 'partial'
+                          ? 'bg-teal-50'
+                          : columnHeaderClass(column, holidayDateKeys, todayKey);
 
                 return (
                   <td
                     key={column.key}
                     onMouseDown={clickable ? () => onCellMouseDown(row, index) : undefined}
                     onMouseEnter={clickable ? () => onCellMouseEnter(row, index) : undefined}
-                    title={approval === 'full' ? 'Onaylandı — değiştirilemez' : approval === 'partial' ? 'Kısmen onaylı' : undefined}
+                    title={title}
+                    style={showApprovedStripe ? APPROVED_STRIPE_STYLE : undefined}
                     className={
                       'select-none border-r border-slate-200 px-2 py-2 text-right tabular-nums text-slate-600' +
                       (clickable ? ' cursor-pointer hover:bg-indigo-50' : '') +
                       ' ' +
-                      (isSelected
-                        ? 'bg-indigo-100'
-                        : isHoliday
-                          ? 'bg-red-50'
-                          : approval === 'full'
-                            ? 'bg-teal-100/70'
-                            : approval === 'partial'
-                              ? 'bg-teal-50'
-                              : columnHeaderClass(column, holidayDateKeys, todayKey))
+                      baseBgClass
                     }
                   >
                     {row.cellHours[column.key] ? formatHours(row.cellHours[column.key]) : ''}
@@ -190,6 +267,7 @@ function TableRows({
                 holidayDateKeys={holidayDateKeys}
                 todayKey={todayKey}
                 approvedRangesByEmployee={approvedRangesByEmployee}
+                leaveRangesByEmployee={leaveRangesByEmployee}
               />
             )}
           </Fragment>
@@ -206,6 +284,7 @@ export function WorkLogTable({
   grandTotal,
   holidayDateKeys,
   approvedRangesByEmployee,
+  leaveRangesByEmployee,
   onCellClick,
   onRangeSelect,
 }: WorkLogTableProps) {
@@ -252,11 +331,11 @@ export function WorkLogTable({
   }, [drag, columns, onCellClick, onRangeSelect]);
 
   return (
-    <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white">
+    <div className="max-h-[60vh] overflow-auto rounded-xl border border-slate-200 bg-white">
       <table className="min-w-full border-collapse text-sm">
         <thead>
           <tr className="border-b border-slate-200 bg-slate-50">
-            <th className="sticky left-0 z-10 min-w-[28rem] border-r border-slate-200 bg-slate-50 px-3 py-2 text-left font-semibold text-slate-500">
+            <th className="sticky left-0 top-0 z-30 min-w-[28rem] border-r border-b border-slate-200 bg-slate-50 px-3 py-2 text-left font-semibold text-slate-500">
               <button
                 type="button"
                 onClick={() => setNameSort((prev) => (prev === 'asc' ? 'desc' : prev === 'desc' ? null : 'asc'))}
@@ -276,13 +355,15 @@ export function WorkLogTable({
             {columns.map((column) => (
               <th
                 key={column.key}
-                className={`min-w-[3rem] border-r border-slate-200 px-2 py-2 text-center font-semibold text-slate-500 ${columnHeaderClass(column, holidayDateKeys, todayKey)}`}
+                className={`sticky top-0 z-20 min-w-[3rem] border-r border-b border-slate-200 px-2 py-2 text-center font-semibold text-slate-500 ${columnHeaderClass(column, holidayDateKeys, todayKey) || 'bg-slate-50'}`}
               >
                 <div>{column.label}</div>
                 {column.sublabel && <div className="text-[10px] font-normal text-slate-400">{column.sublabel}</div>}
               </th>
             ))}
-            <th className="min-w-[4rem] px-3 py-2 text-center font-semibold text-slate-600">TOPLAM</th>
+            <th className="sticky top-0 z-20 min-w-[4rem] border-b border-slate-200 bg-slate-50 px-3 py-2 text-center font-semibold text-slate-600">
+              TOPLAM
+            </th>
           </tr>
         </thead>
         <tbody>
@@ -304,6 +385,7 @@ export function WorkLogTable({
             holidayDateKeys={holidayDateKeys}
             todayKey={todayKey}
             approvedRangesByEmployee={approvedRangesByEmployee}
+            leaveRangesByEmployee={leaveRangesByEmployee}
           />
         </tbody>
         <tfoot>

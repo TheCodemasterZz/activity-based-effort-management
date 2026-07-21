@@ -14,6 +14,7 @@ public sealed class WorkLogApproval : Entity, IAggregateRoot
     public ApprovalPeriodType PeriodType { get; private set; }
     public DateOnly PeriodStart { get; private set; }
     public DateOnly PeriodEnd { get; private set; }
+    public string Description { get; private set; } = default!;
     public DateTime ApprovedAtUtc { get; private set; }
 
     private WorkLogApproval()
@@ -21,7 +22,8 @@ public sealed class WorkLogApproval : Entity, IAggregateRoot
         // EF Core
     }
 
-    public static WorkLogApproval Create(Guid employeeId, ApprovalPeriodType periodType, DateOnly periodStart, DateOnly periodEnd)
+    public static WorkLogApproval Create(
+        Guid employeeId, ApprovalPeriodType periodType, DateOnly periodStart, DateOnly periodEnd, string description)
     {
         if (periodStart.DayOfWeek != DayOfWeek.Monday)
             throw new BusinessRuleValidationException("Onay dönemi Pazartesi gününden başlamalıdır.");
@@ -29,12 +31,16 @@ public sealed class WorkLogApproval : Entity, IAggregateRoot
         if (periodEnd != periodStart.AddDays(6))
             throw new BusinessRuleValidationException("Onay dönemi tam bir hafta (Pazartesi–Pazar) olmalıdır.");
 
+        if (string.IsNullOrWhiteSpace(description))
+            throw new BusinessRuleValidationException("Onay açıklaması zorunludur.");
+
         return new WorkLogApproval
         {
             EmployeeId = employeeId,
             PeriodType = periodType,
             PeriodStart = periodStart,
             PeriodEnd = periodEnd,
+            Description = description.Trim(),
             ApprovedAtUtc = DateTime.UtcNow
         };
     }

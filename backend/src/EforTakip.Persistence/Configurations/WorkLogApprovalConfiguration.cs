@@ -18,6 +18,7 @@ public sealed class WorkLogApprovalConfiguration : IEntityTypeConfiguration<Work
 
         builder.Property(a => a.PeriodStart).IsRequired();
         builder.Property(a => a.PeriodEnd).IsRequired();
+        builder.Property(a => a.Description).HasMaxLength(1000);
         builder.Property(a => a.ApprovedAtUtc).IsRequired();
 
         builder.HasIndex(a => new { a.EmployeeId, a.PeriodStart, a.PeriodEnd });

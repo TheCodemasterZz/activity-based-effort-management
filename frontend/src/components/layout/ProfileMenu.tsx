@@ -34,7 +34,7 @@ export function ProfileMenu() {
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 z-20 mt-2 w-48 rounded-lg border border-slate-200 bg-white p-1 shadow-lg">
+        <div className="absolute right-0 z-40 mt-2 w-48 rounded-lg border border-slate-200 bg-white p-1 shadow-lg">
           {MENU_ITEMS.map((item) => (
             <button
               key={item}

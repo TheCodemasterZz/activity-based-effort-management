@@ -6,6 +6,7 @@ export interface CreateWorkLogApprovalPayload {
   periodType: ApprovalPeriodType;
   periodStart: string;
   periodEnd: string;
+  description?: string | null;
 }
 
 export function createWorkLogApproval(payload: CreateWorkLogApprovalPayload) {
@@ -17,6 +18,7 @@ export interface WorkLogApprovalDto {
   employeeId: string;
   periodStart: string;
   periodEnd: string;
+  description?: string | null;
 }
 
 export function getWorkLogApprovals() {

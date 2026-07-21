@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { AsyncSearchSelect } from '../common/AsyncSearchSelect';
 import { useEmployeeSearch } from '../../hooks/useEmployees';
 import { useProjectSearch } from '../../hooks/useProjects';
 import { useCustomerSearch } from '../../hooks/useCustomers';
 import { useSubActivities, useTopLevelActivities } from '../../hooks/useActivities';
+import { useHolidays } from '../../hooks/useHolidays';
 import { useLogWorkMutation } from '../../hooks/useLogWorkMutation';
 import { useUpdateWorkLogMutation } from '../../hooks/useUpdateWorkLogMutation';
 import { useDeleteWorkLogMutation } from '../../hooks/useDeleteWorkLogMutation';
@@ -12,6 +13,7 @@ import { getEmployeeById } from '../../api/employees';
 import { getWorkCalendarById } from '../../api/workCalendars';
 import { findOvertimeDates } from '../../lib/overtimeCheck';
 import { formatDuration, parseDuration } from '../../lib/duration';
+import { pushSuccessNotification } from '../../lib/notifications';
 
 export interface WorkLogFormInitialValues {
   employeeId?: string;
@@ -37,12 +39,37 @@ interface WorkLogFormModalProps {
   onDeleted?: () => void;
 }
 
+type FieldName = 'employee' | 'project' | 'customer' | 'activityL1' | 'activityL2' | 'date' | 'endDate' | 'hours' | 'description';
+
 function todayIso(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
 function formatDateTr(date: string): string {
   return new Date(`${date}T00:00:00`).toLocaleDateString('tr-TR');
+}
+
+function localDateKey(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+function eachDateKey(startKey: string, endKey: string): string[] {
+  const keys: string[] = [];
+  let d = new Date(`${startKey}T00:00:00`);
+  const end = new Date(`${endKey}T00:00:00`);
+  while (d <= end) {
+    keys.push(localDateKey(d));
+    d = new Date(d.getTime() + 86400000);
+  }
+  return keys;
+}
+
+function isWeekendKey(dateKeyValue: string): boolean {
+  const day = new Date(`${dateKeyValue}T00:00:00`).getDay();
+  return day === 0 || day === 6;
 }
 
 export function WorkLogFormModal({
@@ -72,6 +99,9 @@ export function WorkLogFormModal({
   );
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isCheckingOvertime, setIsCheckingOvertime] = useState(false);
+  const [touched, setTouched] = useState<Partial<Record<FieldName, boolean>>>({});
+
+  const markTouched = (field: FieldName) => setTouched((prev) => ({ ...prev, [field]: true }));
 
   const [employeeQuery, setEmployeeQuery] = useState('');
   const employeeSearch = useEmployeeSearch(employeeQuery);
@@ -84,6 +114,7 @@ export function WorkLogFormModal({
 
   const topLevelActivities = useTopLevelActivities();
   const subActivities = useSubActivities(activityL1Id || null);
+  const holidays = useHolidays();
 
   const logWorkMutation = useLogWorkMutation();
   const updateMutation = useUpdateWorkLogMutation();
@@ -92,28 +123,63 @@ export function WorkLogFormModal({
   const isPending =
     logWorkMutation.isPending || updateMutation.isPending || deleteMutation.isPending || isCheckingOvertime;
 
-  const canSubmit =
-    employeeId &&
-    projectId &&
-    customerId &&
-    activityL1Id &&
-    activityL2Id &&
-    description.trim().length > 0 &&
-    startDate &&
-    (!isRange || endDate >= startDate) &&
-    parseDuration(hoursText) !== null &&
-    (parseDuration(hoursText) as number) > 0;
+  const isCreateRange = mode === 'create' && allowDateRange && isRange;
+  const parsedHours = parseDuration(hoursText);
+
+  const fieldErrors: Partial<Record<FieldName, string>> = {
+    employee: employeeId ? undefined : 'Kişi seçilmeli.',
+    project: projectId ? undefined : 'Proje seçilmeli.',
+    customer: customerId ? undefined : 'Müşteri seçilmeli.',
+    activityL1: activityL1Id ? undefined : 'Activity L1 seçilmeli.',
+    activityL2: activityL2Id ? undefined : 'Activity L2 seçilmeli.',
+    date: startDate ? undefined : 'Tarih seçilmeli.',
+    endDate: isCreateRange && endDate < startDate ? 'Bitiş tarihi başlangıçtan önce olamaz.' : undefined,
+    hours:
+      hoursText.trim().length === 0
+        ? 'Saat girilmeli.'
+        : parsedHours === null
+          ? 'Geçersiz süre biçimi (ör. 1h 30m, 2h, 45m).'
+          : parsedHours <= 0
+            ? 'Saat 0’dan büyük olmalı.'
+            : parsedHours > 24
+              ? 'Saat 24’ten büyük olamaz.'
+              : undefined,
+    description: description.trim().length === 0 ? 'Açıklama girilmeli.' : undefined,
+  };
+
+  const showError = (field: FieldName) => (touched[field] ? fieldErrors[field] : undefined);
+
+  const canSubmit = Object.values(fieldErrors).every((e) => !e);
+
+  const holidayDateKeys = useMemo(
+    () => new Set(holidays.data?.items.map((h) => h.date) ?? []),
+    [holidays.data],
+  );
+
+  const flaggedDateKeys = useMemo(() => {
+    if (!startDate) return [];
+    const rangeEnd = isCreateRange ? endDate : startDate;
+    if (!rangeEnd || rangeEnd < startDate) return [];
+    return eachDateKey(startDate, rangeEnd).filter((d) => isWeekendKey(d) || holidayDateKeys.has(d));
+  }, [startDate, endDate, isCreateRange, holidayDateKeys]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage(null);
+    setTouched({
+      employee: true,
+      project: true,
+      customer: true,
+      activityL1: true,
+      activityL2: true,
+      date: true,
+      endDate: true,
+      hours: true,
+      description: true,
+    });
+    if (!canSubmit) return;
 
-    const hours = parseDuration(hoursText);
-    if (hours === null || hours <= 0) {
-      setErrorMessage('Saat alanı geçersiz. Örnek: "1h 30m", "2h" veya "45m".');
-      return;
-    }
-
+    const hours = parsedHours as number;
     const rangeStart = startDate;
     const rangeEnd = isRange ? endDate : startDate;
 
@@ -171,6 +237,7 @@ export function WorkLogFormModal({
           description: description.trim(),
         });
       }
+      pushSuccessNotification(mode === 'edit' ? 'Work log güncellendi.' : 'İşlem başarıyla yapılmıştır.');
       onClose();
     } catch (err) {
       setErrorMessage(err instanceof ApiError ? err.message : 'Beklenmeyen bir hata oluştu.');
@@ -201,9 +268,20 @@ export function WorkLogFormModal({
           </button>
         </div>
 
+        {flaggedDateKeys.length > 0 && (
+          <div className="mb-4 rounded-lg bg-red-50 px-3 py-2 text-xs font-medium text-red-700">
+            ⚠ {flaggedDateKeys.length === 1
+              ? formatDateTr(flaggedDateKeys[0])
+              : `${flaggedDateKeys.length} gün`}{' '}
+            hafta sonu veya resmi tatile denk geliyor.
+          </div>
+        )}
+
         <form className="space-y-3" onSubmit={handleSubmit}>
           <div>
-            <label className="mb-1 block text-xs font-medium text-slate-500">Kişi</label>
+            <label className="mb-1 block text-xs font-medium text-slate-500">
+              Kişi <span className="text-red-500">*</span>
+            </label>
             <AsyncSearchSelect
               selectedLabel={employeeLabel || null}
               onSearch={setEmployeeQuery}
@@ -216,13 +294,17 @@ export function WorkLogFormModal({
                 setProjectLabel('');
                 setCustomerId('');
                 setCustomerLabel('');
+                markTouched('employee');
               }}
               placeholder="Kişi ara…"
             />
+            {showError('employee') && <p className="mt-1 text-xs text-red-600">{showError('employee')}</p>}
           </div>
 
           <div>
-            <label className="mb-1 block text-xs font-medium text-slate-500">Proje</label>
+            <label className="mb-1 block text-xs font-medium text-slate-500">
+              Proje <span className="text-red-500">*</span>
+            </label>
             <AsyncSearchSelect
               selectedLabel={projectLabel || null}
               onSearch={setProjectQuery}
@@ -233,15 +315,19 @@ export function WorkLogFormModal({
                 setProjectLabel(option.label);
                 setCustomerId('');
                 setCustomerLabel('');
+                markTouched('project');
               }}
               placeholder="Proje ara…"
               disabled={!employeeId}
               disabledMessage="Önce kişi seçin"
             />
+            {showError('project') && <p className="mt-1 text-xs text-red-600">{showError('project')}</p>}
           </div>
 
           <div>
-            <label className="mb-1 block text-xs font-medium text-slate-500">Müşteri</label>
+            <label className="mb-1 block text-xs font-medium text-slate-500">
+              Müşteri <span className="text-red-500">*</span>
+            </label>
             <AsyncSearchSelect
               selectedLabel={customerLabel || null}
               onSearch={setCustomerQuery}
@@ -250,23 +336,27 @@ export function WorkLogFormModal({
               onSelect={(option) => {
                 setCustomerId(option.id);
                 setCustomerLabel(option.label);
+                markTouched('customer');
               }}
               placeholder="Müşteri ara…"
               disabled={!projectId}
               disabledMessage="Önce proje seçin"
             />
+            {showError('customer') && <p className="mt-1 text-xs text-red-600">{showError('customer')}</p>}
           </div>
 
           <div>
-            <label className="mb-1 block text-xs font-medium text-slate-500">Activity L1</label>
+            <label className="mb-1 block text-xs font-medium text-slate-500">
+              Activity L1 <span className="text-red-500">*</span>
+            </label>
             <select
               value={activityL1Id}
               onChange={(e) => {
                 setActivityL1Id(e.target.value);
                 setActivityL2Id('');
               }}
+              onBlur={() => markTouched('activityL1')}
               className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
-              required
             >
               <option value="">Seçiniz</option>
               {topLevelActivities.data?.items.map((activity) => (
@@ -275,16 +365,19 @@ export function WorkLogFormModal({
                 </option>
               ))}
             </select>
+            {showError('activityL1') && <p className="mt-1 text-xs text-red-600">{showError('activityL1')}</p>}
           </div>
 
           <div>
-            <label className="mb-1 block text-xs font-medium text-slate-500">Activity L2</label>
+            <label className="mb-1 block text-xs font-medium text-slate-500">
+              Activity L2 <span className="text-red-500">*</span>
+            </label>
             <select
               value={activityL2Id}
               onChange={(e) => setActivityL2Id(e.target.value)}
+              onBlur={() => markTouched('activityL2')}
               className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm disabled:bg-slate-50"
               disabled={!activityL1Id}
-              required
             >
               <option value="">Seçiniz</option>
               {subActivities.data?.items.map((activity) => (
@@ -293,6 +386,7 @@ export function WorkLogFormModal({
                 </option>
               ))}
             </select>
+            {showError('activityL2') && <p className="mt-1 text-xs text-red-600">{showError('activityL2')}</p>}
           </div>
 
           {mode === 'create' && allowDateRange && (
@@ -305,55 +399,65 @@ export function WorkLogFormModal({
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="mb-1 block text-xs font-medium text-slate-500">
-                {isRange && mode === 'create' ? 'Başlangıç' : 'Tarih'}
+                {isRange && mode === 'create' ? 'Başlangıç' : 'Tarih'} <span className="text-red-500">*</span>
               </label>
               <input
                 type="date"
                 value={startDate}
                 max={todayIso()}
                 onChange={(e) => setStartDate(e.target.value)}
+                onBlur={() => markTouched('date')}
                 className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
-                required
               />
+              {showError('date') && <p className="mt-1 text-xs text-red-600">{showError('date')}</p>}
             </div>
             {mode === 'create' && allowDateRange && isRange && (
               <div>
-                <label className="mb-1 block text-xs font-medium text-slate-500">Bitiş</label>
+                <label className="mb-1 block text-xs font-medium text-slate-500">
+                  Bitiş <span className="text-red-500">*</span>
+                </label>
                 <input
                   type="date"
                   value={endDate}
                   min={startDate}
                   max={todayIso()}
                   onChange={(e) => setEndDate(e.target.value)}
+                  onBlur={() => markTouched('endDate')}
                   className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
-                  required
                 />
+                {showError('endDate') && <p className="mt-1 text-xs text-red-600">{showError('endDate')}</p>}
               </div>
             )}
           </div>
 
           <div>
-            <label className="mb-1 block text-xs font-medium text-slate-500">Saat</label>
+            <label className="mb-1 block text-xs font-medium text-slate-500">
+              Saat <span className="text-red-500">*</span>
+            </label>
             <input
               type="text"
               value={hoursText}
               onChange={(e) => setHoursText(e.target.value)}
+              onBlur={() => markTouched('hours')}
               placeholder="ör. 1h 30m, 2h, 45m"
               className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
-              required
             />
+            {showError('hours') && <p className="mt-1 text-xs text-red-600">{showError('hours')}</p>}
           </div>
 
           <div>
-            <label className="mb-1 block text-xs font-medium text-slate-500">Açıklama</label>
+            <label className="mb-1 block text-xs font-medium text-slate-500">
+              Açıklama <span className="text-red-500">*</span>
+            </label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
+              onBlur={() => markTouched('description')}
               placeholder="Bu efor kaydıyla ilgili kısa bir açıklama girin…"
               rows={3}
               className="w-full resize-none rounded-lg border border-slate-200 px-3 py-2 text-sm"
-              required
             />
+            {showError('description') && <p className="mt-1 text-xs text-red-600">{showError('description')}</p>}
           </div>
 
           {errorMessage && <p className="text-sm text-red-600">{errorMessage}</p>}
@@ -381,7 +485,7 @@ export function WorkLogFormModal({
               </button>
               <button
                 type="submit"
-                disabled={!canSubmit || isPending}
+                disabled={isPending}
                 className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {isCheckingOvertime ? 'Kontrol ediliyor…' : isPending ? 'Kaydediliyor…' : 'Kaydet'}
