@@ -173,14 +173,17 @@ public class LoginCommandHandlerTests : IAsyncDisposable
         assertion.Which.Message.Should().Be("Kullanıcı adı veya şifre hatalı.");
     }
 
-    [Fact]
-    public async Task Handle_UsernameIsMatchedCaseInsensitively()
+    [Theory]
+    [InlineData("Sanal.Kullanici")]
+    [InlineData("SANAL.KULLANICI")]
+    [InlineData("  sanal.kullanici  ")]
+    public async Task Handle_UsernameIsMatchedCaseInsensitively(string typedUsername)
     {
         await AddInternalUserAsync(InternalDirectory());
         _passwordHasher.Verify(Arg.Any<string>(), Arg.Any<string>()).Returns(true);
 
         var result = await CreateHandler().Handle(
-            new LoginCommand("Sanal.Kullanici", "dogru-sifre"), CancellationToken.None);
+            new LoginCommand(typedUsername, "dogru-sifre"), CancellationToken.None);
 
         result.Username.Should().Be("sanal.kullanici");
     }

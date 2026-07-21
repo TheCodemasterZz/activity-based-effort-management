@@ -1,5 +1,6 @@
 using Asp.Versioning;
 using EforTakip.Application.Common.Models;
+using EforTakip.Application.Directories.Commands.CreateInternalUser;
 using EforTakip.Application.Directories.Dtos;
 using EforTakip.Application.Directories.Queries.GetDirectoryUserById;
 using EforTakip.Application.Directories.Queries.GetDirectoryUsers;
@@ -23,4 +24,13 @@ public sealed class DirectoryUsersController(ISender mediator) : ControllerBase
     [ProducesResponseType(typeof(DirectoryUserDetailDto), StatusCodes.Status200OK)]
     public async Task<ActionResult<DirectoryUserDetailDto>> GetById(Guid id, CancellationToken cancellationToken)
         => Ok(await mediator.Send(new GetDirectoryUserByIdQuery(id), cancellationToken));
+
+    [HttpPost("internal")]
+    [ProducesResponseType(StatusCodes.Status201Created)]
+    public async Task<IActionResult> CreateInternal(
+        CreateInternalUserCommand command, CancellationToken cancellationToken)
+    {
+        var id = await mediator.Send(command, cancellationToken);
+        return CreatedAtAction(nameof(GetById), new { id, version = "1.0" }, null);
+    }
 }

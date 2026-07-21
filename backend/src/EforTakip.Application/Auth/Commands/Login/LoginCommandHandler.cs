@@ -20,11 +20,13 @@ public sealed class LoginCommandHandler(
 {
     public async Task<LoginResultDto> Handle(LoginCommand request, CancellationToken cancellationToken)
     {
-        var username = request.Username.Trim().ToLower();
+        // Kullanıcı adları normalize edilmiş (invariant küçük harf) olarak saklanır;
+        // girdi de aynı şekilde normalize edilerek doğrudan karşılaştırılır.
+        var username = request.Username.Trim().ToLowerInvariant();
 
         var user = await db.DirectoryUsers
             .AsNoTracking()
-            .FirstOrDefaultAsync(u => u.Username.ToLower() == username, cancellationToken);
+            .FirstOrDefaultAsync(u => u.Username == username, cancellationToken);
 
         // Kullanıcının bulunamaması, pasif olması ve şifrenin yanlış olması aynı hatayı verir;
         // aksi halde saldırgan hangi kullanıcı adlarının var olduğunu öğrenebilir.

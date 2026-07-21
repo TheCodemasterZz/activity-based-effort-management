@@ -23,10 +23,12 @@ public sealed class CreateInternalUserCommandHandler(
             throw new BusinessRuleValidationException(
                 "Kullanıcı yalnızca internal dizinlerde elle oluşturulabilir. AD kullanıcıları senkronizasyonla gelir.");
 
-        var username = request.Username.Trim();
+        // Domain kullanıcı adını invariant küçük harfe normalize eder; tekillik kontrolü de
+        // aynı biçim üzerinden yapılmalı, aksi halde "Serkan" ve "serkan" birlikte kaydedilebilir.
+        var username = request.Username.Trim().ToLowerInvariant();
 
         var usernameTaken = await db.DirectoryUsers
-            .AnyAsync(u => u.Username.ToLower() == username.ToLower(), cancellationToken);
+            .AnyAsync(u => u.Username == username, cancellationToken);
 
         if (usernameTaken)
             throw new BusinessRuleValidationException($"'{username}' kullanıcı adı zaten kullanılıyor.");

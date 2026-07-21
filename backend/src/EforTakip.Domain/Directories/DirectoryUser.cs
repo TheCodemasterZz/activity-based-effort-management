@@ -38,7 +38,7 @@ public sealed class DirectoryUser : Entity, IAggregateRoot
         {
             DirectoryId = directoryId,
             Source = DirectorySource.ActiveDirectory,
-            Username = username.Trim(),
+            Username = NormalizeUsername(username),
             FirstName = firstName,
             LastName = lastName,
             DisplayName = displayName,
@@ -62,7 +62,7 @@ public sealed class DirectoryUser : Entity, IAggregateRoot
         {
             DirectoryId = directoryId,
             Source = DirectorySource.Internal,
-            Username = username.Trim(),
+            Username = NormalizeUsername(username),
             FirstName = firstName,
             LastName = lastName,
             DisplayName = displayName,
@@ -114,4 +114,11 @@ public sealed class DirectoryUser : Entity, IAggregateRoot
         if (string.IsNullOrWhiteSpace(username))
             throw new BusinessRuleValidationException("Kullanıcı adı boş olamaz.");
     }
+
+    /// <summary>
+    /// Kullanıcı adları dizinlerde büyük/küçük harf duyarsızdır; tek biçimde saklanır.
+    /// Kültüre duyarlı ToLower kullanılmaz — Türkçe kültürde 'I' harfi noktasız 'ı'ya
+    /// dönüşür ve "SERKAN" ile "serkan" eşleşmez olur.
+    /// </summary>
+    private static string NormalizeUsername(string username) => username.Trim().ToLowerInvariant();
 }

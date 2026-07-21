@@ -15,7 +15,7 @@ builder.Host.UseSerilog((context, services, configuration) => configuration
 
 builder.Services
     .AddApplication()
-    .AddInfrastructure()
+    .AddInfrastructure(builder.Configuration)
     .AddPersistence(builder.Configuration)
     .AddApiServices(builder.Configuration);
 
@@ -40,6 +40,7 @@ app.UseExceptionHandler();
 app.UseMiddleware<CorrelationIdMiddleware>();
 app.UseHttpsRedirection();
 app.UseCors(ApiServiceCollectionExtensions.FrontendCorsPolicy);
+app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 app.MapHealthChecks("/health");

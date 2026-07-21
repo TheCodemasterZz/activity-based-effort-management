@@ -61,6 +61,28 @@ public class DirectoryUserTests
         user.LastSyncedUtc.Should().Be(syncTime);
     }
 
+    [Theory]
+    [InlineData("SERKAN.GULTEPE", "serkan.gultepe")]
+    [InlineData("  Serkan.Gultepe  ", "serkan.gultepe")]
+    [InlineData("KULLANICI", "kullanici")]
+    public void CreateFromActiveDirectory_NormalizesUsernameInvariantly(string input, string expected)
+    {
+        var user = DirectoryUser.CreateFromActiveDirectory(
+            Guid.NewGuid(), input, "Ad", "Soyad", "Ad Soyad", null, "guid");
+
+        // Türkçe kültürde ToLower 'I' harfini noktasız 'ı'ya çevirir; invariant olmalı.
+        user.Username.Should().Be(expected);
+    }
+
+    [Fact]
+    public void CreateInternal_NormalizesUsernameInvariantly()
+    {
+        var user = DirectoryUser.CreateInternal(
+            Guid.NewGuid(), "SANAL.KULLANICI", null, null, null, null, "HASHED");
+
+        user.Username.Should().Be("sanal.kullanici");
+    }
+
     [Fact]
     public void SetAttribute_WithNewMapping_AddsAttribute()
     {
