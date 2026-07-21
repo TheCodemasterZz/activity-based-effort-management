@@ -4,8 +4,19 @@ import { useNotifications } from '../hooks/useNotifications';
 import { useValueStreams } from '../hooks/useValueStreams';
 import { useAllActivities } from '../hooks/useActivities';
 import { useHolidays } from '../hooks/useHolidays';
+import { UserDirectorySection } from '../components/admin/directory/UserDirectorySection';
+import { AttributeMappingsSection } from '../components/admin/directory/AttributeMappingsSection';
 
-type SectionKind = 'employees' | 'notifications' | 'valueStreams' | 'activities' | 'holidays' | 'workCalendars' | 'placeholder';
+type SectionKind =
+  | 'employees'
+  | 'notifications'
+  | 'valueStreams'
+  | 'activities'
+  | 'holidays'
+  | 'workCalendars'
+  | 'userDirectory'
+  | 'attributeMappings'
+  | 'placeholder';
 
 interface AdminSection {
   key: string;
@@ -46,6 +57,8 @@ const ADMIN_TABS: AdminTab[] = [
         header: 'KULLANICI YÖNETİMİ',
         sections: [
           { key: 'employees', label: 'Çalışanlar', kind: 'employees' },
+          { key: 'userDirectory', label: 'Kullanıcı Klasörü', kind: 'userDirectory' },
+          { key: 'attributeMappings', label: 'Alan Eşlemeleri', kind: 'attributeMappings' },
           { key: 'roles', label: 'Roller ve İzinler', kind: 'placeholder' },
         ],
       },
@@ -255,6 +268,10 @@ function SectionContent({ section }: { section: AdminSection }) {
       return <HolidaysSection />;
     case 'workCalendars':
       return <WorkCalendarsSection />;
+    case 'userDirectory':
+      return <UserDirectorySection />;
+    case 'attributeMappings':
+      return <AttributeMappingsSection />;
     case 'placeholder':
       return <Placeholder label={section.label} />;
   }
