@@ -11,28 +11,34 @@ namespace EforTakip.Api.Controllers.v1;
 
 [ApiController]
 [ApiVersion("1.0")]
-[Route("api/v{version:apiVersion}/[controller]")]
+[Route("api/v{version:apiVersion}/directories/{directoryId:guid}/attribute-mappings")]
 public sealed class DirectoryAttributeMappingsController(ISender mediator) : ControllerBase
 {
+    public sealed record CreateAttributeMappingRequest(
+        string AdAttributeName, string SystemFieldName, string FieldType, bool IsSynced, int SortOrder);
+
     [HttpGet]
     [ProducesResponseType(typeof(IReadOnlyCollection<DirectoryAttributeMappingDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<IReadOnlyCollection<DirectoryAttributeMappingDto>>> GetAll(
-        [FromQuery] Guid directoryId, CancellationToken cancellationToken)
+        Guid directoryId, CancellationToken cancellationToken)
         => Ok(await mediator.Send(new GetAttributeMappingsQuery(directoryId), cancellationToken));
 
     [HttpPost]
     [ProducesResponseType(StatusCodes.Status201Created)]
     public async Task<IActionResult> Create(
-        CreateAttributeMappingCommand command, CancellationToken cancellationToken)
+        Guid directoryId, CreateAttributeMappingRequest request, CancellationToken cancellationToken)
     {
+        var command = new CreateAttributeMappingCommand(
+            directoryId, request.AdAttributeName, request.SystemFieldName, request.FieldType,
+            request.IsSynced, request.SortOrder);
         var id = await mediator.Send(command, cancellationToken);
-        return CreatedAtAction(nameof(GetAll), new { version = "1.0" }, new { id });
+        return CreatedAtAction(nameof(GetAll), new { version = "1.0", directoryId }, new { id });
     }
 
     [HttpPut("{id:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> Update(
-        Guid id, UpdateAttributeMappingCommand command, CancellationToken cancellationToken)
+        Guid directoryId, Guid id, UpdateAttributeMappingCommand command, CancellationToken cancellationToken)
     {
         if (id != command.Id)
             return BadRequest("Route ve gövde kimlikleri eşleşmiyor.");
@@ -42,7 +48,7 @@ public sealed class DirectoryAttributeMappingsController(ISender mediator) : Con
 
     [HttpDelete("{id:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
-    public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
+    public async Task<IActionResult> Delete(Guid directoryId, Guid id, CancellationToken cancellationToken)
     {
         await mediator.Send(new DeleteAttributeMappingCommand(id), cancellationToken);
         return NoContent();
