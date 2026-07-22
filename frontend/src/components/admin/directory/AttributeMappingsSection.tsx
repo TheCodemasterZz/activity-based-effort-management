@@ -6,16 +6,21 @@ import {
   useDeleteAttributeMappingMutation,
   useUpdateAttributeMappingMutation,
 } from '../../../hooks/useAttributeMappings';
-import type { DirectoryAttributeMappingDto } from '../../../api/types';
+import type { DirectoryAttributeMappingDto, DirectoryDto } from '../../../api/types';
 
 const inputClass =
   'w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500';
 
-export function AttributeMappingsSection() {
-  const mappings = useAttributeMappings();
-  const createMutation = useCreateAttributeMappingMutation();
-  const updateMutation = useUpdateAttributeMappingMutation();
-  const deleteMutation = useDeleteAttributeMappingMutation();
+interface AttributeMappingsSectionProps {
+  directory: DirectoryDto;
+  onBack: () => void;
+}
+
+export function AttributeMappingsSection({ directory, onBack }: AttributeMappingsSectionProps) {
+  const mappings = useAttributeMappings(directory.id);
+  const createMutation = useCreateAttributeMappingMutation(directory.id);
+  const updateMutation = useUpdateAttributeMappingMutation(directory.id);
+  const deleteMutation = useDeleteAttributeMappingMutation(directory.id);
 
   const [adAttributeName, setAdAttributeName] = useState('');
   const [systemFieldName, setSystemFieldName] = useState('');
@@ -40,7 +45,7 @@ export function AttributeMappingsSection() {
       setSystemFieldName('');
       setFieldType('text');
     } catch (error) {
-      setErrorMessage(error instanceof ApiError ? error.message : 'Alan eşlemesi eklenemedi.');
+      setErrorMessage(error instanceof ApiError ? error.message : 'AD Attribute eklenemedi.');
     }
   };
 
@@ -58,19 +63,19 @@ export function AttributeMappingsSection() {
         },
       });
     } catch (error) {
-      setErrorMessage(error instanceof ApiError ? error.message : 'Alan eşlemesi güncellenemedi.');
+      setErrorMessage(error instanceof ApiError ? error.message : 'AD Attribute güncellenemedi.');
     }
   };
 
   const handleDelete = async (mapping: DirectoryAttributeMappingDto) => {
-    if (!window.confirm(`"${mapping.systemFieldName}" eşlemesini silmek istediğinize emin misiniz?`))
+    if (!window.confirm(`"${mapping.systemFieldName}" AD Attribute'unu silmek istediğinize emin misiniz?`))
       return;
 
     setErrorMessage(null);
     try {
       await deleteMutation.mutateAsync(mapping.id);
     } catch (error) {
-      setErrorMessage(error instanceof ApiError ? error.message : 'Alan eşlemesi silinemedi.');
+      setErrorMessage(error instanceof ApiError ? error.message : 'AD Attribute silinemedi.');
     }
   };
 
@@ -78,10 +83,16 @@ export function AttributeMappingsSection() {
 
   return (
     <div>
-      <p className="mb-4 text-sm text-slate-500">
-        Dizinden çekilecek alanlar. Bu eşlemeler <strong>tüm dizinler</strong> için ortaktır.
-        Senkronizasyon kapalı olan alanlar dizinden çekilmez.
-      </p>
+      <div className="mb-4 flex items-center justify-between">
+        <h2 className="text-base font-semibold text-slate-800">{directory.name} — AD Attributes</h2>
+        <button
+          type="button"
+          onClick={onBack}
+          className="text-sm text-slate-500 hover:text-slate-700"
+        >
+          ← Listeye dön
+        </button>
+      </div>
 
       <form onSubmit={handleCreate} className="mb-5 flex flex-wrap items-end gap-2">
         <label className="block">
@@ -133,7 +144,7 @@ export function AttributeMappingsSection() {
         <div className="py-8 text-center text-sm text-slate-400">Yükleniyor…</div>
       ) : items.length === 0 ? (
         <div className="rounded-xl border border-dashed border-slate-200 py-12 text-center text-sm text-slate-500">
-          Henüz alan eşlemesi tanımlanmamış.
+          Henüz AD Attribute tanımlanmamış.
         </div>
       ) : (
         <table className="w-full text-left text-sm">
