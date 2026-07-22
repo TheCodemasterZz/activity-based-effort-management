@@ -29,4 +29,5 @@ public sealed class DirectoryDto
     public SyncScheduleKind SyncSchedule { get; init; }
     public bool IsActive { get; init; }
     public int SortOrder { get; init; }
+    public DateTime? LastSyncedUtc { get; init; }
 }

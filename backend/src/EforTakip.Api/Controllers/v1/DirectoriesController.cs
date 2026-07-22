@@ -9,6 +9,7 @@ using EforTakip.Application.Directories.Dtos;
 using EforTakip.Application.Directories.Ldap;
 using EforTakip.Application.Directories.Queries.GetDirectories;
 using EforTakip.Application.Directories.Queries.GetDirectoryById;
+using EforTakip.Application.Directories.Queries.GetOrgChart;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
@@ -66,4 +67,9 @@ public sealed class DirectoriesController(ISender mediator) : ControllerBase
     public async Task<ActionResult<LdapConnectionTestResult>> TestConnection(
         Guid id, CancellationToken cancellationToken)
         => Ok(await mediator.Send(new TestDirectoryConnectionCommand(id), cancellationToken));
+
+    [HttpGet("{id:guid}/org-chart")]
+    [ProducesResponseType(typeof(OrgChartResultDto), StatusCodes.Status200OK)]
+    public async Task<ActionResult<OrgChartResultDto>> GetOrgChart(Guid id, CancellationToken cancellationToken)
+        => Ok(await mediator.Send(new GetOrgChartQuery(id), cancellationToken));
 }
