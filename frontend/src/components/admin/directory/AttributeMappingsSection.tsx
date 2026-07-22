@@ -111,6 +111,7 @@ export function AttributeMappingsSection() {
           >
             <option value="text">Metin</option>
             <option value="user">Kullanıcı</option>
+            <option value="photo">Fotoğraf</option>
           </select>
         </label>
         <button
@@ -153,7 +154,11 @@ export function AttributeMappingsSection() {
                 </td>
                 <td className="py-2 pr-4 text-slate-700">{mapping.systemFieldName}</td>
                 <td className="py-2 pr-4 text-slate-500">
-                  {mapping.fieldType === 'user' ? 'Kullanıcı' : 'Metin'}
+                  {mapping.fieldType === 'user'
+                    ? 'Kullanıcı'
+                    : mapping.fieldType === 'photo'
+                      ? 'Fotoğraf'
+                      : 'Metin'}
                 </td>
                 <td className="py-2 pr-4">
                   <input

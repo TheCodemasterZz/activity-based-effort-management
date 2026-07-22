@@ -3,6 +3,7 @@ import type {
   DirectoryDto,
   DirectorySyncResultDto,
   LdapConnectionTestResult,
+  OrgChartResultDto,
   PagedResult,
 } from './types';
 
@@ -59,4 +60,8 @@ export function syncDirectory(id: string) {
 
 export function testDirectoryConnection(id: string) {
   return apiClient.post<LdapConnectionTestResult>(`/api/v1/directories/${id}/test-connection`);
+}
+
+export function getOrgChart(id: string) {
+  return apiClient.get<OrgChartResultDto>(`/api/v1/directories/${id}/org-chart`);
 }

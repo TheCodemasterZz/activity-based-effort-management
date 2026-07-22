@@ -5,9 +5,20 @@ import {
   resetInternalUserPassword,
 } from '../api/directoryUsers';
 
-export function useDirectoryUsers(options: { directoryId?: string; searchTerm?: string }) {
+export function useDirectoryUsers(options: {
+  directoryId?: string;
+  searchTerm?: string;
+  pageNumber?: number;
+  pageSize?: number;
+}) {
   return useQuery({
-    queryKey: ['directoryUsers', options.directoryId ?? null, options.searchTerm ?? ''],
+    queryKey: [
+      'directoryUsers',
+      options.directoryId ?? null,
+      options.searchTerm ?? '',
+      options.pageNumber ?? 1,
+      options.pageSize ?? 25,
+    ],
     queryFn: () => getDirectoryUsers(options),
   });
 }

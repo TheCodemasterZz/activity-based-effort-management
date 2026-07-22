@@ -160,6 +160,7 @@ export interface DirectoryUserAttributeValueDto {
   adAttributeName: string;
   fieldType: string;
   value: string | null;
+  referencedDirectoryUserId: string | null;
 }
 
 export interface DirectoryUserDetailDto extends DirectoryUserDto {
@@ -188,4 +189,17 @@ export interface DirectorySyncResultDto {
 export interface LdapConnectionTestResult {
   success: boolean;
   message: string;
+}
+
+export interface OrgChartNodeDto {
+  id: string;
+  username: string;
+  displayName: string;
+  managerId: string | null;
+  photoBase64: string | null;
+}
+
+export interface OrgChartResultDto {
+  hasManagerMapping: boolean;
+  nodes: OrgChartNodeDto[];
 }

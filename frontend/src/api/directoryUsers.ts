@@ -5,13 +5,15 @@ export function getDirectoryUsers(options?: {
   directoryId?: string;
   searchTerm?: string;
   onlyActive?: boolean;
+  pageNumber?: number;
   pageSize?: number;
 }) {
   return apiClient.get<PagedResult<DirectoryUserDto>>('/api/v1/directoryusers', {
     directoryId: options?.directoryId,
     searchTerm: options?.searchTerm,
     onlyActive: options?.onlyActive,
-    pageSize: options?.pageSize ?? 100,
+    pageNumber: options?.pageNumber ?? 1,
+    pageSize: options?.pageSize ?? 25,
   });
 }
 
