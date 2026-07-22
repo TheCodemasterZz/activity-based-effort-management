@@ -6,7 +6,6 @@ public sealed record UpdateWorkLogCommand(
     Guid Id,
     Guid EmployeeId,
     Guid ProjectId,
-    Guid CustomerId,
     Guid ActivityL1Id,
     Guid ActivityL2Id,
     DateOnly WorkDate,

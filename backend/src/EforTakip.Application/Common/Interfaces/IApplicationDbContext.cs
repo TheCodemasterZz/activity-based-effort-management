@@ -6,6 +6,7 @@ using EforTakip.Domain.Employees;
 using EforTakip.Domain.Holidays;
 using EforTakip.Domain.Notifications;
 using EforTakip.Domain.Projects;
+using EforTakip.Domain.Settings;
 using EforTakip.Domain.ValueStreams;
 using EforTakip.Domain.WorkCalendars;
 using EforTakip.Domain.WorkLogApprovals;
@@ -27,6 +28,10 @@ public interface IApplicationDbContext
     DbSet<ProjectEmployeeAssignment> ProjectEmployeeAssignments { get; }
 
     DbSet<ProjectTask> ProjectTasks { get; }
+
+    DbSet<ProjectRisk> ProjectRisks { get; }
+
+    DbSet<ProjectIssue> ProjectIssues { get; }
 
     DbSet<ValueStream> ValueStreams { get; }
 
@@ -57,4 +62,6 @@ public interface IApplicationDbContext
     DbSet<DirectoryAttributeMapping> DirectoryAttributeMappings { get; }
 
     DbSet<DirectoryUserAttribute> DirectoryUserAttributes { get; }
+
+    DbSet<ConfidenceScoreSettings> ConfidenceScoreSettings { get; }
 }

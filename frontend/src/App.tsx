@@ -9,7 +9,6 @@ import { PlanningAccuracyPage } from './pages/PlanningAccuracyPage';
 import { ReportPage } from './pages/ReportPage';
 import { ProjectsPage } from './pages/ProjectsPage';
 import { EmployeesPage } from './pages/EmployeesPage';
-import { WidgetsPage } from './pages/WidgetsPage';
 import { WidgetLogWorkPage } from './pages/WidgetLogWorkPage';
 import { AdminPage } from './pages/AdminPage';
 import { LoginPage } from './pages/LoginPage';
@@ -58,7 +57,6 @@ function App() {
           {activePage === 'planningAccuracy' && <PlanningAccuracyPage />}
           {activePage === 'projects' && <ProjectsPage />}
           {activePage === 'employees' && <EmployeesPage />}
-          {activePage === 'widgets' && <WidgetsPage />}
           {activePage === 'admin' && <AdminPage />}
         </RootLayout>
       )}

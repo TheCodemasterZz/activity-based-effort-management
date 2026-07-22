@@ -17,6 +17,13 @@ interface WorkLogTableProps {
   onCellClick: (row: GroupedRow, column: PeriodColumn) => void;
   /** Aynı satırda birden fazla hücre sürüklenerek seçildiğinde tetiklenir (toplu tarih aralığı ekleme). */
   onRangeSelect: (row: GroupedRow, startColumn: PeriodColumn, endColumn: PeriodColumn) => void;
+  /** Tablonun kendi iç dikey/yatay kaydırma kutusunun maksimum yüksekliği (Tailwind max-h-*
+   * sınıfı) — sayfanın tamamı değil, SADECE bu tablo kaydırılsın diye. Varsayılan 60vh
+   * (bağımsız "Gerçekleşen Efor" sayfasındaki mevcut davranış). Bir sekme/panel içine gömülü
+   * kullanımda (ör. Proje Detay > Gerçekleşen Efor) üstünde zaten toolbar/özet kartlar/sekme
+   * şeridi olduğundan, sayfa scroll'a gerek kalmadan tamamı sığsın diye daha küçük bir değer
+   * verilir. */
+  maxHeightClassName?: string;
 }
 
 interface DragState {
@@ -30,7 +37,7 @@ function formatHours(value: number | undefined): string {
   return `${v % 1 === 0 ? v : v.toFixed(1)}h`;
 }
 
-function isWeekendColumn(column: PeriodColumn): boolean {
+export function isWeekendColumn(column: PeriodColumn): boolean {
   if (column.startKey !== column.endKey) return false;
   const day = new Date(`${column.startKey}T00:00:00`).getDay();
   return day === 0 || day === 6;
@@ -44,11 +51,11 @@ export interface LeaveRange {
   isFullDay: boolean;
 }
 
-type LeaveStatus = 'none' | 'partial' | 'full';
+export type LeaveStatus = 'none' | 'partial' | 'full';
 
 /** Bir hücrenin kapsadığı gün(ler) içinde çalışanın tam günlük veya kısmi (saatlik) izni var mı.
  * Tam gün izin varsa 'full', sadece kısmi izin varsa 'partial' döner. */
-function cellLeaveStatus(
+export function cellLeaveStatus(
   employeeId: string | undefined,
   column: PeriodColumn,
   leaveRangesByEmployee: Map<string, LeaveRange[]> | undefined,
@@ -114,7 +121,7 @@ function sortRowsByLabel(rows: GroupedRow[], dir: 'asc' | 'desc'): GroupedRow[] 
   return sorted.map((row) => (row.children ? { ...row, children: sortRowsByLabel(row.children, dir) } : row));
 }
 
-function isHolidayColumn(column: PeriodColumn, holidayDateKeys: Set<string>): boolean {
+export function isHolidayColumn(column: PeriodColumn, holidayDateKeys: Set<string>): boolean {
   return column.startKey === column.endKey && holidayDateKeys.has(column.startKey);
 }
 
@@ -126,7 +133,7 @@ const APPROVED_STRIPE_STYLE: CSSProperties = {
     'repeating-linear-gradient(45deg, rgba(13,148,136,0.3) 0px, rgba(13,148,136,0.3) 2px, transparent 2px, transparent 9px)',
 };
 
-function columnHeaderClass(column: PeriodColumn, holidayDateKeys: Set<string>, todayKey: string): string {
+export function columnHeaderClass(column: PeriodColumn, holidayDateKeys: Set<string>, todayKey: string): string {
   const isWeekend = isWeekendColumn(column);
   const isCurrent = isCurrentColumn(column, todayKey);
 
@@ -198,7 +205,7 @@ function TableRows({
                 // İzin/tatil/onay renklendirmesi kasıtlı olarak 'clickable'a değil, satırın kendi
                 // 'employeeId'sine bağlı: sadece Group by'daki gerçek Kişi (employee) satırında
                 // görünsün istendi — Kişi satırı çocuklu (parent/non-leaf) olsa bile renklenir,
-                // ama altındaki Proje/Müşteri gibi farklı boyuttaki satırlarda hiç görünmez.
+                // ama altındaki Proje gibi farklı boyuttaki satırlarda hiç görünmez.
                 const hasEmployeeContext = !!row.employeeId;
                 const approval = hasEmployeeContext
                   ? cellApprovalStatus(row.cellLogs[column.key], row.employeeId, column, approvedRangesByEmployee)
@@ -287,6 +294,7 @@ export function WorkLogTable({
   leaveRangesByEmployee,
   onCellClick,
   onRangeSelect,
+  maxHeightClassName = 'max-h-[60vh]',
 }: WorkLogTableProps) {
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
   const [drag, setDrag] = useState<DragState | null>(null);
@@ -333,7 +341,9 @@ export function WorkLogTable({
   }, [drag, columns, onCellClick, onRangeSelect]);
 
   return (
-    <div className="max-h-[60vh] overflow-auto rounded-xl border border-slate-200 bg-white">
+    <div
+      className={`${maxHeightClassName} overflow-auto rounded-xl border border-slate-200 bg-white`}
+    >
       <table className="min-w-full border-collapse text-sm">
         <thead>
           <tr className="border-b border-slate-200 bg-slate-50">

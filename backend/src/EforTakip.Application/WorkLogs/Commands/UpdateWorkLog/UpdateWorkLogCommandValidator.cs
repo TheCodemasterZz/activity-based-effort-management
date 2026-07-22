@@ -9,7 +9,6 @@ public sealed class UpdateWorkLogCommandValidator : AbstractValidator<UpdateWork
         RuleFor(x => x.Id).NotEmpty();
         RuleFor(x => x.EmployeeId).NotEmpty();
         RuleFor(x => x.ProjectId).NotEmpty();
-        RuleFor(x => x.CustomerId).NotEmpty();
         RuleFor(x => x.ActivityL1Id).NotEmpty();
         RuleFor(x => x.ActivityL2Id).NotEmpty().WithMessage("Activity L2 seçimi zorunludur.");
 

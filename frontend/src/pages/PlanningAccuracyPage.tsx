@@ -20,8 +20,10 @@ import { evaluateMql, type MqlNode } from '../lib/mql';
 import { useWorkLogs } from '../hooks/useWorkLogs';
 import { useEmployees } from '../hooks/useEmployees';
 import { useProjects } from '../hooks/useProjects';
-import { useCustomers } from '../hooks/useCustomers';
 import { useAllActivities } from '../hooks/useActivities';
+import { useHolidays } from '../hooks/useHolidays';
+import { useEmployeeLeaves } from '../hooks/useEmployeeLeaves';
+import type { LeaveRange } from '../components/dashboard/WorkLogTable';
 import { WORK_LOG_ENTRY_TYPE, type EmployeeWorkLogDto } from '../api/types';
 
 function PlanningAccuracyLegend() {
@@ -67,23 +69,38 @@ export function PlanningAccuracyPage() {
 
   const employees = useEmployees();
   const projects = useProjects();
-  const customers = useCustomers();
   const activities = useAllActivities();
+  const holidays = useHolidays();
+  const employeeLeaves = useEmployeeLeaves();
+
+  const holidayDateKeys = useMemo(
+    () => new Set(holidays.data?.items.map((h) => h.date) ?? []),
+    [holidays.data],
+  );
+
+  // Çalışan bazlı izin dönemleri — ReportPage/PlanWorkPage'deki WorkLogTable ile aynı kaynak.
+  const leaveRangesByEmployee = useMemo(() => {
+    const map = new Map<string, LeaveRange[]>();
+    for (const leave of employeeLeaves.data?.items ?? []) {
+      const list = map.get(leave.employeeId) ?? [];
+      list.push({ start: leave.startDate, end: leave.endDate, isFullDay: leave.isFullDay });
+      map.set(leave.employeeId, list);
+    }
+    return map;
+  }, [employeeLeaves.data]);
 
   const employeesById = useMemo(() => new Map(employees.data?.items.map((e) => [e.id, e.name])), [employees.data]);
   const projectsById = useMemo(() => new Map(projects.data?.items.map((p) => [p.id, p.name])), [projects.data]);
-  const customersById = useMemo(() => new Map(customers.data?.items.map((c) => [c.id, c.name])), [customers.data]);
   const activitiesById = useMemo(() => new Map(activities.data?.items.map((a) => [a.id, a.name])), [activities.data]);
 
   const mqlFieldValues = useMemo(
     () => ({
       employee: employees.data?.items.map((e) => e.name) ?? [],
       project: projects.data?.items.map((p) => p.name) ?? [],
-      customer: customers.data?.items.map((c) => c.name) ?? [],
       activityL1: activities.data?.items.filter((a) => !a.parentActivityId).map((a) => a.name) ?? [],
       activityL2: activities.data?.items.filter((a) => a.parentActivityId).map((a) => a.name) ?? [],
     }),
-    [employees.data, projects.data, customers.data, activities.data],
+    [employees.data, projects.data, activities.data],
   );
 
   const resolveDimension = useMemo(() => {
@@ -93,8 +110,6 @@ export function PlanningAccuracyPage() {
           return { key: log.employeeId, label: employeesById.get(log.employeeId) ?? 'Bilinmeyen kişi' };
         case 'project':
           return { key: log.projectId, label: projectsById.get(log.projectId) ?? 'Bilinmeyen proje' };
-        case 'customer':
-          return { key: log.customerId, label: customersById.get(log.customerId) ?? 'Bilinmeyen müşteri' };
         case 'activityL1':
           return { key: log.activityL1Id, label: activitiesById.get(log.activityL1Id) ?? 'Bilinmeyen aktivite' };
         case 'activityL2':
@@ -103,7 +118,7 @@ export function PlanningAccuracyPage() {
           return null;
       }
     };
-  }, [employeesById, projectsById, customersById, activitiesById]);
+  }, [employeesById, projectsById, activitiesById]);
 
   const filterLogs = (logs: EmployeeWorkLogDto[]) => {
     if (!mqlAst) return logs;
@@ -111,7 +126,6 @@ export function PlanningAccuracyPage() {
       evaluateMql(mqlAst, {
         employee: employeesById.get(log.employeeId) ?? '',
         project: projectsById.get(log.projectId) ?? '',
-        customer: customersById.get(log.customerId) ?? '',
         activityL1: activitiesById.get(log.activityL1Id) ?? '',
         activityL2: activitiesById.get(log.activityL2Id) ?? '',
         hours: log.hours,
@@ -123,11 +137,11 @@ export function PlanningAccuracyPage() {
 
   const filteredActualLogs = useMemo(
     () => filterLogs(actualLogsQuery.data?.items ?? []),
-    [actualLogsQuery.data, mqlAst, employeesById, projectsById, customersById, activitiesById],
+    [actualLogsQuery.data, mqlAst, employeesById, projectsById, activitiesById],
   );
   const filteredPlannedLogs = useMemo(
     () => filterLogs(plannedLogsQuery.data?.items ?? []),
-    [plannedLogsQuery.data, mqlAst, employeesById, projectsById, customersById, activitiesById],
+    [plannedLogsQuery.data, mqlAst, employeesById, projectsById, activitiesById],
   );
 
   const accuracy = useMemo(
@@ -208,6 +222,9 @@ export function PlanningAccuracyPage() {
               grandTotalPlannedByColumn={accuracy.grandTotalPlannedByColumn}
               grandTotalActual={accuracy.grandTotalActual}
               grandTotalPlanned={accuracy.grandTotalPlanned}
+              holidayDateKeys={holidayDateKeys}
+              todayKey={todayKey}
+              leaveRangesByEmployee={leaveRangesByEmployee}
             />
           </div>
         )}

@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { ErrorState } from '../components/common/ErrorState';
 import { PeriodModeSelect } from '../components/dashboard/PeriodModeSelect';
 import { MonthNavigator } from '../components/dashboard/MonthNavigator';
 import { GroupByMultiSelect } from '../components/dashboard/GroupByMultiSelect';
@@ -28,7 +29,6 @@ import { useWorkLogApprovals } from '../hooks/useWorkLogApprovals';
 import { useEmployeeLeaves } from '../hooks/useEmployeeLeaves';
 import { useEmployees } from '../hooks/useEmployees';
 import { useProjects } from '../hooks/useProjects';
-import { useCustomers } from '../hooks/useCustomers';
 import { useAllActivities } from '../hooks/useActivities';
 import { useHolidays } from '../hooks/useHolidays';
 import { WORK_LOG_ENTRY_TYPE, type EmployeeWorkLogDto } from '../api/types';
@@ -65,7 +65,6 @@ export function PlanWorkPage() {
 
   const employees = useEmployees();
   const projects = useProjects();
-  const customers = useCustomers();
   const activities = useAllActivities();
   const holidays = useHolidays();
 
@@ -76,7 +75,6 @@ export function PlanWorkPage() {
 
   const employeesById = useMemo(() => new Map(employees.data?.items.map((e) => [e.id, e.name])), [employees.data]);
   const projectsById = useMemo(() => new Map(projects.data?.items.map((p) => [p.id, p.name])), [projects.data]);
-  const customersById = useMemo(() => new Map(customers.data?.items.map((c) => [c.id, c.name])), [customers.data]);
   const activitiesById = useMemo(() => new Map(activities.data?.items.map((a) => [a.id, a.name])), [activities.data]);
 
   const approvedRangesByEmployee = useMemo(() => {
@@ -103,11 +101,10 @@ export function PlanWorkPage() {
     () => ({
       employee: employees.data?.items.map((e) => e.name) ?? [],
       project: projects.data?.items.map((p) => p.name) ?? [],
-      customer: customers.data?.items.map((c) => c.name) ?? [],
       activityL1: activities.data?.items.filter((a) => !a.parentActivityId).map((a) => a.name) ?? [],
       activityL2: activities.data?.items.filter((a) => a.parentActivityId).map((a) => a.name) ?? [],
     }),
-    [employees.data, projects.data, customers.data, activities.data],
+    [employees.data, projects.data, activities.data],
   );
 
   const resolveDimension = useMemo(() => {
@@ -117,8 +114,6 @@ export function PlanWorkPage() {
           return { key: log.employeeId, label: employeesById.get(log.employeeId) ?? 'Bilinmeyen kişi' };
         case 'project':
           return { key: log.projectId, label: projectsById.get(log.projectId) ?? 'Bilinmeyen proje' };
-        case 'customer':
-          return { key: log.customerId, label: customersById.get(log.customerId) ?? 'Bilinmeyen müşteri' };
         case 'activityL1':
           return { key: log.activityL1Id, label: activitiesById.get(log.activityL1Id) ?? 'Bilinmeyen aktivite' };
         case 'activityL2':
@@ -127,7 +122,7 @@ export function PlanWorkPage() {
           return null;
       }
     };
-  }, [employeesById, projectsById, customersById, activitiesById]);
+  }, [employeesById, projectsById, activitiesById]);
 
   const logs = workLogs.data?.items ?? [];
 
@@ -137,7 +132,6 @@ export function PlanWorkPage() {
       evaluateMql(mqlAst, {
         employee: employeesById.get(log.employeeId) ?? '',
         project: projectsById.get(log.projectId) ?? '',
-        customer: customersById.get(log.customerId) ?? '',
         activityL1: activitiesById.get(log.activityL1Id) ?? '',
         activityL2: activitiesById.get(log.activityL2Id) ?? '',
         hours: log.hours,
@@ -145,7 +139,7 @@ export function PlanWorkPage() {
         date: log.workDate,
       }),
     );
-  }, [logs, mqlAst, employeesById, projectsById, customersById, activitiesById]);
+  }, [logs, mqlAst, employeesById, projectsById, activitiesById]);
 
   const grouped = useMemo(
     () =>
@@ -188,7 +182,6 @@ export function PlanWorkPage() {
 
   const resolveEmployee = (id: string) => employeesById.get(id) ?? 'Bilinmeyen kişi';
   const resolveProject = (id: string) => projectsById.get(id) ?? 'Bilinmeyen proje';
-  const resolveCustomer = (id: string) => customersById.get(id) ?? 'Bilinmeyen müşteri';
   const resolveActivity = (id: string) => activitiesById.get(id) ?? 'Bilinmeyen aktivite';
 
   const buildPrefillFromRow = (row: GroupedRow): WorkLogFormInitialValues => {
@@ -207,10 +200,6 @@ export function PlanWorkPage() {
         case 'project':
           prefill.projectId = key;
           prefill.projectLabel = resolveProject(key);
-          break;
-        case 'customer':
-          prefill.customerId = key;
-          prefill.customerLabel = resolveCustomer(key);
           break;
         case 'activityL1':
           prefill.activityL1Id = key;
@@ -343,15 +332,7 @@ export function PlanWorkPage() {
             Yükleniyor…
           </div>
         ) : workLogs.isError ? (
-          <div className="flex items-center gap-3 rounded-xl border border-red-200 bg-red-50 p-6 text-red-700">
-            <span className="text-xl">⚠</span>
-            <div>
-              <div className="font-semibold">Veriler yüklenemedi</div>
-              <div className="text-sm text-red-600">
-                Sunucudan yanıt alınamadı. Bağlantınızı kontrol edip tekrar deneyin.
-              </div>
-            </div>
-          </div>
+          <ErrorState />
         ) : (
           <WorkLogTable
             columns={periodRange.columns}
@@ -381,7 +362,6 @@ export function PlanWorkPage() {
         <WorkLogApprovalModal
           onClose={() => setIsApprovalModalOpen(false)}
           resolveProject={resolveProject}
-          resolveCustomer={resolveCustomer}
           resolveActivity={resolveActivity}
           entryType={WORK_LOG_ENTRY_TYPE.Planned}
         />
@@ -393,7 +373,6 @@ export function PlanWorkPage() {
           date={cellModal.date}
           resolveEmployee={resolveEmployee}
           resolveProject={resolveProject}
-          resolveCustomer={resolveCustomer}
           resolveActivity={resolveActivity}
           addPrefill={cellModal.prefill}
           entryType={WORK_LOG_ENTRY_TYPE.Planned}

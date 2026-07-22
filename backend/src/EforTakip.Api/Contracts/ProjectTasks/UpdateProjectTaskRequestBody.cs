@@ -5,4 +5,7 @@ public sealed record UpdateProjectTaskRequestBody(
     DateOnly StartDate,
     DateOnly EndDate,
     decimal EstimatedEffortHours,
-    bool IsMilestone);
+    bool IsMilestone,
+    Guid? ParentTaskId = null,
+    Guid? DependsOnTaskId = null,
+    Guid? AssignedEmployeeId = null);

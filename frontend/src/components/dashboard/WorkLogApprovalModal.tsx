@@ -11,11 +11,14 @@ import { useWorkCalendar } from '../../hooks/useWorkCalendar';
 import { useCreateWorkLogApprovalMutation } from '../../hooks/useCreateWorkLogApprovalMutation';
 import { pushSuccessNotification } from '../../lib/notifications';
 import { WORK_LOG_ENTRY_TYPE, type WorkLogEntryType } from '../../api/types';
+import { useConfidenceScoreContext } from '../../hooks/useConfidenceScoreContext';
+import { useConfidenceScoreSettings } from '../../hooks/useConfidenceScoreSettings';
+import { computeConfidenceScore } from '../../lib/confidenceScore';
+import { ConfidenceLiRow } from '../common/ConfidenceRowIndicator';
 
 interface WorkLogApprovalModalProps {
   onClose: () => void;
   resolveProject: (id: string) => string;
-  resolveCustomer: (id: string) => string;
   resolveActivity: (id: string) => string;
   /** Gerçekleşen (Log Work, varsayılan) mı yoksa planlanan (Plan Work) haftayı mı onaylıyoruz.
    * Planned onaylarda "sonraki hafta" engeli kalkar — planlama zaten geleceğe dönüktür. */
@@ -58,7 +61,6 @@ function formatHoursLabel(hours: number): string {
 export function WorkLogApprovalModal({
   onClose,
   resolveProject,
-  resolveCustomer,
   resolveActivity,
   entryType = WORK_LOG_ENTRY_TYPE.Actual,
 }: WorkLogApprovalModalProps) {
@@ -89,6 +91,10 @@ export function WorkLogApprovalModal({
   const previewItems = previewLogs.data?.items ?? [];
   const previewTotalHours = previewItems.reduce((sum, l) => sum + l.hours, 0);
   const previewApprovedCount = previewItems.filter((l) => l.isApproved).length;
+
+  // Güvenilirlik skoru — sadece Efor Onayı (Actual) için, Plan Onayı'nda anlamsız.
+  const confidenceContext = useConfidenceScoreContext(!isPlanned ? employeeId || null : null);
+  const confidenceSettings = useConfidenceScoreSettings();
 
   const employee = useEmployeeById(employeeId || null);
   const calendar = useWorkCalendar(employee.data?.workCalendarId ?? null);
@@ -334,21 +340,46 @@ export function WorkLogApprovalModal({
                   <div className="p-4 text-center text-xs text-slate-400">Bu haftada kayıt yok.</div>
                 ) : (
                   <ul className="divide-y divide-slate-100">
-                    {previewItems.map((log) => (
-                      <li key={log.id} className="flex items-center justify-between gap-2 px-3 py-2.5 text-xs">
-                        <div className="min-w-0">
-                          <div className="truncate font-medium text-slate-700">{resolveProject(log.projectId)}</div>
-                          <div className="truncate text-slate-400">
-                            {formatDateTr(log.workDate)} · {resolveCustomer(log.customerId)} ·{' '}
-                            {resolveActivity(log.activityL2Id)}
+                    {previewItems.map((log) => {
+                      const confidenceResult =
+                        !isPlanned && confidenceSettings.data
+                          ? computeConfidenceScore(
+                              {
+                                employeeId: log.employeeId,
+                                workDate: log.workDate,
+                                hours: log.hours,
+                                description: log.description,
+                                projectName: resolveProject(log.projectId),
+                                activityL1Name: resolveActivity(log.activityL1Id),
+                                activityL2Name: resolveActivity(log.activityL2Id),
+                              },
+                              {
+                                ...confidenceContext,
+                                siblingLogs: confidenceContext.siblingLogs.filter((s) => s.id !== log.id),
+                              },
+                              confidenceSettings.data,
+                            )
+                          : null;
+
+                      return (
+                        <ConfidenceLiRow
+                          key={log.id}
+                          result={confidenceResult}
+                          baseClassName="flex items-center justify-between gap-2 text-xs"
+                        >
+                          <div className="min-w-0">
+                            <div className="truncate font-medium text-slate-700">{resolveProject(log.projectId)}</div>
+                            <div className="truncate text-slate-400">
+                              {formatDateTr(log.workDate)} · {resolveActivity(log.activityL2Id)}
+                            </div>
                           </div>
-                        </div>
-                        <div className="shrink-0 text-right">
-                          <span className="font-semibold text-slate-700">{log.hours}h</span>
-                          {log.isApproved && <div className="text-teal-600">🔒 onaylı</div>}
-                        </div>
-                      </li>
-                    ))}
+                          <div className="shrink-0 text-right">
+                            <span className="font-semibold text-slate-700">{log.hours}h</span>
+                            {log.isApproved && <div className="text-teal-600">🔒 onaylı</div>}
+                          </div>
+                        </ConfidenceLiRow>
+                      );
+                    })}
                   </ul>
                 )}
               </div>

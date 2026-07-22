@@ -1,3 +1,4 @@
+using EforTakip.Domain.Projects;
 using MediatR;
 
 namespace EforTakip.Application.Projects.Commands.UpdateProject;
@@ -7,4 +8,8 @@ public sealed record UpdateProjectCommand(
     string Name,
     string? Description,
     DateOnly? StartDate,
-    DateOnly? EndDate) : IRequest;
+    DateOnly? EndDate,
+    string? Sponsor,
+    Guid? ProjectManagerEmployeeId,
+    ProjectPriority Priority,
+    string? StrategicGoal) : IRequest;

@@ -1,6 +1,7 @@
 import { Fragment, useState } from 'react';
 import type { PeriodColumn } from '../../lib/dateUtils';
 import type { AccuracyRow } from '../../lib/groupWorkLogsAccuracy';
+import { cellLeaveStatus, columnHeaderClass, isHolidayColumn, type LeaveRange } from './WorkLogTable';
 
 interface PlanningAccuracyTableProps {
   columns: PeriodColumn[];
@@ -9,6 +10,10 @@ interface PlanningAccuracyTableProps {
   grandTotalPlannedByColumn: Record<string, number>;
   grandTotalActual: number;
   grandTotalPlanned: number;
+  holidayDateKeys: Set<string>;
+  todayKey: string;
+  /** employeeId'ye göre izin dönemleri — WorkLogTable ile aynı kaynak/format (bkz. ReportPage). */
+  leaveRangesByEmployee?: Map<string, LeaveRange[]>;
 }
 
 function formatHours(value: number): string {
@@ -52,8 +57,11 @@ const CELL_STATUS_CLASS: Record<Exclude<VarianceStatus, 'none'>, string> = {
 function AccuracyCell({ actual, planned }: { actual: number; planned: number }) {
   const status = varianceStatus(actual, planned);
   if (status === 'none') {
+    // Arkaplan kasıtlı olarak boş bırakılıyor — hafta sonu/tatil/izin rengi bunu saran <td>
+    // üzerinden geliyor (bkz. TableRows), böylece plan/gerçekleşen olmayan bir gün bile hangi
+    // gün tipi olduğunu (hafta sonu, tatil, izin) hâlâ gösterebiliyor.
     return (
-      <div className="rounded-md bg-slate-50 px-2 py-1.5 text-center text-[11px] text-slate-300">—</div>
+      <div className="rounded-md px-2 py-1.5 text-center text-[11px] text-slate-300">—</div>
     );
   }
   const pct = planned > 0 ? Math.round(((actual - planned) / planned) * 1000) / 10 : null;
@@ -79,14 +87,21 @@ interface RowsProps {
   columns: PeriodColumn[];
   collapsed: Set<string>;
   onToggle: (path: string) => void;
+  holidayDateKeys: Set<string>;
+  todayKey: string;
+  leaveRangesByEmployee?: Map<string, LeaveRange[]>;
 }
 
-function TableRows({ rows, columns, collapsed, onToggle }: RowsProps) {
+function TableRows({ rows, columns, collapsed, onToggle, holidayDateKeys, todayKey, leaveRangesByEmployee }: RowsProps) {
   return (
     <>
       {rows.map((row) => {
         const hasChildren = !!row.children && row.children.length > 0;
         const isCollapsed = collapsed.has(row.path);
+        // WorkLogTable ile aynı kural: hafta sonu/tatil/izin renklendirmesi sadece gerçek bir
+        // çalışana (Kişi boyutu) karşılık gelen satırlarda görünür — Proje gibi başka
+        // boyutlardaki satırlarda hiç görünmez.
+        const hasEmployeeContext = !!row.employeeId;
 
         return (
           <Fragment key={row.path}>
@@ -106,17 +121,42 @@ function TableRows({ rows, columns, collapsed, onToggle }: RowsProps) {
                 )}
                 {row.rowLabel}
               </td>
-              {columns.map((column) => (
-                <td key={column.key} className="border-r border-slate-200 p-1">
-                  <AccuracyCell actual={row.cellActual[column.key] ?? 0} planned={row.cellPlanned[column.key] ?? 0} />
-                </td>
-              ))}
+              {columns.map((column) => {
+                const leave = hasEmployeeContext
+                  ? cellLeaveStatus(row.employeeId, column, leaveRangesByEmployee)
+                  : 'none';
+                const isHoliday = isHolidayColumn(column, holidayDateKeys);
+                const dayBgClass =
+                  leave === 'full'
+                    ? 'bg-violet-200'
+                    : leave === 'partial'
+                      ? 'bg-violet-100'
+                      : isHoliday
+                        ? 'bg-red-50'
+                        : columnHeaderClass(column, holidayDateKeys, todayKey);
+                const title =
+                  leave === 'full' ? 'İzinli (Tam Gün)' : leave === 'partial' ? 'İzinli (Kısmi/Saatlik)' : undefined;
+
+                return (
+                  <td key={column.key} title={title} className={`border-r border-slate-200 p-1 ${dayBgClass}`}>
+                    <AccuracyCell actual={row.cellActual[column.key] ?? 0} planned={row.cellPlanned[column.key] ?? 0} />
+                  </td>
+                );
+              })}
               <td className="p-1">
                 <AccuracyCell actual={row.totalActual} planned={row.totalPlanned} />
               </td>
             </tr>
             {hasChildren && !isCollapsed && (
-              <TableRows rows={row.children!} columns={columns} collapsed={collapsed} onToggle={onToggle} />
+              <TableRows
+                rows={row.children!}
+                columns={columns}
+                collapsed={collapsed}
+                onToggle={onToggle}
+                holidayDateKeys={holidayDateKeys}
+                todayKey={todayKey}
+                leaveRangesByEmployee={leaveRangesByEmployee}
+              />
             )}
           </Fragment>
         );
@@ -131,6 +171,11 @@ export const PLANNING_ACCURACY_LEGEND_ITEMS: { swatchClass: string; label: strin
   { swatchClass: 'bg-orange-500', label: 'Büyük sapma (%30–50)' },
   { swatchClass: 'bg-red-700', label: 'Kritik sapma (>%50)' },
   { swatchClass: 'bg-slate-50 border border-slate-200', label: 'Ne plan ne gerçekleşen var (—)' },
+  { swatchClass: 'bg-amber-200 border border-amber-400', label: 'Bugün' },
+  { swatchClass: 'bg-red-200 border border-red-400', label: 'Resmi Tatil' },
+  { swatchClass: 'bg-slate-300 border border-slate-400', label: 'Hafta Sonu' },
+  { swatchClass: 'bg-violet-300 border border-violet-500', label: 'İzinli (Tam Gün)' },
+  { swatchClass: 'bg-violet-100 border border-violet-300', label: 'İzinli (Kısmi/Saatlik)' },
 ];
 
 /** Planlama Doğruluğu tablosu — WorkLogTable'daki expand/collapse ağaç mantığının sadeleştirilmiş
@@ -143,6 +188,9 @@ export function PlanningAccuracyTable({
   grandTotalPlannedByColumn,
   grandTotalActual,
   grandTotalPlanned,
+  holidayDateKeys,
+  todayKey,
+  leaveRangesByEmployee,
 }: PlanningAccuracyTableProps) {
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
   // Diğer tablolarda olduğu gibi her zaman A-Z sıralı başlar — başlığa tıklayarak değiştirilebilir.
@@ -183,7 +231,10 @@ export function PlanningAccuracyTable({
             {columns.map((column) => (
               <th
                 key={column.key}
-                className="sticky top-0 z-20 min-w-[6rem] border-r border-b border-slate-200 bg-slate-50 px-2 py-2 text-center font-semibold text-slate-500"
+                className={
+                  'sticky top-0 z-20 min-w-[6rem] border-r border-b border-slate-200 px-2 py-2 text-center font-semibold text-slate-500 ' +
+                  (columnHeaderClass(column, holidayDateKeys, todayKey) || 'bg-slate-50')
+                }
               >
                 <div>{column.label}</div>
                 {column.sublabel && <div className="text-[10px] font-normal text-slate-400">{column.sublabel}</div>}
@@ -202,7 +253,15 @@ export function PlanningAccuracyTable({
               </td>
             </tr>
           )}
-          <TableRows rows={displayRows} columns={columns} collapsed={collapsed} onToggle={toggle} />
+          <TableRows
+            rows={displayRows}
+            columns={columns}
+            collapsed={collapsed}
+            onToggle={toggle}
+            holidayDateKeys={holidayDateKeys}
+            todayKey={todayKey}
+            leaveRangesByEmployee={leaveRangesByEmployee}
+          />
         </tbody>
         <tfoot>
           <tr className="border-t border-slate-200 bg-slate-50">

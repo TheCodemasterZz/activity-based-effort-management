@@ -12,4 +12,7 @@ public sealed class ProjectTaskDto
     public bool IsMilestone { get; init; }
     public decimal BaselineEffortHours { get; init; }
     public DateOnly BaselineEndDate { get; init; }
+    public Guid? ParentTaskId { get; init; }
+    public Guid? DependsOnTaskId { get; init; }
+    public Guid? AssignedEmployeeId { get; init; }
 }

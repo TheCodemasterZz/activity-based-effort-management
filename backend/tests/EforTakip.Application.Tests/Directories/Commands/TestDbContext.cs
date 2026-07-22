@@ -7,6 +7,7 @@ using EforTakip.Domain.Employees;
 using EforTakip.Domain.Holidays;
 using EforTakip.Domain.Notifications;
 using EforTakip.Domain.Projects;
+using EforTakip.Domain.Settings;
 using EforTakip.Domain.ValueStreams;
 using EforTakip.Domain.WorkCalendars;
 using EforTakip.Domain.WorkLogApprovals;
@@ -27,6 +28,10 @@ public sealed class TestDbContext(DbContextOptions<TestDbContext> options)
     public DbSet<Project> Projects => Set<Project>();
     public DbSet<ProjectCustomerAssignment> ProjectCustomerAssignments => Set<ProjectCustomerAssignment>();
     public DbSet<ProjectEmployeeAssignment> ProjectEmployeeAssignments => Set<ProjectEmployeeAssignment>();
+    public DbSet<ProjectTask> ProjectTasks => Set<ProjectTask>();
+    public DbSet<ProjectRisk> ProjectRisks => Set<ProjectRisk>();
+    public DbSet<ProjectIssue> ProjectIssues => Set<ProjectIssue>();
+    public DbSet<ConfidenceScoreSettings> ConfidenceScoreSettings => Set<ConfidenceScoreSettings>();
     public DbSet<ValueStream> ValueStreams => Set<ValueStream>();
     public DbSet<ValueStreamStage> ValueStreamStages => Set<ValueStreamStage>();
     public DbSet<Activity> Activities => Set<Activity>();

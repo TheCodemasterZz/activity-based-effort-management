@@ -11,17 +11,15 @@ public class EmployeeWorkLogTests
     {
         var employeeId = Guid.NewGuid();
         var projectId = Guid.NewGuid();
-        var customerId = Guid.NewGuid();
         var activityL1Id = Guid.NewGuid();
         var activityL2Id = Guid.NewGuid();
         var workDate = DateOnly.FromDateTime(DateTime.Today);
 
         var log = EmployeeWorkLog.Create(
-            employeeId, projectId, customerId, activityL1Id, activityL2Id, workDate, 4m, "Kod inceleme yapıldı.");
+            employeeId, projectId, activityL1Id, activityL2Id, workDate, 4m, "Kod inceleme yapıldı.");
 
         log.EmployeeId.Should().Be(employeeId);
         log.ProjectId.Should().Be(projectId);
-        log.CustomerId.Should().Be(customerId);
         log.ActivityL1Id.Should().Be(activityL1Id);
         log.ActivityL2Id.Should().Be(activityL2Id);
         log.WorkDate.Should().Be(workDate);
@@ -36,7 +34,7 @@ public class EmployeeWorkLogTests
     public void Create_WithInvalidHours_ThrowsBusinessRuleValidationException(double hours)
     {
         var act = () => EmployeeWorkLog.Create(
-            Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(),
+            Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(),
             DateOnly.FromDateTime(DateTime.Today), (decimal)hours, "Açıklama");
 
         act.Should().Throw<BusinessRuleValidationException>();
@@ -49,7 +47,7 @@ public class EmployeeWorkLogTests
     public void Create_WithEmptyDescription_ThrowsBusinessRuleValidationException(string? description)
     {
         var act = () => EmployeeWorkLog.Create(
-            Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(),
+            Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(),
             DateOnly.FromDateTime(DateTime.Today), 4m, description!);
 
         act.Should().Throw<BusinessRuleValidationException>();

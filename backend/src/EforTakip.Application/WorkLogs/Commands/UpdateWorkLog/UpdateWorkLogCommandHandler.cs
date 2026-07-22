@@ -23,14 +23,14 @@ public sealed class UpdateWorkLogCommandHandler(
 
         await WorkLogValidationHelper.ValidateAsync(
             projectRepository, activityRepository,
-            request.ProjectId, request.CustomerId, request.EmployeeId,
+            request.ProjectId, request.EmployeeId,
             request.ActivityL1Id, request.ActivityL2Id, cancellationToken);
 
         await WorkLogApprovalGuard.EnsureRangeNotApprovedAsync(
             db, request.EmployeeId, request.WorkDate, request.WorkDate, log.EntryType, cancellationToken);
 
         log.Update(
-            request.EmployeeId, request.ProjectId, request.CustomerId,
+            request.EmployeeId, request.ProjectId,
             request.ActivityL1Id, request.ActivityL2Id, request.WorkDate, request.Hours, request.Description);
 
         await unitOfWork.SaveChangesAsync(cancellationToken);

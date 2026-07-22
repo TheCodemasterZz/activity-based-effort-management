@@ -21,7 +21,7 @@ public sealed class EmployeeWorkLogsController(ISender mediator) : ControllerBas
     public async Task<IActionResult> LogWork(LogWorkRequestBody body, CancellationToken cancellationToken)
     {
         var command = new LogWorkCommand(
-            body.EmployeeId, body.ProjectId, body.CustomerId,
+            body.EmployeeId, body.ProjectId,
             body.ActivityL1Id, body.ActivityL2Id, body.StartDate, body.EndDate, body.Hours, body.Description,
             body.EntryType);
 
@@ -40,7 +40,7 @@ public sealed class EmployeeWorkLogsController(ISender mediator) : ControllerBas
     public async Task<IActionResult> Update(Guid id, UpdateWorkLogRequestBody body, CancellationToken cancellationToken)
     {
         var command = new UpdateWorkLogCommand(
-            id, body.EmployeeId, body.ProjectId, body.CustomerId,
+            id, body.EmployeeId, body.ProjectId,
             body.ActivityL1Id, body.ActivityL2Id, body.WorkDate, body.Hours, body.Description);
 
         await mediator.Send(command, cancellationToken);

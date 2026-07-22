@@ -32,5 +32,23 @@ public sealed class ProjectTaskConfiguration : IEntityTypeConfiguration<ProjectT
             .IsRequired();
 
         builder.HasIndex(t => t.ProjectId);
+
+        // Self-FK'ler: WBS hiyerarşisi (ParentTaskId) ve basit finish-to-start bağımlılık
+        // (DependsOnTaskId). Restrict — bir görev silinirken alt/bağımlı görevlerin sessizce
+        // kopması istenmiyor (silme komutu zaten hard-delete, kazara zincirleme kayıp riski var).
+        builder.HasOne<ProjectTask>()
+            .WithMany()
+            .HasForeignKey(t => t.ParentTaskId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne<ProjectTask>()
+            .WithMany()
+            .HasForeignKey(t => t.DependsOnTaskId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne<EforTakip.Domain.Employees.Employee>()
+            .WithMany()
+            .HasForeignKey(t => t.AssignedEmployeeId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }

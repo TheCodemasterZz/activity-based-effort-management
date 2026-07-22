@@ -23,20 +23,18 @@ public class LogWorkCommandHandlerTests
         _db.EmployeeWorkLogs.Returns(Substitute.For<DbSet<EmployeeWorkLog>>());
     }
 
-    private (Project project, Guid customerId, Guid employeeId) CreateAssignedProject()
+    private (Project project, Guid employeeId) CreateAssignedProject()
     {
         var project = Project.Create("Efor Takip Platformu", null);
-        var customerId = Guid.NewGuid();
         var employeeId = Guid.NewGuid();
-        project.AssignCustomer(customerId);
         project.AssignEmployee(employeeId);
-        return (project, customerId, employeeId);
+        return (project, employeeId);
     }
 
     [Fact]
     public async Task Handle_WithSingleDay_CreatesOneWorkLog()
     {
-        var (project, customerId, employeeId) = CreateAssignedProject();
+        var (project, employeeId) = CreateAssignedProject();
         var activityL1 = DomainActivity.Create("Geliştirme", null, null);
         var activityL2 = DomainActivity.Create("Kod İnceleme", null, activityL1.Id);
 
@@ -47,7 +45,7 @@ public class LogWorkCommandHandlerTests
         var handler = new LogWorkCommandHandler(_projectRepository, _activityRepository, _db, _unitOfWork);
         var date = DateOnly.FromDateTime(DateTime.Today);
         var command = new LogWorkCommand(
-            employeeId, project.Id, customerId, activityL1.Id, activityL2.Id, date, date, 3m, "Açıklama");
+            employeeId, project.Id, activityL1.Id, activityL2.Id, date, date, 3m, "Açıklama");
 
         var result = await handler.Handle(command, CancellationToken.None);
 
@@ -59,7 +57,7 @@ public class LogWorkCommandHandlerTests
     [Fact]
     public async Task Handle_WithDateRange_CreatesOneWorkLogPerDay()
     {
-        var (project, customerId, employeeId) = CreateAssignedProject();
+        var (project, employeeId) = CreateAssignedProject();
         var activityL1 = DomainActivity.Create("Geliştirme", null, null);
         var activityL2 = DomainActivity.Create("Kod İnceleme", null, activityL1.Id);
 
@@ -71,7 +69,7 @@ public class LogWorkCommandHandlerTests
         var startDate = DateOnly.FromDateTime(DateTime.Today.AddDays(-4));
         var endDate = DateOnly.FromDateTime(DateTime.Today);
         var command = new LogWorkCommand(
-            employeeId, project.Id, customerId, activityL1.Id, activityL2.Id, startDate, endDate, 2m, "Açıklama");
+            employeeId, project.Id, activityL1.Id, activityL2.Id, startDate, endDate, 2m, "Açıklama");
 
         var result = await handler.Handle(command, CancellationToken.None);
 
@@ -79,34 +77,9 @@ public class LogWorkCommandHandlerTests
     }
 
     [Fact]
-    public async Task Handle_WithUnassignedCustomer_ThrowsBusinessRuleValidationException()
-    {
-        var project = Project.Create("Efor Takip Platformu", null);
-        var employeeId = Guid.NewGuid();
-        project.AssignEmployee(employeeId);
-        var activityL1 = DomainActivity.Create("Geliştirme", null, null);
-        var activityL2 = DomainActivity.Create("Kod İnceleme", null, activityL1.Id);
-
-        _projectRepository.GetByIdAsync(project.Id, Arg.Any<CancellationToken>()).Returns(project);
-        _activityRepository.GetByIdAsync(activityL1.Id, Arg.Any<CancellationToken>()).Returns(activityL1);
-        _activityRepository.GetByIdAsync(activityL2.Id, Arg.Any<CancellationToken>()).Returns(activityL2);
-
-        var handler = new LogWorkCommandHandler(_projectRepository, _activityRepository, _db, _unitOfWork);
-        var date = DateOnly.FromDateTime(DateTime.Today);
-        var command = new LogWorkCommand(
-            employeeId, project.Id, Guid.NewGuid(), activityL1.Id, activityL2.Id, date, date, 3m, "Açıklama");
-
-        var act = async () => await handler.Handle(command, CancellationToken.None);
-
-        await act.Should().ThrowAsync<BusinessRuleValidationException>();
-    }
-
-    [Fact]
     public async Task Handle_WithUnassignedEmployee_ThrowsBusinessRuleValidationException()
     {
         var project = Project.Create("Efor Takip Platformu", null);
-        var customerId = Guid.NewGuid();
-        project.AssignCustomer(customerId);
         var activityL1 = DomainActivity.Create("Geliştirme", null, null);
         var activityL2 = DomainActivity.Create("Kod İnceleme", null, activityL1.Id);
 
@@ -117,7 +90,7 @@ public class LogWorkCommandHandlerTests
         var handler = new LogWorkCommandHandler(_projectRepository, _activityRepository, _db, _unitOfWork);
         var date = DateOnly.FromDateTime(DateTime.Today);
         var command = new LogWorkCommand(
-            Guid.NewGuid(), project.Id, customerId, activityL1.Id, activityL2.Id, date, date, 3m, "Açıklama");
+            Guid.NewGuid(), project.Id, activityL1.Id, activityL2.Id, date, date, 3m, "Açıklama");
 
         var act = async () => await handler.Handle(command, CancellationToken.None);
 
@@ -127,7 +100,7 @@ public class LogWorkCommandHandlerTests
     [Fact]
     public async Task Handle_WithNonTopLevelActivityL1_ThrowsBusinessRuleValidationException()
     {
-        var (project, customerId, employeeId) = CreateAssignedProject();
+        var (project, employeeId) = CreateAssignedProject();
         var parent = DomainActivity.Create("Geliştirme", null, null);
         var subActivity = DomainActivity.Create("Kod İnceleme", null, parent.Id);
         var grandchild = DomainActivity.Create("Detay", null, subActivity.Id);
@@ -139,7 +112,7 @@ public class LogWorkCommandHandlerTests
         var handler = new LogWorkCommandHandler(_projectRepository, _activityRepository, _db, _unitOfWork);
         var date = DateOnly.FromDateTime(DateTime.Today);
         var command = new LogWorkCommand(
-            employeeId, project.Id, customerId, subActivity.Id, grandchild.Id, date, date, 3m, "Açıklama");
+            employeeId, project.Id, subActivity.Id, grandchild.Id, date, date, 3m, "Açıklama");
 
         var act = async () => await handler.Handle(command, CancellationToken.None);
 
@@ -149,7 +122,7 @@ public class LogWorkCommandHandlerTests
     [Fact]
     public async Task Handle_WithActivityL2NotChildOfActivityL1_ThrowsBusinessRuleValidationException()
     {
-        var (project, customerId, employeeId) = CreateAssignedProject();
+        var (project, employeeId) = CreateAssignedProject();
         var activityL1 = DomainActivity.Create("Geliştirme", null, null);
         var unrelatedL1 = DomainActivity.Create("Test", null, null);
         var activityL2 = DomainActivity.Create("Test Senaryosu Yazma", null, unrelatedL1.Id);
@@ -161,7 +134,7 @@ public class LogWorkCommandHandlerTests
         var handler = new LogWorkCommandHandler(_projectRepository, _activityRepository, _db, _unitOfWork);
         var date = DateOnly.FromDateTime(DateTime.Today);
         var command = new LogWorkCommand(
-            employeeId, project.Id, customerId, activityL1.Id, activityL2.Id, date, date, 3m, "Açıklama");
+            employeeId, project.Id, activityL1.Id, activityL2.Id, date, date, 3m, "Açıklama");
 
         var act = async () => await handler.Handle(command, CancellationToken.None);
 

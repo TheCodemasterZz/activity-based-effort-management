@@ -36,7 +36,12 @@ export function RatioGaugeWidget({ percent, color, size = 56, label }: RatioGaug
           wrapperStyle={{ zIndex: 50, outline: 'none' }}
         />
       </RadialBarChart>
-      <div className="pointer-events-none absolute inset-0 flex items-center justify-center text-[13px] font-semibold text-slate-700">
+      <div
+        className={
+          'pointer-events-none absolute inset-0 flex items-center justify-center font-semibold text-slate-700 ' +
+          (size <= 48 ? 'text-[10px]' : 'text-[13px]')
+        }
+      >
         {`${clamped.toFixed(0)}%`}
       </div>
     </div>

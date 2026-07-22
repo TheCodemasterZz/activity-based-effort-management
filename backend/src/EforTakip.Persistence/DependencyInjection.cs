@@ -48,6 +48,8 @@ public static class DependencyInjection
         services.AddScoped<IRepository<Employee>, RepositoryBase<Employee>>();
         services.AddScoped<IProjectRepository, ProjectRepository>();
         services.AddScoped<IRepository<ProjectTask>, RepositoryBase<ProjectTask>>();
+        services.AddScoped<IRepository<ProjectRisk>, RepositoryBase<ProjectRisk>>();
+        services.AddScoped<IRepository<ProjectIssue>, RepositoryBase<ProjectIssue>>();
         services.AddScoped<IValueStreamRepository, ValueStreamRepository>();
         services.AddScoped<IRepository<DomainActivity>, RepositoryBase<DomainActivity>>();
         services.AddScoped<IRepository<EmployeeWorkLog>, RepositoryBase<EmployeeWorkLog>>();

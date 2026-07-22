@@ -19,7 +19,6 @@ import { useWorkLogs } from '../hooks/useWorkLogs';
 import { useEmployees } from '../hooks/useEmployees';
 import { useEmployeeLeaves } from '../hooks/useEmployeeLeaves';
 import { useProjects } from '../hooks/useProjects';
-import { useCustomers } from '../hooks/useCustomers';
 import { useAllActivities } from '../hooks/useActivities';
 import { useHolidays } from '../hooks/useHolidays';
 import { getWorkCalendarById } from '../api/workCalendars';
@@ -265,23 +264,20 @@ export function CapacityManagementPage() {
   const employeeLeaves = useEmployeeLeaves();
   const holidays = useHolidays();
   const projects = useProjects();
-  const customers = useCustomers();
   const activities = useAllActivities();
 
   const employeesById = useMemo(() => new Map(employees.data?.items.map((e) => [e.id, e.name])), [employees.data]);
   const projectsById = useMemo(() => new Map(projects.data?.items.map((p) => [p.id, p.name])), [projects.data]);
-  const customersById = useMemo(() => new Map(customers.data?.items.map((c) => [c.id, c.name])), [customers.data]);
   const activitiesById = useMemo(() => new Map(activities.data?.items.map((a) => [a.id, a.name])), [activities.data]);
 
   const mqlFieldValues = useMemo(
     () => ({
       employee: employees.data?.items.map((e) => e.name) ?? [],
       project: projects.data?.items.map((p) => p.name) ?? [],
-      customer: customers.data?.items.map((c) => c.name) ?? [],
       activityL1: activities.data?.items.filter((a) => !a.parentActivityId).map((a) => a.name) ?? [],
       activityL2: activities.data?.items.filter((a) => a.parentActivityId).map((a) => a.name) ?? [],
     }),
-    [employees.data, projects.data, customers.data, activities.data],
+    [employees.data, projects.data, activities.data],
   );
 
   const filterLogs = (logs: EmployeeWorkLogDto[]) => {
@@ -290,7 +286,6 @@ export function CapacityManagementPage() {
       evaluateMql(mqlAst, {
         employee: employeesById.get(log.employeeId) ?? '',
         project: projectsById.get(log.projectId) ?? '',
-        customer: customersById.get(log.customerId) ?? '',
         activityL1: activitiesById.get(log.activityL1Id) ?? '',
         activityL2: activitiesById.get(log.activityL2Id) ?? '',
         hours: log.hours,
@@ -302,11 +297,11 @@ export function CapacityManagementPage() {
 
   const filteredActualLogs = useMemo(
     () => filterLogs(actualLogs.data?.items ?? []),
-    [actualLogs.data, mqlAst, employeesById, projectsById, customersById, activitiesById],
+    [actualLogs.data, mqlAst, employeesById, projectsById, activitiesById],
   );
   const filteredPlannedLogs = useMemo(
     () => filterLogs(plannedLogs.data?.items ?? []),
-    [plannedLogs.data, mqlAst, employeesById, projectsById, customersById, activitiesById],
+    [plannedLogs.data, mqlAst, employeesById, projectsById, activitiesById],
   );
 
   const holidayDateKeys = useMemo(() => new Set(holidays.data?.items.map((h) => h.date) ?? []), [holidays.data]);

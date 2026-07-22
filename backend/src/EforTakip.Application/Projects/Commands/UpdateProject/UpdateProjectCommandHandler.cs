@@ -13,7 +13,15 @@ public sealed class UpdateProjectCommandHandler(IProjectRepository repository, I
         var project = await repository.GetByIdAsync(request.Id, cancellationToken)
             ?? throw new NotFoundException(nameof(Project), request.Id);
 
-        project.Update(request.Name, request.Description, request.StartDate, request.EndDate);
+        project.Update(
+            request.Name,
+            request.Description,
+            request.StartDate,
+            request.EndDate,
+            request.Sponsor,
+            request.ProjectManagerEmployeeId,
+            request.Priority,
+            request.StrategicGoal);
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
     }

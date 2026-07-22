@@ -19,15 +19,14 @@ const PARAM_ROWS: { param: string; description: string; required: boolean }[] = 
       'gerçek imza/JWT doğrulaması backend tarafında henüz yok, prod öncesi eklenmesi gerekir.)',
     required: true,
   },
-  { param: 'employeeId', description: 'Önceden seçili kişinin GUID\'i.', required: false },
-  { param: 'projectId', description: 'Önceden seçili projenin GUID\'i.', required: false },
-  { param: 'customerId', description: 'Önceden seçili müşterinin GUID\'i (projectId ile birlikte anlamlıdır).', required: false },
+  { param: 'employeeId', description: 'Kişinin GUID\'i — widget\'ın kimin adına açılacağını belirler.', required: true },
+  { param: 'projectId', description: 'Projenin GUID\'i — widget\'ın hangi proje için açılacağını belirler.', required: true },
   { param: 'activityL1Id', description: 'Önceden seçili Activity L1 GUID\'i.', required: false },
   { param: 'activityL2Id', description: 'Önceden seçili Activity L2 GUID\'i.', required: false },
-  { param: 'date', description: 'Önceden doldurulacak tarih (yyyy-MM-dd).', required: false },
-  { param: 'hours', description: 'Önceden doldurulacak süre, ör. 1h 30m, 2h, 45m.', required: false },
-  { param: 'description', description: 'Önceden doldurulacak açıklama metni.', required: false },
 ];
+
+// date/hours/description BİLEREK bu listede yok ve URL'den okunmuyor — bunlar formda kullanıcının
+// kendisinin dolduracağı alanlardır, request üzerinden önceden doldurulamaz (bkz. WidgetLogWorkPage.tsx).
 
 type WidgetMode = 'log-work' | 'plan-work';
 
@@ -62,21 +61,15 @@ export function WidgetsPage() {
   const [projectQuery, setProjectQuery] = useState('');
   const projectSearch = useProjectSearch(projectQuery, employeeId || null);
 
-  const [date, setDate] = useState('');
-  const [hours, setHours] = useState('');
-  const [description, setDescription] = useState('');
-
   const generatedUrl = useMemo(
-    () => buildWidgetUrl(mode, { token, employeeId, projectId, date, hours, description }),
-    [mode, token, employeeId, projectId, date, hours, description],
+    () => buildWidgetUrl(mode, { token, employeeId, projectId }),
+    [mode, token, employeeId, projectId],
   );
 
   const exampleUrl = buildWidgetUrl(mode, {
     token: '<erişim-token\'ınız>',
     employeeId: '00000000-0000-0000-0000-000000000000',
     projectId: '00000000-0000-0000-0000-000000000000',
-    date: '2026-07-21',
-    hours: '2h',
   });
 
   const copy = async (text: string) => {
@@ -208,34 +201,6 @@ export function WidgetsPage() {
               placeholder="Proje ara…"
               disabled={!employeeId}
               disabledMessage="Önce kişi seçin"
-            />
-          </div>
-          <div>
-            <label className="mb-1 block text-xs font-medium text-slate-500">Tarih</label>
-            <input
-              type="date"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-              className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
-            />
-          </div>
-          <div>
-            <label className="mb-1 block text-xs font-medium text-slate-500">Saat</label>
-            <input
-              type="text"
-              value={hours}
-              onChange={(e) => setHours(e.target.value)}
-              placeholder="ör. 1h 30m"
-              className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
-            />
-          </div>
-          <div className="md:col-span-2">
-            <label className="mb-1 block text-xs font-medium text-slate-500">Açıklama</label>
-            <input
-              type="text"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
             />
           </div>
         </div>

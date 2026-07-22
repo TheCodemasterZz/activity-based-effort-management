@@ -1,13 +1,19 @@
 import { useEffect, useRef, useState } from 'react';
-import { MQL_FIELD_INFO, MqlParseError, parseMqlQuery, type MqlField, type MqlNode } from '../../lib/mql';
+import { MQL_FIELD_INFO, MqlParseError, parseMqlQuery, type MqlFieldInfo, type MqlNode } from '../../lib/mql';
 
 interface MqlFilterInputProps {
   onApply: (ast: MqlNode | null) => void;
   /** Alan bazlı, otomatik tamamlamada önerilecek bilinen değerler (ör. gerçek çalışan isimleri). */
-  fieldValues?: Partial<Record<MqlField, string[]>>;
+  fieldValues?: Partial<Record<string, string[]>>;
+  /** Bu MQL örneğinin çalıştığı alan şeması — verilmezse work log ekranlarının varsayılanı
+   * (MQL_FIELD_INFO) kullanılır. Başka bir veri modeli (ör. proje listesi) için kendi
+   * MqlFieldInfo[] listenizi geçin (bkz. ProjectsPage). */
+  fieldInfo?: MqlFieldInfo[];
+  /** Yardım panelindeki ve placeholder'daki örnek sorgu — alan şemasına uygun olmalı. */
+  example?: string;
 }
 
-const EXAMPLE = 'employee ~ "ayşe" AND hours > 5';
+const DEFAULT_EXAMPLE = 'employee ~ "ayşe" AND hours > 5';
 
 const OPERATORS_BY_LENGTH = ['!=', '!~', '>=', '<=', '=', '~', '>', '<'];
 
@@ -45,15 +51,16 @@ function findWordStart(text: string, cursor: number): number {
   return start;
 }
 
-function resolveFieldByText(raw: string) {
+function resolveFieldByText(raw: string, fieldInfoList: MqlFieldInfo[]) {
   const lower = raw.trim().toLocaleLowerCase('tr');
-  return MQL_FIELD_INFO.find((f) => f.field.toLocaleLowerCase('tr') === lower || f.aliases.includes(lower));
+  return fieldInfoList.find((f) => f.field.toLocaleLowerCase('tr') === lower || f.aliases.includes(lower));
 }
 
 function computeSuggestions(
   text: string,
   cursor: number,
-  fieldValues: Partial<Record<MqlField, string[]>>,
+  fieldValues: Partial<Record<string, string[]>>,
+  fieldInfoList: MqlFieldInfo[],
 ): { range: { start: number; end: number }; items: Suggestion[] } {
   const clauseStart = findClauseStart(text, cursor);
   const clauseTextUpToCursor = text.slice(clauseStart, cursor);
@@ -64,9 +71,8 @@ function computeSuggestions(
     const word = text.slice(wordStart, cursor);
     if (word.length === 0) return { range: { start: wordStart, end: cursor }, items: [] };
     const lower = word.toLocaleLowerCase('tr');
-    const items: Suggestion[] = MQL_FIELD_INFO.filter(
-      (f) => f.field.toLocaleLowerCase('tr').startsWith(lower) || f.aliases.some((a) => a.startsWith(lower)),
-    )
+    const items: Suggestion[] = fieldInfoList
+      .filter((f) => f.field.toLocaleLowerCase('tr').startsWith(lower) || f.aliases.some((a) => a.startsWith(lower)))
       .slice(0, 8)
       .map((f) => ({ kind: 'field', insertText: `${f.field} `, display: f.field, sub: f.label }));
     return { range: { start: wordStart, end: cursor }, items };
@@ -77,7 +83,7 @@ function computeSuggestions(
   while (valueStart < cursor && /\s/.test(text[valueStart])) valueStart++;
 
   const fieldPart = clauseTextUpToCursor.slice(0, opMatch.index).trim();
-  const field = resolveFieldByText(fieldPart);
+  const field = resolveFieldByText(fieldPart, fieldInfoList);
   if (!field) return { range: { start: valueStart, end: cursor }, items: [] };
 
   const values = fieldValues[field.field];
@@ -108,7 +114,7 @@ function computeSuggestions(
 
 /** Work log satırlarını serbest metin sorgusuyla filtrelemek için arama çubuğu —
  * "Mesainâme Query Language" (MQL). Enter'a basılana kadar tabloyu değiştirmez. */
-export function MqlFilterInput({ onApply, fieldValues = {} }: MqlFilterInputProps) {
+export function MqlFilterInput({ onApply, fieldValues = {}, fieldInfo = MQL_FIELD_INFO, example }: MqlFilterInputProps) {
   const [text, setText] = useState('');
   const [cursorPos, setCursorPos] = useState(0);
   const [error, setError] = useState<string | null>(null);
@@ -117,8 +123,9 @@ export function MqlFilterInput({ onApply, fieldValues = {} }: MqlFilterInputProp
   const [activeIndex, setActiveIndex] = useState(0);
   const helpRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const exampleText = example ?? DEFAULT_EXAMPLE;
 
-  const suggestions = computeSuggestions(text, cursorPos, fieldValues);
+  const suggestions = computeSuggestions(text, cursorPos, fieldValues, fieldInfo);
   const clampedActiveIndex = Math.min(activeIndex, Math.max(suggestions.items.length - 1, 0));
   const showAutocomplete = isAutocompleteOpen && suggestions.items.length > 0;
 
@@ -160,7 +167,7 @@ export function MqlFilterInput({ onApply, fieldValues = {} }: MqlFilterInputProp
       return;
     }
     try {
-      const ast = parseMqlQuery(value);
+      const ast = parseMqlQuery(value, fieldInfo);
       setError(null);
       onApply(ast);
     } catch (err) {
@@ -222,7 +229,7 @@ export function MqlFilterInput({ onApply, fieldValues = {} }: MqlFilterInputProp
             }
             if (e.key === 'Enter') commit(text);
           }}
-          placeholder={`ör. ${EXAMPLE}`}
+          placeholder={`ör. ${exampleText}`}
           className="min-w-0 flex-1 text-sm text-slate-700 placeholder:text-slate-400 focus:outline-none"
         />
         {text && (
@@ -257,7 +264,7 @@ export function MqlFilterInput({ onApply, fieldValues = {} }: MqlFilterInputProp
               </div>
               <div className="mb-1 font-semibold text-slate-600">Alanlar</div>
               <ul className="mb-2 space-y-0.5 text-slate-500">
-                {MQL_FIELD_INFO.map((f) => (
+                {fieldInfo.map((f) => (
                   <li key={f.field}>
                     <code className="rounded bg-slate-100 px-1 text-indigo-700">{f.field}</code> — {f.label}
                   </li>
@@ -281,10 +288,10 @@ export function MqlFilterInput({ onApply, fieldValues = {} }: MqlFilterInputProp
                 ile gruplayın; parantezler iç içe de kullanılabilir.
               </div>
               <code className="mb-2 block rounded bg-slate-100 px-1.5 py-1 text-indigo-700">
-                (project = "X" OR customer = "Y") AND hours &gt; 5
+                (project = "X" OR project = "Y") AND hours &gt; 5
               </code>
               <div className="mb-1 font-semibold text-slate-600">Örnek</div>
-              <code className="block rounded bg-slate-100 px-1.5 py-1 text-indigo-700">{EXAMPLE}</code>
+              <code className="block rounded bg-slate-100 px-1.5 py-1 text-indigo-700">{exampleText}</code>
             </div>
           )}
         </div>
