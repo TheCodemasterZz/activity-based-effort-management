@@ -138,3 +138,104 @@ export interface ProblemDetails {
   detail?: string;
   errors?: Record<string, string[]>;
 }
+
+export interface LoginResultDto {
+  token: string;
+  expiresAtUtc: string;
+  userId: string;
+  username: string;
+  displayName: string | null;
+  source: number;
+}
+
+export interface DirectoryDto {
+  id: string;
+  name: string;
+  source: number;
+  directoryType: string | null;
+  hostname: string | null;
+  port: number;
+  useSsl: boolean;
+  bindUsername: string | null;
+  baseDn: string | null;
+  additionalUserDn: string | null;
+  additionalGroupDn: string | null;
+  permission: number;
+  userObjectClass: string | null;
+  userObjectFilter: string | null;
+  usernameAttribute: string | null;
+  usernameRdnAttribute: string | null;
+  firstNameAttribute: string | null;
+  lastNameAttribute: string | null;
+  displayNameAttribute: string | null;
+  emailAttribute: string | null;
+  uniqueIdAttribute: string | null;
+  syncSchedule: number;
+  isActive: boolean;
+  sortOrder: number;
+  lastSyncedUtc: string | null;
+}
+
+export interface DirectoryUserDto {
+  id: string;
+  directoryId: string;
+  directoryName: string;
+  source: number;
+  username: string;
+  firstName: string | null;
+  lastName: string | null;
+  displayName: string | null;
+  email: string | null;
+  isActive: boolean;
+  lastSyncedUtc: string | null;
+}
+
+export interface DirectoryUserAttributeValueDto {
+  systemFieldName: string;
+  adAttributeName: string;
+  fieldType: string;
+  value: string | null;
+  referencedDirectoryUserId: string | null;
+}
+
+export interface DirectoryUserDetailDto extends DirectoryUserDto {
+  attributes: DirectoryUserAttributeValueDto[];
+}
+
+export interface DirectoryAttributeMappingDto {
+  id: string;
+  adAttributeName: string;
+  systemFieldName: string;
+  fieldType: string;
+  isSynced: boolean;
+  sortOrder: number;
+}
+
+export interface DirectorySyncResultDto {
+  directoryId: string;
+  directoryName: string;
+  added: number;
+  updated: number;
+  deactivated: number;
+  totalFromDirectory: number;
+  syncedAtUtc: string;
+}
+
+export interface LdapConnectionTestResult {
+  success: boolean;
+  message: string;
+}
+
+export interface OrgChartNodeDto {
+  id: string;
+  username: string;
+  displayName: string;
+  managerId: string | null;
+  photoBase64: string | null;
+  unresolvedManagerName: string | null;
+}
+
+export interface OrgChartResultDto {
+  hasManagerMapping: boolean;
+  nodes: OrgChartNodeDto[];
+}

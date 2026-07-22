@@ -3,9 +3,14 @@ using MediatR;
 
 namespace EforTakip.Application.Common.Behaviors;
 
+/// <summary>
+/// NOT: Kısıt bilinçli olarak <c>notnull</c>; <c>IRequest&lt;TResponse&gt;</c> kullanılırsa
+/// yanıt döndürmeyen (<c>IRequest</c>) komutlar için kısıt sağlanamaz ve MediatR bu behavior'ı
+/// atlar — o komutlarda doğrulama sessizce çalışmaz.
+/// </summary>
 public sealed class ValidationBehavior<TRequest, TResponse>(IEnumerable<IValidator<TRequest>> validators)
     : IPipelineBehavior<TRequest, TResponse>
-    where TRequest : IRequest<TResponse>
+    where TRequest : notnull
 {
     public async Task<TResponse> Handle(
         TRequest request,
