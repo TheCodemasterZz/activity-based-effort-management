@@ -32,3 +32,10 @@ export interface CreateInternalUserPayload {
 export function createInternalUser(payload: CreateInternalUserPayload) {
   return apiClient.post<void>('/api/v1/directoryusers/internal', payload);
 }
+
+export function resetInternalUserPassword(directoryUserId: string, newPassword: string) {
+  return apiClient.post<void>(`/api/v1/directoryusers/${directoryUserId}/reset-password`, {
+    directoryUserId,
+    newPassword,
+  });
+}

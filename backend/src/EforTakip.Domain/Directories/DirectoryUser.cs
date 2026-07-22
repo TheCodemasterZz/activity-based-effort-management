@@ -89,6 +89,22 @@ public sealed class DirectoryUser : Entity, IAggregateRoot
 
     public void Activate() => IsActive = true;
 
+    /// <summary>
+    /// Internal kullanıcının şifresini değiştirir. AD kullanıcılarının şifresi dizinde tutulur,
+    /// sistemde saklanmaz — bu yüzden onlar için şifre atanamaz.
+    /// </summary>
+    public void SetPassword(string passwordHash)
+    {
+        if (Source != DirectorySource.Internal)
+            throw new BusinessRuleValidationException(
+                "Active Directory kullanıcısının şifresi sistemden değiştirilemez; şifre dizinde yönetilir.");
+
+        if (string.IsNullOrWhiteSpace(passwordHash))
+            throw new BusinessRuleValidationException("Şifre boş olamaz.");
+
+        PasswordHash = passwordHash;
+    }
+
     public void SetAttribute(Guid attributeMappingId, string? value)
     {
         var existing = _attributes.FirstOrDefault(a => a.AttributeMappingId == attributeMappingId);

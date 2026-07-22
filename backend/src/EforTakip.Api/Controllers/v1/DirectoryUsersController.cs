@@ -1,6 +1,7 @@
 using Asp.Versioning;
 using EforTakip.Application.Common.Models;
 using EforTakip.Application.Directories.Commands.CreateInternalUser;
+using EforTakip.Application.Directories.Commands.ResetInternalUserPassword;
 using EforTakip.Application.Directories.Dtos;
 using EforTakip.Application.Directories.Queries.GetDirectoryUserById;
 using EforTakip.Application.Directories.Queries.GetDirectoryUsers;
@@ -32,5 +33,16 @@ public sealed class DirectoryUsersController(ISender mediator) : ControllerBase
     {
         var id = await mediator.Send(command, cancellationToken);
         return CreatedAtAction(nameof(GetById), new { id, version = "1.0" }, null);
+    }
+
+    [HttpPost("{id:guid}/reset-password")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> ResetPassword(
+        Guid id, ResetInternalUserPasswordCommand command, CancellationToken cancellationToken)
+    {
+        if (id != command.DirectoryUserId)
+            return BadRequest("Route ve gövde kimlikleri eşleşmiyor.");
+        await mediator.Send(command, cancellationToken);
+        return NoContent();
     }
 }

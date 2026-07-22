@@ -1,4 +1,9 @@
-import { useDirectoryUser } from '../../../hooks/useDirectoryUsers';
+import { useState, type FormEvent } from 'react';
+import { ApiError } from '../../../api/client';
+import {
+  useDirectoryUser,
+  useResetInternalUserPasswordMutation,
+} from '../../../hooks/useDirectoryUsers';
 
 interface DirectoryUserCardProps {
   userId: string;
@@ -15,6 +20,74 @@ function InfoRow({ label, value }: { label: string; value: string }) {
     <div className="flex border-b border-slate-50 py-2 last:border-0">
       <div className="w-48 shrink-0 text-sm text-slate-500">{label}</div>
       <div className="text-sm text-slate-700">{value}</div>
+    </div>
+  );
+}
+
+/** Yalnızca internal kullanıcılar için; AD kullanıcısının şifresi dizinde yönetilir. */
+function ResetPasswordPanel({ userId }: { userId: string }) {
+  const [newPassword, setNewPassword] = useState('');
+  const [message, setMessage] = useState<{ text: string; isError: boolean } | null>(null);
+  const resetMutation = useResetInternalUserPasswordMutation();
+
+  const handleSubmit = async (event: FormEvent) => {
+    event.preventDefault();
+    setMessage(null);
+
+    try {
+      await resetMutation.mutateAsync({ userId, newPassword });
+      setNewPassword('');
+      setMessage({ text: 'Şifre güncellendi.', isError: false });
+    } catch (error) {
+      setMessage({
+        text: error instanceof ApiError ? error.message : 'Şifre güncellenemedi.',
+        isError: true,
+      });
+    }
+  };
+
+  return (
+    <div>
+      <h4 className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-400">Şifre</h4>
+      <p className="mb-3 text-sm text-slate-500">
+        Kullanıcının şifresini sıfırlayın. Yeni şifreyi kullanıcıya siz iletmelisiniz.
+      </p>
+
+      <form onSubmit={handleSubmit} className="flex flex-wrap items-end gap-2">
+        <label className="block">
+          <span className="mb-1 block text-xs font-medium text-slate-600">Yeni Şifre</span>
+          <input
+            type="password"
+            value={newPassword}
+            onChange={(e) => setNewPassword(e.target.value)}
+            autoComplete="new-password"
+            className="w-64 rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+          />
+        </label>
+        <button
+          type="submit"
+          disabled={newPassword.length < 8 || resetMutation.isPending}
+          className="rounded-lg bg-indigo-600 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:bg-slate-300"
+        >
+          {resetMutation.isPending ? 'Güncelleniyor…' : 'Şifreyi Sıfırla'}
+        </button>
+      </form>
+
+      {newPassword.length > 0 && newPassword.length < 8 && (
+        <p className="mt-2 text-xs text-slate-400">Şifre en az 8 karakter olmalıdır.</p>
+      )}
+
+      {message && (
+        <p
+          role="status"
+          className={
+            'mt-3 rounded-md px-3 py-2 text-sm ' +
+            (message.isError ? 'bg-rose-50 text-rose-700' : 'bg-emerald-50 text-emerald-700')
+          }
+        >
+          {message.text}
+        </p>
+      )}
     </div>
   );
 }
@@ -90,6 +163,8 @@ export function DirectoryUserCard({ userId, onBack }: DirectoryUserCardProps) {
               ))
             )}
           </div>
+
+          {user.source === 0 && <ResetPasswordPanel userId={user.id} />}
         </div>
       )}
     </div>

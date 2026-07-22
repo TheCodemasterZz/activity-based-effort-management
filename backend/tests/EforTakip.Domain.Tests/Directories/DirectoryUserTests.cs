@@ -84,6 +84,42 @@ public class DirectoryUserTests
     }
 
     [Fact]
+    public void SetPassword_OnInternalUser_ReplacesHash()
+    {
+        var user = DirectoryUser.CreateInternal(
+            Guid.NewGuid(), "sanal.kullanici", null, null, null, null, "ESKI_HASH");
+
+        user.SetPassword("YENI_HASH");
+
+        user.PasswordHash.Should().Be("YENI_HASH");
+    }
+
+    [Fact]
+    public void SetPassword_OnActiveDirectoryUser_Throws()
+    {
+        var user = DirectoryUser.CreateFromActiveDirectory(
+            Guid.NewGuid(), "serkan.gultepe", "Serkan", "Gültepe", "Serkan Gültepe", null, "guid");
+
+        // AD kullanıcısının şifresi dizinde tutulur; sistemde şifre atanamaz.
+        var act = () => user.SetPassword("YENI_HASH");
+
+        act.Should().Throw<BusinessRuleValidationException>();
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    public void SetPassword_WithEmptyHash_Throws(string hash)
+    {
+        var user = DirectoryUser.CreateInternal(
+            Guid.NewGuid(), "sanal.kullanici", null, null, null, null, "ESKI_HASH");
+
+        var act = () => user.SetPassword(hash);
+
+        act.Should().Throw<BusinessRuleValidationException>();
+    }
+
+    [Fact]
     public void SetAttribute_WithNewMapping_AddsAttribute()
     {
         var user = DirectoryUser.CreateFromActiveDirectory(
