@@ -11,7 +11,7 @@ public sealed class CreateAttributeMappingCommandHandler(
     public async Task<Guid> Handle(CreateAttributeMappingCommand request, CancellationToken cancellationToken)
     {
         var mapping = DirectoryAttributeMapping.Create(
-            request.AdAttributeName, request.SystemFieldName, request.FieldType,
+            request.DirectoryId, request.AdAttributeName, request.SystemFieldName, request.FieldType,
             request.IsSynced, request.SortOrder);
 
         await repository.AddAsync(mapping, cancellationToken);

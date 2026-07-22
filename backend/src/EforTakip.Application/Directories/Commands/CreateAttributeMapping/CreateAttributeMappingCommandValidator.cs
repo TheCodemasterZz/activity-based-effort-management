@@ -6,6 +6,8 @@ public sealed class CreateAttributeMappingCommandValidator : AbstractValidator<C
 {
     public CreateAttributeMappingCommandValidator()
     {
+        RuleFor(x => x.DirectoryId)
+            .NotEmpty().WithMessage("Dizin kimliği zorunludur.");
         RuleFor(x => x.AdAttributeName)
             .NotEmpty().WithMessage("AD alan adı zorunludur.")
             .MaximumLength(150);

@@ -3,6 +3,7 @@ using System;
 using EforTakip.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace EforTakip.Persistence.Migrations
 {
     [DbContext(typeof(EforTakipDbContext))]
-    partial class EforTakipDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260722190229_SyncModelSnapshotForDirectorySchema")]
+    partial class SyncModelSnapshotForDirectorySchema
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1053,9 +1056,6 @@ namespace EforTakip.Persistence.Migrations
                         .HasColumnType("character varying(150)");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("DirectoryId", "AdAttributeName")
-                        .IsUnique();
 
                     b.ToTable("DirectoryAttributeMappings", (string)null);
                 });
@@ -2280,15 +2280,6 @@ namespace EforTakip.Persistence.Migrations
                         .WithMany()
                         .HasForeignKey("ParentActivityId")
                         .OnDelete(DeleteBehavior.Restrict);
-                });
-
-            modelBuilder.Entity("EforTakip.Domain.Directories.DirectoryAttributeMapping", b =>
-                {
-                    b.HasOne("EforTakip.Domain.Directories.Directory", null)
-                        .WithMany()
-                        .HasForeignKey("DirectoryId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
                 });
 
             modelBuilder.Entity("EforTakip.Domain.Directories.DirectoryUser", b =>

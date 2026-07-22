@@ -16,7 +16,7 @@ public class CreateAttributeMappingCommandHandlerTests
     public async Task Handle_CreatesMapping()
     {
         var handler = new CreateAttributeMappingCommandHandler(_repository, _unitOfWork);
-        var command = new CreateAttributeMappingCommand("company", "Kurum", "text", true, 0);
+        var command = new CreateAttributeMappingCommand(Guid.NewGuid(), "company", "Kurum", "text", true, 0);
 
         var result = await handler.Handle(command, CancellationToken.None);
 
