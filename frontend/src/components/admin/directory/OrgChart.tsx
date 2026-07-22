@@ -402,8 +402,8 @@ export function OrgChart({ directoryId, onSelectUser }: OrgChartProps) {
   if (!orgChart.data?.hasManagerMapping) {
     return (
       <div className="rounded-xl border border-dashed border-slate-200 py-12 text-center text-sm text-slate-500">
-        Organizasyon şeması çıkarılamıyor. Alan Eşlemeleri bölümünden "Kullanıcı" tipinde bir
-        Yönetici alanı tanımlayıp dizini yeniden senkronize edin.
+        Organizasyon şeması çıkarılamıyor. AD Attributes bölümünden (Kullanıcı Klasörü → ilgili dizin)
+        "Kullanıcı" tipinde bir Yönetici alanı tanımlayıp dizini yeniden senkronize edin.
       </div>
     );
   }
