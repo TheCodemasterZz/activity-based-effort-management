@@ -193,6 +193,16 @@ const CHART_VIEW_OPTIONS: { value: CapacityChartView; label: string }[] = [
   { value: 'combined', label: 'Hepsi' },
 ];
 
+// Grafiğin renk/çizgi dilini tek bakışta anlaşılır kılmak için görünüme göre değişen kısa açıklama.
+const CHART_VIEW_CAPTIONS: Record<CapacityChartView, string> = {
+  capacity:
+    'Barlar: iş yükü (koyu = Gerçekleşen, açık = Planlanan, üst üste yığılı) · Mor çizgi: dönemin kapasite tavanı.',
+  availability: 'Yeşil alan: Kapasite − iş yükü, yani o dönemde kalan boş kapasite.',
+  utilization: 'Mor çizgi: (Gerçekleşen + Planlanan) / Kapasite × 100 · Kırmızı kesikli çizgi: %100 referansı.',
+  combined:
+    'Barlar: iş yükü (koyu = Gerçekleşen, açık = Planlanan) · Mor düz çizgi: Kapasite tavanı · Yeşil kesikli çizgi: kalan boş kapasite (Kapasite − iş yükü).',
+};
+
 /**
  * Plan Work (Planlanan) ve Log Work (Gerçekleşen) verilerini birlikte kullanarak, her çalışan
  * için seçili dönemdeki kapasite (mesai takvimi - izin) karşısında ne kadar dolu/boş/aşımda
@@ -328,12 +338,24 @@ export function CapacityManagementPage() {
     [employeeLeaves.data, employees.data, calendarsById],
   );
 
+  // MQL aktifken tablo/grafik sadece filtreye uyan en az bir Actual/Planned kaydı olan
+  // çalışanları göstermeli — aksi halde (ReportPage'de daha önce düzeltilen aynı hata) tüm kadro
+  // hep gösterilmeye devam eder ve MQL sadece hücre içindeki saatleri etkiler, kişi/toplamları
+  // etkilemez; "Toplam Kapasite Görünümü" de filtre ne olursa olsun tüm şirketi toplar.
+  const matchingEmployeeIds = useMemo(() => {
+    if (!mqlAst) return null;
+    const ids = new Set<string>();
+    for (const log of filteredActualLogs) ids.add(log.employeeId);
+    for (const log of filteredPlannedLogs) ids.add(log.employeeId);
+    return ids;
+  }, [mqlAst, filteredActualLogs, filteredPlannedLogs]);
+
   const sortedEmployees = useMemo(
     () =>
-      [...(employees.data?.items ?? [])].sort((a, b) =>
-        nameSort === 'asc' ? a.name.localeCompare(b.name, 'tr') : b.name.localeCompare(a.name, 'tr'),
-      ),
-    [employees.data, nameSort],
+      (employees.data?.items ?? [])
+        .filter((e) => !matchingEmployeeIds || matchingEmployeeIds.has(e.id))
+        .sort((a, b) => (nameSort === 'asc' ? a.name.localeCompare(b.name, 'tr') : b.name.localeCompare(a.name, 'tr'))),
+    [employees.data, nameSort, matchingEmployeeIds],
   );
 
   const todayKey = dateKey(new Date());
@@ -543,6 +565,7 @@ export function CapacityManagementPage() {
               ))}
             </div>
           </div>
+          <p className="mb-2 px-4 text-xs text-slate-400">{CHART_VIEW_CAPTIONS[chartView]}</p>
           <div ref={chartScrollRef} onScroll={syncScrollFrom('chart')} className="overflow-x-auto overflow-y-hidden">
             <div className="flex" style={{ width: measuredCols.name + periodRange.columns.length * measuredCols.column }}>
               <div className="shrink-0" style={{ width: Math.max(measuredCols.name - CHART_Y_AXIS_PX, 0) }} />

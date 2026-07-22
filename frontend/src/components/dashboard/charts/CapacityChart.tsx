@@ -57,10 +57,21 @@ function makeColumnBoundaryGenerator(columnCount: number) {
 
 function CapacityTooltip({ active, payload, label }: any) {
   if (!active || !payload || payload.length === 0) return null;
+  // 'combined'/'capacity' görünümlerinde Kapasite/Müsait çizgilerinin altına aynı dataKey'le bir
+  // dolgu (Area, sadece görsel amaçlı) eklendiği için aynı seri tooltip payload'ında iki kez
+  // görünür (Area'daki legendType="none" bunu sadece legend'dan gizler, tooltip'ten değil) —
+  // burada dataKey'e göre tekilleştirilir.
+  const seenDataKeys = new Set<string>();
+  const uniquePayload = payload.filter((entry: any) => {
+    if (seenDataKeys.has(entry.dataKey)) return false;
+    seenDataKeys.add(entry.dataKey);
+    return true;
+  });
+
   return (
     <div className="rounded-md bg-slate-900 px-3 py-2 text-xs text-white shadow-lg">
       <div className="mb-1 text-[10px] font-semibold text-slate-300">{label}</div>
-      {payload.map((entry: any) => (
+      {uniquePayload.map((entry: any) => (
         <div key={entry.dataKey} className="flex items-center gap-1.5 whitespace-nowrap">
           <span className="h-2 w-2 rounded-full" style={{ backgroundColor: entry.color }} />
           <span>
@@ -176,13 +187,17 @@ export function CapacityChart({ data, view, height = 260, width }: CapacityChart
           <XAxis dataKey="label" tick={{ fontSize: 11, fill: '#94a3b8' }} tickLine={false} axisLine={{ stroke: '#e2e8f0' }} />
           <YAxis tick={{ fontSize: 11, fill: '#94a3b8' }} tickLine={false} axisLine={false} width={yAxisWidth} unit="h" />
           <Tooltip content={<CapacityTooltip />} />
-          <Legend wrapperStyle={{ fontSize: 11 }} height={22} iconType="plainline" />
+          <Legend wrapperStyle={{ fontSize: 13 }} height={26} iconType="plainline" iconSize={16} />
+          {/* Dolgular kasıtlı olarak NÖTR gri — çizgilerle aynı renkte olsalardı (mor çizgi mor
+              dolgu üstünde, yeşil çizgi yeşil dolgu üstünde) kontrast kaybolup okunmaz hale
+              geliyordu. Nötr dolgu, veri kaybı olmadan sadece "kapasite tavanına kadarki alan"
+              hissini korur, çizgilerin kendi rengiyle rekabet etmez. */}
           <Area
             type="monotone"
             dataKey="Kapasite"
             stroke="none"
-            fill={COLORS.capacity}
-            fillOpacity={0.08}
+            fill="#64748b"
+            fillOpacity={0.07}
             isAnimationActive={false}
             legendType="none"
             tooltipType="none"
@@ -191,7 +206,7 @@ export function CapacityChart({ data, view, height = 260, width }: CapacityChart
             type="monotone"
             dataKey="Müsait"
             stroke="none"
-            fill={COLORS.available}
+            fill="#64748b"
             fillOpacity={0.12}
             isAnimationActive={false}
             legendType="none"
@@ -199,7 +214,7 @@ export function CapacityChart({ data, view, height = 260, width }: CapacityChart
           />
           <Bar dataKey="Gerçekleşen" stackId="workload" fill={COLORS.actual} radius={[0, 0, 0, 0]} isAnimationActive={false} />
           <Bar dataKey="Planlanan" stackId="workload" fill={COLORS.planned} radius={[3, 3, 0, 0]} isAnimationActive={false} />
-          <Line type="monotone" dataKey="Kapasite" stroke={COLORS.capacity} strokeWidth={2} dot={false} isAnimationActive={false} />
+          <Line type="monotone" dataKey="Kapasite" stroke={COLORS.capacity} strokeWidth={2.5} dot={false} isAnimationActive={false} />
           <Line
             type="monotone"
             dataKey="Müsait"
@@ -235,20 +250,20 @@ export function CapacityChart({ data, view, height = 260, width }: CapacityChart
         <XAxis dataKey="label" tick={{ fontSize: 11, fill: '#94a3b8' }} tickLine={false} axisLine={{ stroke: '#e2e8f0' }} />
         <YAxis tick={{ fontSize: 11, fill: '#94a3b8' }} tickLine={false} axisLine={false} width={yAxisWidth} unit="h" />
         <Tooltip content={<CapacityTooltip />} />
-        <Legend wrapperStyle={{ fontSize: 11 }} height={22} iconType="plainline" />
+        <Legend wrapperStyle={{ fontSize: 13 }} height={26} iconType="plainline" iconSize={16} />
         <Area
           type="monotone"
           dataKey="Kapasite"
           stroke="none"
-          fill={COLORS.capacity}
-          fillOpacity={0.08}
+          fill="#64748b"
+          fillOpacity={0.07}
           isAnimationActive={false}
           legendType="none"
           tooltipType="none"
         />
         <Bar dataKey="Gerçekleşen" stackId="workload" fill={COLORS.actual} radius={[0, 0, 0, 0]} isAnimationActive={false} />
         <Bar dataKey="Planlanan" stackId="workload" fill={COLORS.planned} radius={[3, 3, 0, 0]} isAnimationActive={false} />
-        <Line type="monotone" dataKey="Kapasite" stroke={COLORS.capacity} strokeWidth={2} dot={false} isAnimationActive={false} />
+        <Line type="monotone" dataKey="Kapasite" stroke={COLORS.capacity} strokeWidth={2.5} dot={false} isAnimationActive={false} />
       </ComposedChart>
     </ResponsiveContainer>
   );

@@ -36,7 +36,7 @@ function isWidgetMode(): boolean {
 }
 
 function App() {
-  const [activePage, setActivePage] = useState<AppPage>('workLog');
+  const [activePage, setActivePage] = useState<AppPage>('home');
 
   return (
     <QueryClientProvider client={queryClient}>

@@ -6,6 +6,9 @@ public sealed class ProjectDetailDto
     public string Name { get; init; } = default!;
     public string? Description { get; init; }
     public string Status { get; init; } = default!;
+    public DateOnly? StartDate { get; init; }
+    public DateOnly? EndDate { get; init; }
+    public string HealthStatus { get; init; } = default!;
     public IReadOnlyCollection<CustomerSummaryDto> Customers { get; init; } = [];
     public IReadOnlyCollection<EmployeeSummaryDto> Employees { get; init; } = [];
 }

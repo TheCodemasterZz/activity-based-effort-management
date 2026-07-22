@@ -13,11 +13,11 @@ export type AppPage =
 
 export const NAV_ITEMS: { page: AppPage; label: string }[] = [
   { page: 'home', label: 'Ana Sayfa' },
+  { page: 'projects', label: 'Projeler' },
   { page: 'planWork', label: 'Planlanan Efor' },
   { page: 'workLog', label: 'Gerçekleşen Efor' },
   { page: 'capacityManagement', label: 'Kapasite Yönetimi' },
   { page: 'planningAccuracy', label: 'Planlama Doğruluğu' },
-  { page: 'projects', label: 'Projeler' },
   { page: 'employees', label: 'Çalışanlar' },
   { page: 'widgets', label: 'Widgets' },
 ];

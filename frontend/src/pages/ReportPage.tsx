@@ -131,8 +131,8 @@ export function ReportPage() {
 
   const logs = workLogs.data?.items ?? [];
 
-  // MQL (Mesainâme Query Language) — JQL mantığında serbest metin sorgusu; tanımlıysa
-  // tablonun ve tüm özet hesaplamaların girdisi bu filtrelenmiş alt küme olur.
+  // MQL (Mesainâme Query Language) — serbest metin sorgusu; tanımlıysa tablonun ve
+  // tüm özet hesaplamaların girdisi bu filtrelenmiş alt küme olur.
   const filteredLogs = useMemo(() => {
     if (!mqlAst) return logs;
     return logs.filter((log) =>

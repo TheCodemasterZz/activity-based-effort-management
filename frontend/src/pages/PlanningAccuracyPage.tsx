@@ -4,6 +4,7 @@ import { MonthNavigator } from '../components/dashboard/MonthNavigator';
 import { GroupByMultiSelect } from '../components/dashboard/GroupByMultiSelect';
 import { MqlFilterInput } from '../components/dashboard/MqlFilterInput';
 import { PlanningAccuracyTable, PLANNING_ACCURACY_LEGEND_ITEMS } from '../components/dashboard/PlanningAccuracyTable';
+import { PlanningAccuracyVarianceWidgets } from '../components/dashboard/PlanningAccuracyVarianceWidgets';
 import {
   buildCustomDailyRange,
   dateKey,
@@ -42,7 +43,7 @@ function PlanningAccuracyLegend() {
  * bileşenleri kullanır; hesaplama tarafı groupWorkLogsAccuracy ile Actual+Planned'ı aynı anda
  * gruplar (mevcut, tek-taraflı groupWorkLogs'a dokunmadan). */
 export function PlanningAccuracyPage() {
-  const [periodMode, setPeriodMode] = useState<PeriodMode>('weekly');
+  const [periodMode, setPeriodMode] = useState<PeriodMode>('daily');
   const [anchorDate, setAnchorDate] = useState(new Date());
   const [customRange, setCustomRange] = useState<CustomRange | null>(null);
   const [groupBy, setGroupBy] = useState<GroupByDimension[]>(['employee']);
@@ -146,8 +147,8 @@ export function PlanningAccuracyPage() {
 
   return (
     <div className="flex flex-1 overflow-hidden bg-slate-50">
-      <main className="flex-1 overflow-y-auto p-6">
-        <div className="mb-4 flex flex-wrap items-center gap-3">
+      <main className="flex flex-1 flex-col overflow-hidden p-6">
+        <div className="mb-4 flex shrink-0 flex-wrap items-center gap-3">
           <div className="flex shrink-0 items-center gap-3">
             <MonthNavigator
               anchorDate={anchorDate}
@@ -186,19 +187,29 @@ export function PlanningAccuracyPage() {
           </div>
         </div>
 
-        <PlanningAccuracyLegend />
+        <div className="shrink-0">
+          <PlanningAccuracyVarianceWidgets rows={accuracy.rows} columns={pastColumns} />
+        </div>
+
+        <div className="shrink-0">
+          <PlanningAccuracyLegend />
+        </div>
 
         {isLoading ? (
-          <div className="rounded-xl border border-slate-200 bg-white p-8 text-center text-slate-400">Yükleniyor…</div>
+          <div className="min-h-0 flex-1 rounded-xl border border-slate-200 bg-white p-8 text-center text-slate-400">
+            Yükleniyor…
+          </div>
         ) : (
-          <PlanningAccuracyTable
-            columns={pastColumns}
-            rows={accuracy.rows}
-            grandTotalActualByColumn={accuracy.grandTotalActualByColumn}
-            grandTotalPlannedByColumn={accuracy.grandTotalPlannedByColumn}
-            grandTotalActual={accuracy.grandTotalActual}
-            grandTotalPlanned={accuracy.grandTotalPlanned}
-          />
+          <div className="min-h-0 flex-1">
+            <PlanningAccuracyTable
+              columns={pastColumns}
+              rows={accuracy.rows}
+              grandTotalActualByColumn={accuracy.grandTotalActualByColumn}
+              grandTotalPlannedByColumn={accuracy.grandTotalPlannedByColumn}
+              grandTotalActual={accuracy.grandTotalActual}
+              grandTotalPlanned={accuracy.grandTotalPlanned}
+            />
+          </div>
         )}
       </main>
     </div>

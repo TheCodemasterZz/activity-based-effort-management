@@ -23,6 +23,7 @@ public static class TestDataSeeder
 
         var random = new Random(1234);
         var bogus = new Faker("tr");
+        var todayDate = DateOnly.FromDateTime(DateTime.Today);
 
         var customers = new Faker<Customer>("tr")
             .CustomInstantiator(f => Customer.Create(f.Company.CompanyName(1)))
@@ -44,9 +45,24 @@ public static class TestDataSeeder
         var topLevelActivities = await context.Activities.Where(a => a.ParentActivityId == null).ToListAsync();
         var subActivities = await context.Activities.Where(a => a.ParentActivityId != null).ToListAsync();
 
+        // Her proje, bugünden 2-8 ay önce başlayıp 1-4 ay sonra biten bir aralığa yayılır —
+        // Clarity PPM örneğindeki gibi "hâlâ devam eden" projeler çoğunlukta olsun diye.
         var projects = new Faker<Project>("tr")
-            .CustomInstantiator(f => Project.Create($"{f.Commerce.ProductName()} Projesi", f.Lorem.Sentence()))
+            .CustomInstantiator(f =>
+            {
+                var startDate = todayDate.AddDays(-random.Next(60, 240));
+                var endDate = todayDate.AddDays(random.Next(30, 120));
+                return Project.Create($"{f.Commerce.ProductName()} Projesi", f.Lorem.Sentence(), startDate, endDate);
+            })
             .Generate(4);
+
+        // Sağlık rozeti (ON TRACK/AT RISK/NEEDS HELP) — Clarity örneğindeki gibi çoğunlukla
+        // yeşil, birkaçı dikkat çeken renklerde.
+        foreach (var project in projects)
+        {
+            var roll = random.NextDouble();
+            project.SetHealthStatus(roll < 0.6 ? ProjectHealthStatus.OnTrack : roll < 0.85 ? ProjectHealthStatus.AtRisk : ProjectHealthStatus.NeedsHelp);
+        }
 
         foreach (var project in projects)
         {
@@ -64,6 +80,56 @@ public static class TestDataSeeder
         }
         context.Projects.AddRange(projects);
 
+        // Görevler (+ birer kilometre taşı) — Clarity kartındaki elmas-şeritli zaman çizelgesi ve
+        // SPI/EVM hesaplaması (bkz. ProjectTask.BaselineEffortHours/BaselineEndDate) için.
+        var taskNamePool = new[]
+        {
+            "Gereksinim Analizi", "Mimari Tasarım", "Ekran Tasarımı", "Backend Geliştirme",
+            "Servis Geliştirme", "Veritabanı Geliştirme", "Entegrasyon", "Birim Test",
+            "Kullanıcı Kabul Testi", "Devreye Alma", "Kullanıcı Eğitimi", "Kapanış",
+        };
+
+        var projectTasks = new List<ProjectTask>();
+        foreach (var project in projects)
+        {
+            var taskCount = random.Next(5, 9);
+            var names = taskNamePool.OrderBy(_ => random.Next()).Take(taskCount).ToList();
+            var projectStart = project.StartDate!.Value;
+            var projectEnd = project.EndDate!.Value;
+            var totalDays = Math.Max(taskCount, projectEnd.DayNumber - projectStart.DayNumber);
+            var slice = totalDays / taskCount;
+
+            var cursor = projectStart;
+            foreach (var name in names)
+            {
+                var taskStart = cursor;
+                var taskEnd = name == names[^1] ? projectEnd : cursor.AddDays(Math.Max(1, slice));
+                var estimatedHours = Math.Round((decimal)(random.NextDouble() * 30 + 10), 1);
+
+                var task = ProjectTask.Create(project.Id, name, taskStart, taskEnd, estimatedHours);
+
+                // Bitiş tarihi geçmişse çoğunlukla Bitti — ama bir kısmı kasıtlı olarak hâlâ
+                // Devam Ediyor durumunda bırakılıyor (SPI'nin 1'in altına düşmesini sağlayan,
+                // "planlanan bitmiş görünmesi gerekirken hâlâ sürüyor" senaryosu).
+                task.SetStatus(
+                    taskEnd <= todayDate
+                        ? (random.NextDouble() > 0.2 ? ProjectTaskStatus.Done : ProjectTaskStatus.InProgress)
+                        : taskStart <= todayDate
+                            ? ProjectTaskStatus.InProgress
+                            : ProjectTaskStatus.NotStarted);
+
+                projectTasks.Add(task);
+                cursor = taskEnd;
+            }
+
+            var milestoneDate = projectStart.AddDays(totalDays / 2);
+            var milestone = ProjectTask.Create(
+                project.Id, $"{project.Name} — Ara Değerlendirme", milestoneDate, milestoneDate, 0, isMilestone: true);
+            milestone.SetStatus(milestoneDate <= todayDate ? ProjectTaskStatus.Done : ProjectTaskStatus.NotStarted);
+            projectTasks.Add(milestone);
+        }
+        context.ProjectTasks.AddRange(projectTasks);
+
         var valueStreams = new[] { "Ürün Geliştirme Süreci", "Müşteri Talep Süreci" }
             .Select(name => ValueStream.Create(name, null))
             .ToList();
@@ -80,7 +146,6 @@ public static class TestDataSeeder
         // İçinde bulunulan ayın tamamı (ör. Temmuz 2026) — her 25 çalışan için hem gerçekleşen
         // (Actual, sadece bugüne kadar) hem planlanan (Planned, bugünden sonrası) kayıtlarla
         // baştan sona doldurulur. Bugünün kendisi Actual tarafında sayılır.
-        var todayDate = DateOnly.FromDateTime(DateTime.Today);
         var monthStart = new DateOnly(todayDate.Year, todayDate.Month, 1);
         var monthEnd = new DateOnly(todayDate.Year, todayDate.Month, DateTime.DaysInMonth(todayDate.Year, todayDate.Month));
 

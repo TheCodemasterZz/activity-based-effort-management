@@ -23,6 +23,31 @@ export interface ProjectDto {
   name: string;
   description: string | null;
   status: string;
+  startDate: string | null;
+  endDate: string | null;
+  healthStatus: string;
+}
+
+// Backend'de global bir JsonStringEnumConverter yok — bu yüzden komut gövdelerinde (request)
+// enum'lar WORK_LOG_ENTRY_TYPE'daki gibi SAYI olarak gönderilir; DTO'larda (response) ise
+// ProjectMappingConfig'in .ToString() eşlemesi nedeniyle METİN olarak gelir (ör. "OnTrack").
+export const PROJECT_HEALTH_STATUS = { OnTrack: 1, AtRisk: 2, NeedsHelp: 3 } as const;
+export type ProjectHealthStatusValue = (typeof PROJECT_HEALTH_STATUS)[keyof typeof PROJECT_HEALTH_STATUS];
+
+export const PROJECT_TASK_STATUS = { NotStarted: 1, InProgress: 2, Done: 3 } as const;
+export type ProjectTaskStatusValue = (typeof PROJECT_TASK_STATUS)[keyof typeof PROJECT_TASK_STATUS];
+
+export interface ProjectTaskDto {
+  id: string;
+  projectId: string;
+  name: string;
+  startDate: string;
+  endDate: string;
+  estimatedEffortHours: number;
+  status: string;
+  isMilestone: boolean;
+  baselineEffortHours: number;
+  baselineEndDate: string;
 }
 
 export interface CustomerSummaryDto {
@@ -40,6 +65,9 @@ export interface ProjectDetailDto {
   name: string;
   description: string | null;
   status: string;
+  startDate: string | null;
+  endDate: string | null;
+  healthStatus: string;
   customers: CustomerSummaryDto[];
   employees: EmployeeSummaryDto[];
 }

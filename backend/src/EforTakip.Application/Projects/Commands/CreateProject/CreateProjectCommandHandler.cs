@@ -9,7 +9,7 @@ public sealed class CreateProjectCommandHandler(IProjectRepository repository, I
 {
     public async Task<Guid> Handle(CreateProjectCommand request, CancellationToken cancellationToken)
     {
-        var project = Project.Create(request.Name, request.Description);
+        var project = Project.Create(request.Name, request.Description, request.StartDate, request.EndDate);
 
         await repository.AddAsync(project, cancellationToken);
         await unitOfWork.SaveChangesAsync(cancellationToken);

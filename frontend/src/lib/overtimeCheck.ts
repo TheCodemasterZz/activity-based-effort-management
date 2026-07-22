@@ -49,7 +49,7 @@ export async function findOvertimeDates(params: OvertimeCheckParams): Promise<st
     employeeId: params.employeeId,
     dateFrom: params.startDate,
     dateTo: params.endDate,
-    pageSize: 1000,
+    pageSize: 5000,
     entryType: params.entryType ?? WORK_LOG_ENTRY_TYPE.Actual,
   });
 
