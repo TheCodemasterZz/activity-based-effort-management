@@ -5,6 +5,19 @@ namespace EforTakip.Domain.Directories;
 
 public sealed class DirectoryAttributeMapping : Entity, IAggregateRoot
 {
+    /// <summary>
+    /// AD'de DN (Distinguished Name) formatında gelen alanlar için (ör. manager). Senkronizasyon
+    /// sırasında bu tip, değerin aynı taramadaki başka bir kullanıcıya referans olarak
+    /// çözümlenmeye çalışılmasını tetikler.
+    /// </summary>
+    public const string UserReferenceFieldType = "user";
+
+    /// <summary>
+    /// AD'de ikili (binary) gelen alanlar için (ör. thumbnailPhoto). Senkronizasyon sırasında
+    /// metin gibi UTF-8 çözülmeye çalışılmaz; ham baytlar Base64'e çevrilip Value alanında saklanır.
+    /// </summary>
+    public const string PhotoFieldType = "photo";
+
     public string AdAttributeName { get; private set; } = default!;
     public string SystemFieldName { get; private set; } = default!;
     public string FieldType { get; private set; } = default!;

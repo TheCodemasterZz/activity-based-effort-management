@@ -3,6 +3,7 @@ using System;
 using EforTakip.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace EforTakip.Persistence.Migrations
 {
     [DbContext(typeof(EforTakipDbContext))]
-    partial class EforTakipDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260722065027_AddDirectoryUserAttributeReference")]
+    partial class AddDirectoryUserAttributeReference
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1129,7 +1132,8 @@ namespace EforTakip.Persistence.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<string>("Value")
-                        .HasColumnType("text");
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
 
                     b.HasKey("Id");
 

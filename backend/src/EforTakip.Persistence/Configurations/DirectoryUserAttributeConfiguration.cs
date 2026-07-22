@@ -11,7 +11,9 @@ public sealed class DirectoryUserAttributeConfiguration : IEntityTypeConfigurati
         builder.ToTable("DirectoryUserAttributes");
         builder.HasKey(a => a.Id);
 
-        builder.Property(a => a.Value).HasMaxLength(2000);
+        // Fotoğraf (thumbnailPhoto) tipindeki alanlar Base64 metin olarak burada saklanır —
+        // sabit bir kısa metin sınırı yeterli değil, bu yüzden sınırsız (text) bırakılır.
+        builder.Property(a => a.Value);
 
         builder.HasIndex(a => new { a.DirectoryUserId, a.AttributeMappingId }).IsUnique();
 
@@ -19,5 +21,12 @@ public sealed class DirectoryUserAttributeConfiguration : IEntityTypeConfigurati
             .WithMany()
             .HasForeignKey(a => a.AttributeMappingId)
             .OnDelete(DeleteBehavior.Cascade);
+
+        // Restrict: DirectoryUserId FK'i zaten Cascade — aynı satırdan ikinci bir cascade yolu
+        // (referans verilen kullanıcı silinince) çoklu cascade döngüsüne yol açar.
+        builder.HasOne<DirectoryUser>()
+            .WithMany()
+            .HasForeignKey(a => a.ReferencedDirectoryUserId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }

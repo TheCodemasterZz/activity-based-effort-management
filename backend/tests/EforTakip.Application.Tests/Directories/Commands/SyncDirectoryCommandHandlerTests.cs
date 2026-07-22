@@ -48,18 +48,28 @@ public class SyncDirectoryCommandHandlerTests : IAsyncDisposable
             SyncScheduleKind.Daily, 0);
 
     private static LdapUser LdapUserOf(
-        string username, string guid, string? company = null, bool isEnabled = true) =>
+        string username, string guid, string? company = null, bool isEnabled = true,
+        string? manager = null, string? distinguishedName = null) =>
         new(username, "Serkan", "Gültepe", "Serkan Gültepe", $"{username}@kizilay.org.tr", guid, isEnabled,
-            company is null
-                ? new Dictionary<string, string?>()
-                : new Dictionary<string, string?> { ["company"] = company });
+            BuildAttributes(company, manager),
+            distinguishedName);
+
+    private static Dictionary<string, string?> BuildAttributes(string? company, string? manager)
+    {
+        var attributes = new Dictionary<string, string?>();
+        if (company is not null)
+            attributes["company"] = company;
+        if (manager is not null)
+            attributes["manager"] = manager;
+        return attributes;
+    }
 
     [Fact]
     public async Task Handle_NewUsersFromLdap_AddsThem()
     {
         var directory = ValidAd();
         _directoryRepository.GetByIdAsync(directory.Id, Arg.Any<CancellationToken>()).Returns(directory);
-        _ldapService.SearchUsersAsync(directory, Arg.Any<IReadOnlyCollection<string>>(), Arg.Any<CancellationToken>())
+        _ldapService.SearchUsersAsync(directory, Arg.Any<IReadOnlyCollection<string>>(), Arg.Any<IReadOnlyCollection<string>>(), Arg.Any<CancellationToken>())
             .Returns(new List<LdapUser> { LdapUserOf("serkan.gultepe", "guid-1") });
 
         var result = await CreateHandler().Handle(new SyncDirectoryCommand(directory.Id), CancellationToken.None);
@@ -81,7 +91,7 @@ public class SyncDirectoryCommandHandlerTests : IAsyncDisposable
         await _db.SaveChangesAsync();
 
         _directoryRepository.GetByIdAsync(directory.Id, Arg.Any<CancellationToken>()).Returns(directory);
-        _ldapService.SearchUsersAsync(directory, Arg.Any<IReadOnlyCollection<string>>(), Arg.Any<CancellationToken>())
+        _ldapService.SearchUsersAsync(directory, Arg.Any<IReadOnlyCollection<string>>(), Arg.Any<IReadOnlyCollection<string>>(), Arg.Any<CancellationToken>())
             .Returns(new List<LdapUser> { LdapUserOf("serkan.gultepe", "guid-1") });
 
         var result = await CreateHandler().Handle(new SyncDirectoryCommand(directory.Id), CancellationToken.None);
@@ -102,7 +112,7 @@ public class SyncDirectoryCommandHandlerTests : IAsyncDisposable
         await _db.SaveChangesAsync();
 
         _directoryRepository.GetByIdAsync(directory.Id, Arg.Any<CancellationToken>()).Returns(directory);
-        _ldapService.SearchUsersAsync(directory, Arg.Any<IReadOnlyCollection<string>>(), Arg.Any<CancellationToken>())
+        _ldapService.SearchUsersAsync(directory, Arg.Any<IReadOnlyCollection<string>>(), Arg.Any<IReadOnlyCollection<string>>(), Arg.Any<CancellationToken>())
             .Returns(new List<LdapUser>());
 
         var result = await CreateHandler().Handle(new SyncDirectoryCommand(directory.Id), CancellationToken.None);
@@ -117,7 +127,7 @@ public class SyncDirectoryCommandHandlerTests : IAsyncDisposable
     {
         var directory = ValidAd();
         _directoryRepository.GetByIdAsync(directory.Id, Arg.Any<CancellationToken>()).Returns(directory);
-        _ldapService.SearchUsersAsync(directory, Arg.Any<IReadOnlyCollection<string>>(), Arg.Any<CancellationToken>())
+        _ldapService.SearchUsersAsync(directory, Arg.Any<IReadOnlyCollection<string>>(), Arg.Any<IReadOnlyCollection<string>>(), Arg.Any<CancellationToken>())
             .Returns(new List<LdapUser> { LdapUserOf("pasif.kullanici", "guid-2", isEnabled: false) });
 
         var result = await CreateHandler().Handle(new SyncDirectoryCommand(directory.Id), CancellationToken.None);
@@ -136,7 +146,7 @@ public class SyncDirectoryCommandHandlerTests : IAsyncDisposable
         await _db.SaveChangesAsync();
 
         _directoryRepository.GetByIdAsync(directory.Id, Arg.Any<CancellationToken>()).Returns(directory);
-        _ldapService.SearchUsersAsync(directory, Arg.Any<IReadOnlyCollection<string>>(), Arg.Any<CancellationToken>())
+        _ldapService.SearchUsersAsync(directory, Arg.Any<IReadOnlyCollection<string>>(), Arg.Any<IReadOnlyCollection<string>>(), Arg.Any<CancellationToken>())
             .Returns(new List<LdapUser> { LdapUserOf("serkan.gultepe", "guid-1", isEnabled: false) });
 
         await CreateHandler().Handle(new SyncDirectoryCommand(directory.Id), CancellationToken.None);
@@ -154,7 +164,7 @@ public class SyncDirectoryCommandHandlerTests : IAsyncDisposable
         await _db.SaveChangesAsync();
 
         _directoryRepository.GetByIdAsync(directory.Id, Arg.Any<CancellationToken>()).Returns(directory);
-        _ldapService.SearchUsersAsync(directory, Arg.Any<IReadOnlyCollection<string>>(), Arg.Any<CancellationToken>())
+        _ldapService.SearchUsersAsync(directory, Arg.Any<IReadOnlyCollection<string>>(), Arg.Any<IReadOnlyCollection<string>>(), Arg.Any<CancellationToken>())
             .Returns(new List<LdapUser> { LdapUserOf("serkan.gultepe", "guid-1", company: "Kızılay") });
 
         await CreateHandler().Handle(new SyncDirectoryCommand(directory.Id), CancellationToken.None);
@@ -163,6 +173,60 @@ public class SyncDirectoryCommandHandlerTests : IAsyncDisposable
         user.Attributes.Should().ContainSingle();
         user.Attributes.Single().AttributeMappingId.Should().Be(mapping.Id);
         user.Attributes.Single().Value.Should().Be("Kızılay");
+    }
+
+    [Fact]
+    public async Task Handle_UserFieldMatchingAnotherSyncedUser_ResolvesReference()
+    {
+        var directory = ValidAd();
+        var mapping = DirectoryAttributeMapping.Create("manager", "Yönetici", "user", isSynced: true, 0);
+        _db.DirectoryAttributeMappings.Add(mapping);
+        await _db.SaveChangesAsync();
+
+        const string managerDn = "CN=Gökhan Yetkin,OU=Yönetim,DC=kizilay,DC=local";
+
+        _directoryRepository.GetByIdAsync(directory.Id, Arg.Any<CancellationToken>()).Returns(directory);
+        _ldapService.SearchUsersAsync(directory, Arg.Any<IReadOnlyCollection<string>>(), Arg.Any<IReadOnlyCollection<string>>(), Arg.Any<CancellationToken>())
+            .Returns(new List<LdapUser>
+            {
+                LdapUserOf("gokhan.yetkin", "guid-manager", distinguishedName: managerDn),
+                LdapUserOf("baris.kalaycioglu", "guid-1", manager: managerDn)
+            });
+
+        await CreateHandler().Handle(new SyncDirectoryCommand(directory.Id), CancellationToken.None);
+
+        var employee = _db.DirectoryUsers.Include(u => u.Attributes).Single(u => u.Username == "baris.kalaycioglu");
+        var manager = _db.DirectoryUsers.Single(u => u.Username == "gokhan.yetkin");
+
+        var attribute = employee.Attributes.Single();
+        attribute.ReferencedDirectoryUserId.Should().Be(manager.Id);
+        attribute.Value.Should().Be(manager.DisplayName);
+    }
+
+    [Fact]
+    public async Task Handle_UserFieldWithNoMatchingUser_FallsBackToPlainNameFromDn()
+    {
+        var directory = ValidAd();
+        var mapping = DirectoryAttributeMapping.Create("manager", "Yönetici", "user", isSynced: true, 0);
+        _db.DirectoryAttributeMappings.Add(mapping);
+        await _db.SaveChangesAsync();
+
+        _directoryRepository.GetByIdAsync(directory.Id, Arg.Any<CancellationToken>()).Returns(directory);
+        _ldapService.SearchUsersAsync(directory, Arg.Any<IReadOnlyCollection<string>>(), Arg.Any<IReadOnlyCollection<string>>(), Arg.Any<CancellationToken>())
+            .Returns(new List<LdapUser>
+            {
+                LdapUserOf(
+                    "baris.kalaycioglu", "guid-1",
+                    manager: "CN=Gökhan Yetkin,OU=Yönetim,DC=kizilay,DC=local")
+            });
+
+        await CreateHandler().Handle(new SyncDirectoryCommand(directory.Id), CancellationToken.None);
+
+        var employee = _db.DirectoryUsers.Include(u => u.Attributes).Single();
+        var attribute = employee.Attributes.Single();
+
+        attribute.ReferencedDirectoryUserId.Should().BeNull();
+        attribute.Value.Should().Be("Gökhan Yetkin");
     }
 
     [Fact]
@@ -175,7 +239,7 @@ public class SyncDirectoryCommandHandlerTests : IAsyncDisposable
         await _db.SaveChangesAsync();
 
         _directoryRepository.GetByIdAsync(directory.Id, Arg.Any<CancellationToken>()).Returns(directory);
-        _ldapService.SearchUsersAsync(directory, Arg.Any<IReadOnlyCollection<string>>(), Arg.Any<CancellationToken>())
+        _ldapService.SearchUsersAsync(directory, Arg.Any<IReadOnlyCollection<string>>(), Arg.Any<IReadOnlyCollection<string>>(), Arg.Any<CancellationToken>())
             .Returns(new List<LdapUser>());
 
         await CreateHandler().Handle(new SyncDirectoryCommand(directory.Id), CancellationToken.None);
@@ -183,6 +247,7 @@ public class SyncDirectoryCommandHandlerTests : IAsyncDisposable
         await _ldapService.Received(1).SearchUsersAsync(
             directory,
             Arg.Is<IReadOnlyCollection<string>>(names => names.Count == 1 && names.Contains("company")),
+            Arg.Any<IReadOnlyCollection<string>>(),
             Arg.Any<CancellationToken>());
     }
 
@@ -191,7 +256,7 @@ public class SyncDirectoryCommandHandlerTests : IAsyncDisposable
     {
         var directory = ValidAd();
         _directoryRepository.GetByIdAsync(directory.Id, Arg.Any<CancellationToken>()).Returns(directory);
-        _ldapService.SearchUsersAsync(directory, Arg.Any<IReadOnlyCollection<string>>(), Arg.Any<CancellationToken>())
+        _ldapService.SearchUsersAsync(directory, Arg.Any<IReadOnlyCollection<string>>(), Arg.Any<IReadOnlyCollection<string>>(), Arg.Any<CancellationToken>())
             .Returns(new List<LdapUser>());
 
         await CreateHandler().Handle(new SyncDirectoryCommand(directory.Id), CancellationToken.None);

@@ -9,11 +9,14 @@ public interface ILdapService
 
     /// <summary>
     /// Dizindeki kullanıcıları arar. <paramref name="extraAttributeNames"/> senkronize edilecek
-    /// ek AD attribute adlarıdır (alan eşlemelerinden gelir).
+    /// ek AD attribute adlarıdır (alan eşlemelerinden gelir). <paramref name="binaryAttributeNames"/>
+    /// bunlardan ikili (binary) olanlardır (ör. thumbnailPhoto) — metin gibi UTF-8 çözülmeye
+    /// çalışılmaz, ham baytlar Base64'e çevrilip döner.
     /// </summary>
     Task<IReadOnlyList<LdapUser>> SearchUsersAsync(
         Directory directory,
         IReadOnlyCollection<string> extraAttributeNames,
+        IReadOnlyCollection<string> binaryAttributeNames,
         CancellationToken cancellationToken);
 
     /// <summary>

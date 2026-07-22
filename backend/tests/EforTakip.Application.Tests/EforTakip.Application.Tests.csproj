@@ -26,6 +26,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\EforTakip.Application\EforTakip.Application.csproj" />
     <ProjectReference Include="..\..\src\EforTakip.Domain\EforTakip.Domain.csproj" />
+    <ProjectReference Include="..\..\src\EforTakip.Persistence\EforTakip.Persistence.csproj" />
   </ItemGroup>
 
 </Project>

@@ -9,12 +9,20 @@ public sealed class DirectoryUserAttribute : Entity
     public Guid AttributeMappingId { get; private set; }
     public string? Value { get; private set; }
 
+    /// <summary>
+    /// "Kullanıcı" tipindeki alanlar (ör. Yönetici) AD'de bir DN olarak gelir. Bu DN, aynı
+    /// senkronizasyon taramasında dönen başka bir kullanıcıyla eşleşirse o kullanıcıya işaret
+    /// eder; eşleşmezse null kalır ve Value alanındaki düz isim kullanılır.
+    /// </summary>
+    public Guid? ReferencedDirectoryUserId { get; private set; }
+
     private DirectoryUserAttribute()
     {
         // EF Core
     }
 
-    public static DirectoryUserAttribute Create(Guid directoryUserId, Guid attributeMappingId, string? value)
+    public static DirectoryUserAttribute Create(
+        Guid directoryUserId, Guid attributeMappingId, string? value, Guid? referencedDirectoryUserId = null)
     {
         if (attributeMappingId == Guid.Empty)
             throw new BusinessRuleValidationException("Attribute eşlemesi belirtilmelidir.");
@@ -23,9 +31,14 @@ public sealed class DirectoryUserAttribute : Entity
         {
             DirectoryUserId = directoryUserId,
             AttributeMappingId = attributeMappingId,
-            Value = value
+            Value = value,
+            ReferencedDirectoryUserId = referencedDirectoryUserId
         };
     }
 
-    public void SetValue(string? value) => Value = value;
+    public void SetValue(string? value, Guid? referencedDirectoryUserId = null)
+    {
+        Value = value;
+        ReferencedDirectoryUserId = referencedDirectoryUserId;
+    }
 }

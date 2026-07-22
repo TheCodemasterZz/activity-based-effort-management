@@ -148,6 +148,19 @@ public class DirectoryUserTests
     }
 
     [Fact]
+    public void SetAttribute_WithReferencedUser_StoresReference()
+    {
+        var user = DirectoryUser.CreateFromActiveDirectory(
+            Guid.NewGuid(), "serkan.gultepe", "Serkan", "Gültepe", "Serkan Gültepe", null, "guid");
+        var mappingId = Guid.NewGuid();
+        var managerId = Guid.NewGuid();
+
+        user.SetAttribute(mappingId, "Gökhan Yetkin", managerId);
+
+        user.Attributes.Single().ReferencedDirectoryUserId.Should().Be(managerId);
+    }
+
+    [Fact]
     public void ClearAttributes_RemovesAll()
     {
         var user = DirectoryUser.CreateFromActiveDirectory(

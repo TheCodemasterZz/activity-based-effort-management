@@ -8,6 +8,9 @@ public sealed class DirectoryUserAttributeValueDto
     public string AdAttributeName { get; init; } = default!;
     public string FieldType { get; init; } = default!;
     public string? Value { get; init; }
+
+    /// <summary>FieldType "user" olup değer sistemde tanımlı bir kullanıcıyla eşleştiyse dolu olur.</summary>
+    public Guid? ReferencedDirectoryUserId { get; init; }
 }
 
 /// <summary>Kullanıcı kartı için tüm senkronize attribute'larla birlikte kullanıcı bilgisi.</summary>

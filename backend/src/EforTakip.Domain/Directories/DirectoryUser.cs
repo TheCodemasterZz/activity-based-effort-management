@@ -105,16 +105,25 @@ public sealed class DirectoryUser : Entity, IAggregateRoot
         PasswordHash = passwordHash;
     }
 
-    public void SetAttribute(Guid attributeMappingId, string? value)
+    /// <summary>
+    /// Attribute değerini ayarlar. Yeni oluşturulan bir attribute varsa geri döner — EF Core,
+    /// içeriği boş bir koleksiyona (ör. bu senkronizasyondan önce hiç attribute'u olmayan bir
+    /// kullanıcıya) eklenen yeni öğeleri DetectChanges ile her zaman fark etmeyebilir; çağıran
+    /// taraf bu durumda dönen varlığı context'e açıkça eklemelidir.
+    /// </summary>
+    public DirectoryUserAttribute? SetAttribute(
+        Guid attributeMappingId, string? value, Guid? referencedDirectoryUserId = null)
     {
         var existing = _attributes.FirstOrDefault(a => a.AttributeMappingId == attributeMappingId);
         if (existing is not null)
         {
-            existing.SetValue(value);
-            return;
+            existing.SetValue(value, referencedDirectoryUserId);
+            return null;
         }
 
-        _attributes.Add(DirectoryUserAttribute.Create(Id, attributeMappingId, value));
+        var created = DirectoryUserAttribute.Create(Id, attributeMappingId, value, referencedDirectoryUserId);
+        _attributes.Add(created);
+        return created;
     }
 
     public void ClearAttributes() => _attributes.Clear();

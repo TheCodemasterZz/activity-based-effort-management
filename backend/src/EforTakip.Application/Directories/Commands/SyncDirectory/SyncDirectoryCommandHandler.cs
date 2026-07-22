@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using EforTakip.Application.Common.Interfaces;
 using EforTakip.Application.Directories.Dtos;
 using EforTakip.Application.Directories.Ldap;
@@ -9,7 +10,7 @@ using Directory = EforTakip.Domain.Directories.Directory;
 
 namespace EforTakip.Application.Directories.Commands.SyncDirectory;
 
-public sealed class SyncDirectoryCommandHandler(
+public sealed partial class SyncDirectoryCommandHandler(
     IApplicationDbContext db,
     IRepository<Directory> directoryRepository,
     ILdapService ldapService,
@@ -30,11 +31,19 @@ public sealed class SyncDirectoryCommandHandler(
             .ToListAsync(cancellationToken);
 
         var extraAttributeNames = syncedMappings
+            .Where(m => m.FieldType != DirectoryAttributeMapping.PhotoFieldType)
             .Select(m => m.AdAttributeName)
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToList();
 
-        var ldapUsers = await ldapService.SearchUsersAsync(directory, extraAttributeNames, cancellationToken);
+        var binaryAttributeNames = syncedMappings
+            .Where(m => m.FieldType == DirectoryAttributeMapping.PhotoFieldType)
+            .Select(m => m.AdAttributeName)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        var ldapUsers = await ldapService.SearchUsersAsync(
+            directory, extraAttributeNames, binaryAttributeNames, cancellationToken);
 
         var existingUsers = await db.DirectoryUsers
             .Include(u => u.Attributes)
@@ -45,11 +54,21 @@ public sealed class SyncDirectoryCommandHandler(
             .Where(u => u.ObjectGuid is not null)
             .ToDictionary(u => u.ObjectGuid!, StringComparer.OrdinalIgnoreCase);
 
+        // "Kullanıcı" tipi alanların DN referanslarını (ör. manager) aynı taramadaki bir
+        // kullanıcıyla eşleştirebilmek için: DN -> ObjectGuid haritası.
+        var dnToObjectGuid = ldapUsers
+            .Where(u => !string.IsNullOrWhiteSpace(u.DistinguishedName))
+            .ToDictionary(u => u.DistinguishedName!, u => u.ObjectGuid, StringComparer.OrdinalIgnoreCase);
+
         var syncedAtUtc = DateTime.UtcNow;
         var seenObjectGuids = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         var added = 0;
         var updated = 0;
+        var processed = new List<(LdapUser LdapUser, DirectoryUser User)>();
 
+        // 1. geçiş: tüm kullanıcılar oluşturulur/güncellenir — attribute'lar henüz uygulanmaz.
+        // Böylece "Yönetici" gibi başka bir kullanıcıya referans veren alanlar, referans verilen
+        // kullanıcı bu taramada henüz işlenmemiş olsa bile (liste sırasına bakılmaksızın) çözülebilir.
         foreach (var ldapUser in ldapUsers)
         {
             seenObjectGuids.Add(ldapUser.ObjectGuid);
@@ -59,7 +78,7 @@ public sealed class SyncDirectoryCommandHandler(
                 existing.UpdateFromSync(
                     ldapUser.FirstName, ldapUser.LastName, ldapUser.DisplayName, ldapUser.Email,
                     ldapUser.IsEnabled, syncedAtUtc);
-                ApplyAttributes(existing, ldapUser, syncedMappings);
+                processed.Add((ldapUser, existing));
                 updated++;
             }
             else
@@ -69,11 +88,17 @@ public sealed class SyncDirectoryCommandHandler(
                     ldapUser.DisplayName, ldapUser.Email, ldapUser.ObjectGuid);
                 if (!ldapUser.IsEnabled)
                     created.Deactivate();
-                ApplyAttributes(created, ldapUser, syncedMappings);
                 db.DirectoryUsers.Add(created);
+                byObjectGuid[created.ObjectGuid!] = created;
+                processed.Add((ldapUser, created));
                 added++;
             }
         }
+
+        // 2. geçiş: artık taramadaki tüm kullanıcılar mevcut, attribute'lar (ve varsa kullanıcı
+        // referansları) güvenle çözülüp uygulanabilir.
+        foreach (var (ldapUser, user) in processed)
+            ApplyAttributes(db, user, ldapUser, syncedMappings, dnToObjectGuid, byObjectGuid);
 
         // Dizinde artık bulunmayan kullanıcılar silinmez, yalnızca pasife alınır.
         var deactivated = 0;
@@ -105,13 +130,53 @@ public sealed class SyncDirectoryCommandHandler(
         };
     }
 
+    /// <summary>
+    /// EF Core, boş bir koleksiyona senkronizasyon sırasında eklenen yeni öğeleri her zaman
+    /// otomatik DetectChanges ile fark etmeyebilir (özellikle kullanıcının bu senkronizasyondan
+    /// önce hiç attribute'u yoksa). Bu yüzden yeni oluşturulan attribute context'e açıkça eklenir.
+    /// </summary>
     private static void ApplyAttributes(
-        DirectoryUser user, LdapUser ldapUser, IReadOnlyCollection<DirectoryAttributeMapping> mappings)
+        IApplicationDbContext db, DirectoryUser user, LdapUser ldapUser,
+        IReadOnlyCollection<DirectoryAttributeMapping> mappings,
+        IReadOnlyDictionary<string, string> dnToObjectGuid,
+        IReadOnlyDictionary<string, DirectoryUser> byObjectGuid)
     {
         foreach (var mapping in mappings)
         {
-            ldapUser.Attributes.TryGetValue(mapping.AdAttributeName, out var value);
-            user.SetAttribute(mapping.Id, value);
+            ldapUser.Attributes.TryGetValue(mapping.AdAttributeName, out var rawValue);
+
+            string? value = rawValue;
+            Guid? referencedDirectoryUserId = null;
+
+            if (mapping.FieldType == DirectoryAttributeMapping.UserReferenceFieldType && rawValue is not null)
+            {
+                if (dnToObjectGuid.TryGetValue(rawValue, out var referencedObjectGuid)
+                    && byObjectGuid.TryGetValue(referencedObjectGuid, out var referencedUser))
+                {
+                    referencedDirectoryUserId = referencedUser.Id;
+                    value = referencedUser.DisplayName ?? referencedUser.Username;
+                }
+                else
+                {
+                    // Referans verilen kişi bu dizinin senkronizasyon kapsamına (ör. filtreye)
+                    // girmiyorsa sistemde bir karşılığı yoktur — DN'den düz isim çıkarılır.
+                    value = ExtractPlainNameFromDn(rawValue);
+                }
+            }
+
+            var createdAttribute = user.SetAttribute(mapping.Id, value, referencedDirectoryUserId);
+            if (createdAttribute is not null)
+                db.DirectoryUserAttributes.Add(createdAttribute);
         }
     }
+
+    /// <summary>Bir DN'in ilk RDN bileşenindeki değeri döner (ör. "CN=Ada Lovelace,OU=..." -> "Ada Lovelace").</summary>
+    private static string ExtractPlainNameFromDn(string distinguishedName)
+    {
+        var match = DnLeadingCnPattern().Match(distinguishedName);
+        return match.Success ? match.Groups[1].Value : distinguishedName;
+    }
+
+    [GeneratedRegex(@"^\s*CN=([^,]+)", RegexOptions.IgnoreCase)]
+    private static partial Regex DnLeadingCnPattern();
 }

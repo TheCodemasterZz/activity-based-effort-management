@@ -5,6 +5,10 @@ namespace EforTakip.Application.Directories.Ldap;
 /// Hesabın dizinde etkin olup olmadığı. Microsoft AD'de devre dışı bırakılan hesaplar dizinde
 /// kalmaya devam eder, yalnızca userAccountControl alanının ACCOUNTDISABLE biti işaretlenir.
 /// </param>
+/// <param name="DistinguishedName">
+/// "Kullanıcı" tipindeki alanların (ör. manager) DN referanslarını aynı taramadaki başka bir
+/// kullanıcıyla eşleştirebilmek için kullanılır.
+/// </param>
 public sealed record LdapUser(
     string Username,
     string? FirstName,
@@ -13,4 +17,5 @@ public sealed record LdapUser(
     string? Email,
     string ObjectGuid,
     bool IsEnabled,
-    IReadOnlyDictionary<string, string?> Attributes);
+    IReadOnlyDictionary<string, string?> Attributes,
+    string? DistinguishedName = null);

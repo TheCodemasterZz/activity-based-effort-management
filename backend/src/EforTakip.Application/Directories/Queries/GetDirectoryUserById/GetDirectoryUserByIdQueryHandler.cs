@@ -30,16 +30,17 @@ public sealed class GetDirectoryUserByIdQueryHandler(IApplicationDbContext db)
             .OrderBy(m => m.SortOrder)
             .ToListAsync(cancellationToken);
 
-        var valuesByMappingId = user.Attributes.ToDictionary(a => a.AttributeMappingId, a => a.Value);
+        var attributesByMappingId = user.Attributes.ToDictionary(a => a.AttributeMappingId);
 
         var attributes = mappings
-            .Where(m => valuesByMappingId.ContainsKey(m.Id))
+            .Where(m => attributesByMappingId.ContainsKey(m.Id))
             .Select(m => new DirectoryUserAttributeValueDto
             {
                 SystemFieldName = m.SystemFieldName,
                 AdAttributeName = m.AdAttributeName,
                 FieldType = m.FieldType,
-                Value = valuesByMappingId[m.Id]
+                Value = attributesByMappingId[m.Id].Value,
+                ReferencedDirectoryUserId = attributesByMappingId[m.Id].ReferencedDirectoryUserId
             })
             .ToList();
 

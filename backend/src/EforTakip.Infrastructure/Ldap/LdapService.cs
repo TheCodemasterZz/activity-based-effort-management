@@ -44,12 +44,15 @@ public sealed class LdapService(ISettingsEncryptor settingsEncryptor) : ILdapSer
         }, cancellationToken);
 
     public Task<IReadOnlyList<LdapUser>> SearchUsersAsync(
-        Directory directory, IReadOnlyCollection<string> extraAttributeNames, CancellationToken cancellationToken)
+        Directory directory,
+        IReadOnlyCollection<string> extraAttributeNames,
+        IReadOnlyCollection<string> binaryAttributeNames,
+        CancellationToken cancellationToken)
         => Task.Run<IReadOnlyList<LdapUser>>(() =>
         {
             try
             {
-                return SearchUsers(directory, extraAttributeNames, cancellationToken);
+                return SearchUsers(directory, extraAttributeNames, binaryAttributeNames, cancellationToken);
             }
             catch (LdapException ex)
             {
@@ -59,12 +62,15 @@ public sealed class LdapService(ISettingsEncryptor settingsEncryptor) : ILdapSer
         }, cancellationToken);
 
     private List<LdapUser> SearchUsers(
-        Directory directory, IReadOnlyCollection<string> extraAttributeNames, CancellationToken cancellationToken)
+        Directory directory,
+        IReadOnlyCollection<string> extraAttributeNames,
+        IReadOnlyCollection<string> binaryAttributeNames,
+        CancellationToken cancellationToken)
     {
         using var connection = CreateConnection(directory);
         connection.Bind();
 
-        var attributesToLoad = BuildAttributeList(directory, extraAttributeNames);
+        var attributesToLoad = BuildAttributeList(directory, extraAttributeNames, binaryAttributeNames);
         var searchBase = BuildSearchBase(directory);
         var filter = string.IsNullOrWhiteSpace(directory.UserObjectFilter)
             ? "(objectClass=*)"
@@ -84,7 +90,7 @@ public sealed class LdapService(ISettingsEncryptor settingsEncryptor) : ILdapSer
 
             foreach (SearchResultEntry entry in response.Entries)
             {
-                var user = MapUser(entry, directory, extraAttributeNames);
+                var user = MapUser(entry, directory, extraAttributeNames, binaryAttributeNames);
                 if (user is not null)
                     users.Add(user);
             }
@@ -206,7 +212,9 @@ public sealed class LdapService(ISettingsEncryptor settingsEncryptor) : ILdapSer
             ? directory.BaseDn ?? string.Empty
             : $"{directory.AdditionalUserDn},{directory.BaseDn}";
 
-    private static string[] BuildAttributeList(Directory directory, IReadOnlyCollection<string> extraAttributeNames)
+    private static string[] BuildAttributeList(
+        Directory directory, IReadOnlyCollection<string> extraAttributeNames,
+        IReadOnlyCollection<string> binaryAttributeNames)
     {
         var names = new List<string?>
         {
@@ -219,6 +227,7 @@ public sealed class LdapService(ISettingsEncryptor settingsEncryptor) : ILdapSer
             UserAccountControlAttribute
         };
         names.AddRange(extraAttributeNames);
+        names.AddRange(binaryAttributeNames);
 
         return names
             .Where(n => !string.IsNullOrWhiteSpace(n))
@@ -228,7 +237,8 @@ public sealed class LdapService(ISettingsEncryptor settingsEncryptor) : ILdapSer
     }
 
     private static LdapUser? MapUser(
-        SearchResultEntry entry, Directory directory, IReadOnlyCollection<string> extraAttributeNames)
+        SearchResultEntry entry, Directory directory, IReadOnlyCollection<string> extraAttributeNames,
+        IReadOnlyCollection<string> binaryAttributeNames)
     {
         var username = ReadString(entry, directory.UsernameAttribute);
         var objectGuid = ReadGuid(entry, directory.UniqueIdAttribute);
@@ -240,6 +250,8 @@ public sealed class LdapService(ISettingsEncryptor settingsEncryptor) : ILdapSer
         var attributes = new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase);
         foreach (var name in extraAttributeNames)
             attributes[name] = ReadString(entry, name);
+        foreach (var name in binaryAttributeNames)
+            attributes[name] = ReadBase64(entry, name);
 
         return new LdapUser(
             username,
@@ -249,7 +261,8 @@ public sealed class LdapService(ISettingsEncryptor settingsEncryptor) : ILdapSer
             ReadString(entry, directory.EmailAttribute),
             objectGuid,
             ReadIsEnabled(entry),
-            attributes);
+            attributes,
+            entry.DistinguishedName);
     }
 
     /// <summary>
@@ -273,6 +286,22 @@ public sealed class LdapService(ISettingsEncryptor settingsEncryptor) : ILdapSer
             null => null,
             string s => s,
             byte[] bytes => Encoding.UTF8.GetString(bytes),
+            _ => raw.ToString()
+        };
+    }
+
+    /// <summary>
+    /// thumbnailPhoto gibi ikili alanlar için — ReadString'in yaptığı UTF-8 çözümü ikili veriyi
+    /// (ör. JPEG baytları) bozar, bu yüzden ham baytlar doğrudan Base64'e çevrilir.
+    /// </summary>
+    private static string? ReadBase64(SearchResultEntry entry, string? attributeName)
+    {
+        var raw = ReadRaw(entry, attributeName);
+        return raw switch
+        {
+            null => null,
+            byte[] bytes => Convert.ToBase64String(bytes),
+            string s => s,
             _ => raw.ToString()
         };
     }
