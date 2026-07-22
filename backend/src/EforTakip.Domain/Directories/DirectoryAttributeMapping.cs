@@ -18,6 +18,7 @@ public sealed class DirectoryAttributeMapping : Entity, IAggregateRoot
     /// </summary>
     public const string PhotoFieldType = "photo";
 
+    public Guid DirectoryId { get; private set; }
     public string AdAttributeName { get; private set; } = default!;
     public string SystemFieldName { get; private set; } = default!;
     public string FieldType { get; private set; } = default!;
@@ -30,12 +31,17 @@ public sealed class DirectoryAttributeMapping : Entity, IAggregateRoot
     }
 
     public static DirectoryAttributeMapping Create(
-        string adAttributeName, string systemFieldName, string fieldType, bool isSynced, int sortOrder)
+        Guid directoryId, string adAttributeName, string systemFieldName, string fieldType,
+        bool isSynced, int sortOrder)
     {
+        if (directoryId == Guid.Empty)
+            throw new BusinessRuleValidationException("AD Attribute bir dizine bağlı olmalıdır.");
+
         Validate(adAttributeName, systemFieldName, fieldType);
 
         return new DirectoryAttributeMapping
         {
+            DirectoryId = directoryId,
             AdAttributeName = adAttributeName.Trim(),
             SystemFieldName = systemFieldName.Trim(),
             FieldType = fieldType.Trim(),
