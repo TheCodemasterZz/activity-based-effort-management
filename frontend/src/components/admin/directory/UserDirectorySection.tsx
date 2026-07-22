@@ -36,6 +36,7 @@ export function UserDirectorySection() {
       <DirectoryUserCard
         userId={view.userId}
         onBack={() => setView({ kind: 'users', directory: view.directory })}
+        onSelectUser={(userId) => setView({ kind: 'userDetail', directory: view.directory, userId })}
       />
     );
   }
