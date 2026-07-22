@@ -30,16 +30,24 @@ public sealed class GetOrgChartQueryHandler(IApplicationDbContext db)
             .ToListAsync(cancellationToken);
 
         var nodes = users
-            .Select(u => new OrgChartNodeDto
+            .Select(u =>
             {
-                Id = u.Id,
-                Username = u.Username,
-                DisplayName = u.DisplayName ?? u.Username,
-                ManagerId = u.Attributes
-                    .FirstOrDefault(a => a.AttributeMappingId == managerMapping.Id)?.ReferencedDirectoryUserId,
-                PhotoBase64 = photoMapping is null
-                    ? null
-                    : u.Attributes.FirstOrDefault(a => a.AttributeMappingId == photoMapping.Id)?.Value
+                var managerAttribute = u.Attributes
+                    .FirstOrDefault(a => a.AttributeMappingId == managerMapping.Id);
+
+                return new OrgChartNodeDto
+                {
+                    Id = u.Id,
+                    Username = u.Username,
+                    DisplayName = u.DisplayName ?? u.Username,
+                    ManagerId = managerAttribute?.ReferencedDirectoryUserId,
+                    UnresolvedManagerName = managerAttribute?.ReferencedDirectoryUserId is null
+                        ? managerAttribute?.Value
+                        : null,
+                    PhotoBase64 = photoMapping is null
+                        ? null
+                        : u.Attributes.FirstOrDefault(a => a.AttributeMappingId == photoMapping.Id)?.Value
+                };
             })
             .ToList();
 

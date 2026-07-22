@@ -197,6 +197,7 @@ export interface OrgChartNodeDto {
   displayName: string;
   managerId: string | null;
   photoBase64: string | null;
+  unresolvedManagerName: string | null;
 }
 
 export interface OrgChartResultDto {

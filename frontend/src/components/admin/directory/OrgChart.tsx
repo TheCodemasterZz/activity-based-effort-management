@@ -7,25 +7,74 @@ interface OrgChartProps {
   onSelectUser: (userId: string) => void;
 }
 
-interface TreeNode extends OrgChartNodeDto {
+interface TreeNode {
+  id: string;
+  username: string;
+  displayName: string;
+  photoBase64: string | null;
   children: TreeNode[];
+  /**
+   * Yönetici, bu dizinin senkronizasyon filtresi dışında kaldığı için sistemde kaydı olmayan
+   * (tıklanamaz) bir yer tutucu düğüm. Aynı isimdeki dış yönetici için tek kutu paylaşılır,
+   * böylece o yöneticiye bağlı herkes hiyerarşide doğru yerde görünür.
+   */
+  isExternal: boolean;
 }
 
 const MIN_SCALE = 0.2;
 const MAX_SCALE = 2;
 
-/** managerId null olan veya yöneticisi bu dizinin senkron kapsamında olmayan kullanıcılar köktür. */
+/**
+ * managerId dolu olan düğümler gerçek yöneticisinin altına yerleşir. managerId boş ama
+ * unresolvedManagerName doluysa (yönetici sistemde senkronize değil), o isim için paylaşılan
+ * tıklanamaz bir yer tutucu kök oluşturulur. Hiçbiri yoksa düğüm gerçekten köktür.
+ */
 function buildForest(nodes: OrgChartNodeDto[]): TreeNode[] {
-  const byId = new Map<string, TreeNode>(nodes.map((n) => [n.id, { ...n, children: [] }]));
+  const byId = new Map<string, TreeNode>(
+    nodes.map((n) => [
+      n.id,
+      {
+        id: n.id,
+        username: n.username,
+        displayName: n.displayName,
+        photoBase64: n.photoBase64,
+        children: [],
+        isExternal: false,
+      },
+    ]),
+  );
+  const externalByName = new Map<string, TreeNode>();
   const roots: TreeNode[] = [];
 
-  for (const node of byId.values()) {
-    const manager = node.managerId ? byId.get(node.managerId) : undefined;
+  for (const original of nodes) {
+    const node = byId.get(original.id)!;
+    const manager = original.managerId ? byId.get(original.managerId) : undefined;
+
     if (manager && manager.id !== node.id) {
       manager.children.push(node);
-    } else {
-      roots.push(node);
+      continue;
     }
+
+    if (original.unresolvedManagerName) {
+      const key = original.unresolvedManagerName.trim().toLowerCase();
+      let external = externalByName.get(key);
+      if (!external) {
+        external = {
+          id: `external:${key}`,
+          username: '',
+          displayName: original.unresolvedManagerName,
+          photoBase64: null,
+          children: [],
+          isExternal: true,
+        };
+        externalByName.set(key, external);
+        roots.push(external);
+      }
+      external.children.push(node);
+      continue;
+    }
+
+    roots.push(node);
   }
 
   return roots;
@@ -61,7 +110,13 @@ function getDefaultCollapsedIds(forest: TreeNode[]): Set<string> {
   return ids;
 }
 
-function Avatar({ node, tone }: { node: OrgChartNodeDto; tone: 'root' | 'default' }) {
+function Avatar({
+  node,
+  tone,
+}: {
+  node: Pick<TreeNode, 'displayName' | 'photoBase64'>;
+  tone: 'root' | 'default' | 'external';
+}) {
   const ring = tone === 'root' ? 'ring-2 ring-white/60' : 'ring-1 ring-slate-200';
   if (node.photoBase64) {
     return (
@@ -76,7 +131,11 @@ function Avatar({ node, tone }: { node: OrgChartNodeDto; tone: 'root' | 'default
     <div
       className={
         `flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-semibold ${ring} ` +
-        (tone === 'root' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-400')
+        (tone === 'root'
+          ? 'bg-white/20 text-white'
+          : tone === 'external'
+            ? 'bg-slate-200 text-slate-400'
+            : 'bg-slate-100 text-slate-400')
       }
     >
       {node.displayName.charAt(0).toUpperCase()}
@@ -100,30 +159,46 @@ function OrgChartCard({
   const hasChildren = node.children.length > 0;
   const isCollapsed = collapsed.has(node.id);
   const isRoot = depth === 0;
+  const tone = node.isExternal ? 'external' : isRoot ? 'root' : 'default';
 
   return (
     <li>
       <div className="relative flex flex-col items-center">
-        <button
-          type="button"
-          onClick={() => onSelectUser(node.id)}
-          className={
-            'flex w-44 flex-col items-center gap-1.5 rounded-xl px-3 py-3 text-center shadow-sm transition-shadow hover:shadow-md ' +
-            (isRoot
-              ? 'bg-indigo-600 text-white'
-              : 'border border-slate-200 bg-white text-slate-800 hover:border-indigo-300')
-          }
-        >
-          <Avatar node={node} tone={isRoot ? 'root' : 'default'} />
-          <span className="min-w-0">
-            <span className={'block truncate text-sm font-semibold ' + (isRoot ? 'text-white' : 'text-slate-800')}>
-              {node.displayName}
+        {node.isExternal ? (
+          <div
+            title="Bu kişi dizinin senkronizasyon filtresi dışında kaldığı için sistemde kaydı yok."
+            className="flex w-44 cursor-default flex-col items-center gap-1.5 rounded-xl border border-dashed border-slate-300 bg-slate-50 px-3 py-3 text-center"
+          >
+            <Avatar node={node} tone={tone} />
+            <span className="min-w-0">
+              <span className="block truncate text-sm font-semibold text-slate-500">
+                {node.displayName}
+              </span>
+              <span className="block truncate text-xs text-slate-400">Dizin dışı</span>
             </span>
-            <span className={'block truncate text-xs ' + (isRoot ? 'text-indigo-100' : 'text-slate-400')}>
-              {node.username}
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={() => onSelectUser(node.id)}
+            className={
+              'flex w-44 flex-col items-center gap-1.5 rounded-xl px-3 py-3 text-center shadow-sm transition-shadow hover:shadow-md ' +
+              (isRoot
+                ? 'bg-indigo-600 text-white'
+                : 'border border-slate-200 bg-white text-slate-800 hover:border-indigo-300')
+            }
+          >
+            <Avatar node={node} tone={tone} />
+            <span className="min-w-0">
+              <span className={'block truncate text-sm font-semibold ' + (isRoot ? 'text-white' : 'text-slate-800')}>
+                {node.displayName}
+              </span>
+              <span className={'block truncate text-xs ' + (isRoot ? 'text-indigo-100' : 'text-slate-400')}>
+                {node.username}
+              </span>
             </span>
-          </span>
-        </button>
+          </button>
+        )}
 
         {hasChildren && (
           <button
@@ -404,10 +479,9 @@ export function OrgChart({ directoryId, onSelectUser }: OrgChartProps) {
           {orgChart.data.nodes.length} kişi · Fare tekerleğiyle yakınlaştır, sürükleyerek kaydır,
           daraltma rozetleriyle dalları aç/kapat.
         </span>
-        {forest.length > 1 && (
+        {forest.filter((root) => !root.isExternal).length > 1 && (
           <span>
-            Birden fazla kök görünüyor — bazı yöneticiler bu dizinin senkronizasyon filtresi
-            dışında kalmış olabilir.
+            Birden fazla kök görünüyor — bazı çalışanların yöneticisi hiç atanmamış olabilir.
           </span>
         )}
       </div>

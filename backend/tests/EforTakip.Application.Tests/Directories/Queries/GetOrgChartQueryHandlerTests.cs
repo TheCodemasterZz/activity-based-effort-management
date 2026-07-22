@@ -66,4 +66,29 @@ public sealed class GetOrgChartQueryHandlerTests : IAsyncDisposable
         result.Nodes.Single(n => n.Username == "baris.kalaycioglu").ManagerId.Should().Be(manager.Id);
         result.Nodes.Single(n => n.Username == "gokhan.yetkin").ManagerId.Should().BeNull();
     }
+
+    [Fact]
+    public async Task Handle_WithManagerOutsideSyncScope_ExposesUnresolvedManagerName()
+    {
+        // Yönetici (ör. Gökhan Yetkin) bu dizinin senkronizasyon filtresine (ör. şirket/departman)
+        // girmediği için sistemde hiç DirectoryUser kaydı yok — ManagerId null kalır ama frontend'in
+        // hiyerarşiyi kırmadan bir "harici" kutu gösterebilmesi için düz isim burada dönmelidir.
+        var directory = ValidAd();
+        var mapping = DirectoryAttributeMapping.Create("manager", "Yönetici", "user", isSynced: true, 0);
+        _db.Directories.Add(directory);
+        _db.DirectoryAttributeMappings.Add(mapping);
+
+        var employee = DirectoryUser.CreateFromActiveDirectory(
+            directory.Id, "ismail.koktay", "İsmail", "Koktay", "İsmail Koktay", null, "guid-employee");
+        employee.SetAttribute(mapping.Id, "Gökhan Yetkin", referencedDirectoryUserId: null);
+        _db.DirectoryUsers.Add(employee);
+        await _db.SaveChangesAsync();
+
+        var result = await new GetOrgChartQueryHandler(_db)
+            .Handle(new GetOrgChartQuery(directory.Id), CancellationToken.None);
+
+        var node = result.Nodes.Single();
+        node.ManagerId.Should().BeNull();
+        node.UnresolvedManagerName.Should().Be("Gökhan Yetkin");
+    }
 }
