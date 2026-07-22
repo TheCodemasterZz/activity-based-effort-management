@@ -1,5 +1,8 @@
 import { useState } from 'react';
 import { useCreateProjectTaskMutation, useUpdateProjectTaskMutation } from '../../hooks/useProjectTaskMutations';
+import { useEmployeeSearch } from '../../hooks/useEmployees';
+import { useEmployeeById } from '../../hooks/useEmployeeById';
+import { AsyncSearchSelect } from '../common/AsyncSearchSelect';
 import { ApiError } from '../../api/client';
 import type { ProjectTaskDto } from '../../api/types';
 
@@ -20,7 +23,14 @@ export function ProjectTaskFormModal({ projectId, task, onClose }: ProjectTaskFo
   const [endDate, setEndDate] = useState(task?.endDate ?? todayIso());
   const [estimatedEffortHours, setEstimatedEffortHours] = useState(String(task?.estimatedEffortHours ?? ''));
   const [isMilestone, setIsMilestone] = useState(task?.isMilestone ?? false);
+  const [assignedEmployeeId, setAssignedEmployeeId] = useState(task?.assignedEmployeeId ?? '');
+  const [assigneeLabel, setAssigneeLabel] = useState('');
+  const [assigneeQuery, setAssigneeQuery] = useState('');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  const existingAssignee = useEmployeeById(task?.assignedEmployeeId ?? null);
+  const assigneeSearch = useEmployeeSearch(assigneeQuery);
+  const resolvedAssigneeLabel = assigneeLabel || existingAssignee.data?.name || '';
 
   const createMutation = useCreateProjectTaskMutation();
   const updateMutation = useUpdateProjectTaskMutation();
@@ -38,7 +48,18 @@ export function ProjectTaskFormModal({ projectId, task, onClose }: ProjectTaskFo
       if (isEdit && task) {
         await updateMutation.mutateAsync({
           id: task.id,
-          payload: { name: name.trim(), startDate, endDate, estimatedEffortHours: hours, isMilestone },
+          payload: {
+            name: name.trim(),
+            startDate,
+            endDate,
+            estimatedEffortHours: hours,
+            isMilestone,
+            // WBS ilişkileri (üst görev/bağımlılık) bu formda düzenlenmiyor — mevcut değerleri
+            // olduğu gibi geri gönderip kazara sıfırlanmalarını önlüyoruz.
+            parentTaskId: task.parentTaskId,
+            dependsOnTaskId: task.dependsOnTaskId,
+            assignedEmployeeId: assignedEmployeeId || null,
+          },
         });
       } else {
         await createMutation.mutateAsync({
@@ -48,6 +69,7 @@ export function ProjectTaskFormModal({ projectId, task, onClose }: ProjectTaskFo
           endDate,
           estimatedEffortHours: hours,
           isMilestone,
+          assignedEmployeeId: assignedEmployeeId || null,
         });
       }
       onClose();
@@ -116,6 +138,21 @@ export function ProjectTaskFormModal({ projectId, task, onClose }: ProjectTaskFo
               onChange={(e) => setEstimatedEffortHours(e.target.value)}
               placeholder="ör. 16"
               className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+            />
+          </div>
+
+          <div>
+            <label className="mb-1 block text-xs font-medium text-slate-500">Sorumlu</label>
+            <AsyncSearchSelect
+              selectedLabel={resolvedAssigneeLabel || null}
+              onSearch={setAssigneeQuery}
+              options={(assigneeSearch.data?.items ?? []).map((e) => ({ id: e.id, label: e.name }))}
+              isLoading={assigneeSearch.isLoading}
+              onSelect={(option) => {
+                setAssignedEmployeeId(option.id);
+                setAssigneeLabel(option.label);
+              }}
+              placeholder="Kişi ara…"
             />
           </div>
 

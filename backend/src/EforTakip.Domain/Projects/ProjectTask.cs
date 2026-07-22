@@ -22,6 +22,19 @@ public sealed class ProjectTask : Entity, IAggregateRoot
     public decimal BaselineEffortHours { get; private set; }
     public DateOnly BaselineEndDate { get; private set; }
 
+    /// <summary>WBS hiyerarşisi için basit kendine-referanslı FK (Schedule sekmesi) — çok
+    /// seviyeli olabilir, ayrı bir ağaç/entity modellenmedi. Gerçek CPM/kritik yol hesaplaması
+    /// kasıtlı olarak yapılmıyor (bkz. DependsOnTaskId), sadece ilişki gösterilir.</summary>
+    public Guid? ParentTaskId { get; private set; }
+
+    /// <summary>Basit finish-to-start bağımlılık — bir önceki görevin bitişine bağlı olduğunu
+    /// gösterir, gerçek bir zamanlama/kısıt motoru tetiklemez.</summary>
+    public Guid? DependsOnTaskId { get; private set; }
+
+    /// <summary>Görevin sorumlusu (Tasks sekmesi) — önceden hiçbir görev bir kişiye
+    /// atanmıyordu, iş yükü/atama görünümü için eklendi.</summary>
+    public Guid? AssignedEmployeeId { get; private set; }
+
     private ProjectTask()
     {
         // EF Core
@@ -29,7 +42,10 @@ public sealed class ProjectTask : Entity, IAggregateRoot
 
     public static ProjectTask Create(
         Guid projectId, string name, DateOnly startDate, DateOnly endDate, decimal estimatedEffortHours,
-        bool isMilestone = false)
+        bool isMilestone = false,
+        Guid? parentTaskId = null,
+        Guid? dependsOnTaskId = null,
+        Guid? assignedEmployeeId = null)
     {
         Validate(name, startDate, endDate, estimatedEffortHours);
 
@@ -43,13 +59,20 @@ public sealed class ProjectTask : Entity, IAggregateRoot
             IsMilestone = isMilestone,
             Status = ProjectTaskStatus.NotStarted,
             BaselineEffortHours = estimatedEffortHours,
-            BaselineEndDate = endDate
+            BaselineEndDate = endDate,
+            ParentTaskId = parentTaskId,
+            DependsOnTaskId = dependsOnTaskId,
+            AssignedEmployeeId = assignedEmployeeId
         };
     }
 
     /// <summary>Güncel planı değiştirir — BaselineEffortHours/BaselineEndDate kasıtlı olarak
     /// buradan etkilenmez, ilk oluşturulduğu andaki değerde donmuş kalır.</summary>
-    public void UpdatePlan(string name, DateOnly startDate, DateOnly endDate, decimal estimatedEffortHours, bool isMilestone)
+    public void UpdatePlan(
+        string name, DateOnly startDate, DateOnly endDate, decimal estimatedEffortHours, bool isMilestone,
+        Guid? parentTaskId = null,
+        Guid? dependsOnTaskId = null,
+        Guid? assignedEmployeeId = null)
     {
         Validate(name, startDate, endDate, estimatedEffortHours);
 
@@ -58,6 +81,9 @@ public sealed class ProjectTask : Entity, IAggregateRoot
         EndDate = endDate;
         EstimatedEffortHours = estimatedEffortHours;
         IsMilestone = isMilestone;
+        ParentTaskId = parentTaskId;
+        DependsOnTaskId = dependsOnTaskId;
+        AssignedEmployeeId = assignedEmployeeId;
     }
 
     public void SetStatus(ProjectTaskStatus status)

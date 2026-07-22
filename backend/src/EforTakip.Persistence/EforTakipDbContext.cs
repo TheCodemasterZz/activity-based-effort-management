@@ -5,6 +5,7 @@ using EforTakip.Domain.Employees;
 using EforTakip.Domain.Holidays;
 using EforTakip.Domain.Notifications;
 using EforTakip.Domain.Projects;
+using EforTakip.Domain.Settings;
 using EforTakip.Domain.ValueStreams;
 using EforTakip.Domain.WorkCalendars;
 using EforTakip.Domain.WorkLogApprovals;
@@ -29,6 +30,10 @@ public sealed class EforTakipDbContext(DbContextOptions<EforTakipDbContext> opti
 
     public DbSet<ProjectTask> ProjectTasks => Set<ProjectTask>();
 
+    public DbSet<ProjectRisk> ProjectRisks => Set<ProjectRisk>();
+
+    public DbSet<ProjectIssue> ProjectIssues => Set<ProjectIssue>();
+
     public DbSet<ValueStream> ValueStreams => Set<ValueStream>();
 
     public DbSet<ValueStreamStage> ValueStreamStages => Set<ValueStreamStage>();
@@ -50,6 +55,8 @@ public sealed class EforTakipDbContext(DbContextOptions<EforTakipDbContext> opti
     public DbSet<WorkLogApproval> WorkLogApprovals => Set<WorkLogApproval>();
 
     public DbSet<EmployeeLeave> EmployeeLeaves => Set<EmployeeLeave>();
+
+    public DbSet<ConfidenceScoreSettings> ConfidenceScoreSettings => Set<ConfidenceScoreSettings>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

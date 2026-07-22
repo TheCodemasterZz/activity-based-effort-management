@@ -8,4 +8,7 @@ public sealed record CreateProjectTaskCommand(
     DateOnly StartDate,
     DateOnly EndDate,
     decimal EstimatedEffortHours,
-    bool IsMilestone) : IRequest<Guid>;
+    bool IsMilestone,
+    Guid? ParentTaskId = null,
+    Guid? DependsOnTaskId = null,
+    Guid? AssignedEmployeeId = null) : IRequest<Guid>;

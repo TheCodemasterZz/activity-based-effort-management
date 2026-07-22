@@ -1,4 +1,3 @@
-using EforTakip.Domain.Customers;
 using EforTakip.Domain.Employees;
 using EforTakip.Domain.Projects;
 using EforTakip.Domain.WorkLogApprovals;
@@ -36,7 +35,6 @@ public sealed class EmployeeWorkLogConfiguration : IEntityTypeConfiguration<Empl
 
         builder.HasOne<Employee>().WithMany().HasForeignKey(w => w.EmployeeId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne<Project>().WithMany().HasForeignKey(w => w.ProjectId).OnDelete(DeleteBehavior.Restrict);
-        builder.HasOne<Customer>().WithMany().HasForeignKey(w => w.CustomerId).OnDelete(DeleteBehavior.Restrict);
 
         builder.HasOne<DomainActivity>()
             .WithMany()

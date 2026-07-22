@@ -26,6 +26,10 @@ export interface ProjectDto {
   startDate: string | null;
   endDate: string | null;
   healthStatus: string;
+  sponsor: string | null;
+  projectManagerEmployeeId: string | null;
+  priority: string;
+  strategicGoal: string | null;
 }
 
 // Backend'de global bir JsonStringEnumConverter yok — bu yüzden komut gövdelerinde (request)
@@ -33,6 +37,9 @@ export interface ProjectDto {
 // ProjectMappingConfig'in .ToString() eşlemesi nedeniyle METİN olarak gelir (ör. "OnTrack").
 export const PROJECT_HEALTH_STATUS = { OnTrack: 1, AtRisk: 2, NeedsHelp: 3 } as const;
 export type ProjectHealthStatusValue = (typeof PROJECT_HEALTH_STATUS)[keyof typeof PROJECT_HEALTH_STATUS];
+
+export const PROJECT_PRIORITY = { Low: 1, Medium: 2, High: 3, Critical: 4 } as const;
+export type ProjectPriorityValue = (typeof PROJECT_PRIORITY)[keyof typeof PROJECT_PRIORITY];
 
 export const PROJECT_TASK_STATUS = { NotStarted: 1, InProgress: 2, Done: 3 } as const;
 export type ProjectTaskStatusValue = (typeof PROJECT_TASK_STATUS)[keyof typeof PROJECT_TASK_STATUS];
@@ -48,6 +55,43 @@ export interface ProjectTaskDto {
   isMilestone: boolean;
   baselineEffortHours: number;
   baselineEndDate: string;
+  parentTaskId: string | null;
+  dependsOnTaskId: string | null;
+  assignedEmployeeId: string | null;
+}
+
+export const PROJECT_RISK_STATUS = { Open: 1, Mitigating: 2, Closed: 3 } as const;
+export type ProjectRiskStatusValue = (typeof PROJECT_RISK_STATUS)[keyof typeof PROJECT_RISK_STATUS];
+
+export interface ProjectRiskDto {
+  id: string;
+  projectId: string;
+  title: string;
+  description: string | null;
+  probability: number;
+  impact: number;
+  status: string;
+  mitigationPlan: string | null;
+  ownerEmployeeId: string | null;
+  identifiedDate: string;
+}
+
+export const PROJECT_ISSUE_PRIORITY = { Low: 1, Medium: 2, High: 3, Critical: 4 } as const;
+export type ProjectIssuePriorityValue = (typeof PROJECT_ISSUE_PRIORITY)[keyof typeof PROJECT_ISSUE_PRIORITY];
+
+export const PROJECT_ISSUE_STATUS = { Open: 1, InProgress: 2, Resolved: 3, Closed: 4 } as const;
+export type ProjectIssueStatusValue = (typeof PROJECT_ISSUE_STATUS)[keyof typeof PROJECT_ISSUE_STATUS];
+
+export interface ProjectIssueDto {
+  id: string;
+  projectId: string;
+  title: string;
+  description: string | null;
+  priority: string;
+  status: string;
+  ownerEmployeeId: string | null;
+  dueDate: string | null;
+  resolution: string | null;
 }
 
 export interface CustomerSummaryDto {
@@ -68,6 +112,10 @@ export interface ProjectDetailDto {
   startDate: string | null;
   endDate: string | null;
   healthStatus: string;
+  sponsor: string | null;
+  projectManagerEmployeeId: string | null;
+  priority: string;
+  strategicGoal: string | null;
   customers: CustomerSummaryDto[];
   employees: EmployeeSummaryDto[];
 }
@@ -105,7 +153,6 @@ export interface EmployeeWorkLogDto {
   id: string;
   employeeId: string;
   projectId: string;
-  customerId: string;
   activityL1Id: string;
   activityL2Id: string;
   workDate: string;
@@ -137,4 +184,31 @@ export interface ProblemDetails {
   status?: number;
   detail?: string;
   errors?: Record<string, string[]>;
+}
+
+export interface ConfidenceScoreSettingsDto {
+  id: string;
+  weightDescriptionLength: number;
+  weightSpecificity: number;
+  weightGenericPenalty: number;
+  weightDuplicateDetection: number;
+  weightRoundHoursSingle: number;
+  weightDurationDescriptionRatio: number;
+  weightDailyRoundTotal: number;
+  weightDailyTotalReasonableness: number;
+  weightBaselineDeviation: number;
+  weightWeekendHoliday: number;
+  thresholdVeryLow: number;
+  thresholdLow: number;
+  thresholdMedium: number;
+  thresholdHigh: number;
+  baselineLookbackDays: number;
+  duplicateLookbackDays: number;
+  duplicateSimilarityThreshold: number;
+  shortDescriptionCharThreshold: number;
+  longDescriptionCharThreshold: number;
+  longDurationHoursThreshold: number;
+  shortDurationHoursThreshold: number;
+  dailyTotalSuspiciousHours: number;
+  genericPhrasesCsv: string;
 }

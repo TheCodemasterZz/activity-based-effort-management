@@ -2,7 +2,6 @@ import { useMemo, useState } from 'react';
 import { AsyncSearchSelect } from '../common/AsyncSearchSelect';
 import { useEmployeeSearch } from '../../hooks/useEmployees';
 import { useProjectSearch } from '../../hooks/useProjects';
-import { useCustomerSearch } from '../../hooks/useCustomers';
 import { useSubActivities, useTopLevelActivities } from '../../hooks/useActivities';
 import { useHolidays } from '../../hooks/useHolidays';
 import { useLogWorkMutation } from '../../hooks/useLogWorkMutation';
@@ -21,8 +20,6 @@ export interface WorkLogFormInitialValues {
   employeeLabel?: string;
   projectId?: string;
   projectLabel?: string;
-  customerId?: string;
-  customerLabel?: string;
   activityL1Id?: string;
   activityL2Id?: string;
   date?: string;
@@ -50,7 +47,7 @@ export interface WorkLogFormProps {
   cancelLabel?: string;
 }
 
-type FieldName = 'employee' | 'project' | 'customer' | 'activityL1' | 'activityL2' | 'date' | 'endDate' | 'hours' | 'description';
+type FieldName = 'employee' | 'project' | 'activityL1' | 'activityL2' | 'date' | 'endDate' | 'hours' | 'description';
 
 function todayIso(): string {
   return new Date().toISOString().slice(0, 10);
@@ -100,8 +97,6 @@ export function WorkLogForm({
   const [employeeLabel, setEmployeeLabel] = useState(initialValues?.employeeLabel ?? '');
   const [projectId, setProjectId] = useState(initialValues?.projectId ?? '');
   const [projectLabel, setProjectLabel] = useState(initialValues?.projectLabel ?? '');
-  const [customerId, setCustomerId] = useState(initialValues?.customerId ?? '');
-  const [customerLabel, setCustomerLabel] = useState(initialValues?.customerLabel ?? '');
   const [activityL1Id, setActivityL1Id] = useState(initialValues?.activityL1Id ?? '');
   const [activityL2Id, setActivityL2Id] = useState(initialValues?.activityL2Id ?? '');
   const [description, setDescription] = useState(initialValues?.description ?? '');
@@ -125,9 +120,6 @@ export function WorkLogForm({
   const [projectQuery, setProjectQuery] = useState('');
   const projectSearch = useProjectSearch(projectQuery, employeeId || null);
 
-  const [customerQuery, setCustomerQuery] = useState('');
-  const customerSearch = useCustomerSearch(customerQuery, projectId || null);
-
   const topLevelActivities = useTopLevelActivities();
   const subActivities = useSubActivities(activityL1Id || null);
   const holidays = useHolidays();
@@ -145,7 +137,6 @@ export function WorkLogForm({
   const fieldErrors: Partial<Record<FieldName, string>> = {
     employee: employeeId ? undefined : 'Kişi seçilmeli.',
     project: projectId ? undefined : 'Proje seçilmeli.',
-    customer: customerId ? undefined : 'Müşteri seçilmeli.',
     activityL1: activityL1Id ? undefined : 'Activity L1 seçilmeli.',
     activityL2: activityL2Id ? undefined : 'Activity L2 seçilmeli.',
     date: startDate ? undefined : 'Tarih seçilmeli.',
@@ -185,7 +176,6 @@ export function WorkLogForm({
     setTouched({
       employee: true,
       project: true,
-      customer: true,
       activityL1: true,
       activityL2: true,
       date: true,
@@ -233,7 +223,6 @@ export function WorkLogForm({
           payload: {
             employeeId,
             projectId,
-            customerId,
             activityL1Id,
             activityL2Id,
             workDate: startDate,
@@ -245,7 +234,6 @@ export function WorkLogForm({
         await logWorkMutation.mutateAsync({
           employeeId,
           projectId,
-          customerId,
           activityL1Id,
           activityL2Id,
           startDate,
@@ -300,8 +288,6 @@ export function WorkLogForm({
               setEmployeeLabel(option.label);
               setProjectId('');
               setProjectLabel('');
-              setCustomerId('');
-              setCustomerLabel('');
               markTouched('employee');
             }}
             placeholder="Kişi ara…"
@@ -321,8 +307,6 @@ export function WorkLogForm({
             onSelect={(option) => {
               setProjectId(option.id);
               setProjectLabel(option.label);
-              setCustomerId('');
-              setCustomerLabel('');
               markTouched('project');
             }}
             placeholder="Proje ara…"
@@ -330,27 +314,6 @@ export function WorkLogForm({
             disabledMessage="Önce kişi seçin"
           />
           {showError('project') && <p className="mt-1 text-xs text-red-600">{showError('project')}</p>}
-        </div>
-
-        <div>
-          <label className="mb-1 block text-xs font-medium text-slate-500">
-            Müşteri <span className="text-red-500">*</span>
-          </label>
-          <AsyncSearchSelect
-            selectedLabel={customerLabel || null}
-            onSearch={setCustomerQuery}
-            options={(customerSearch.data?.items ?? []).map((c) => ({ id: c.id, label: c.name }))}
-            isLoading={customerSearch.isLoading}
-            onSelect={(option) => {
-              setCustomerId(option.id);
-              setCustomerLabel(option.label);
-              markTouched('customer');
-            }}
-            placeholder="Müşteri ara…"
-            disabled={!projectId}
-            disabledMessage="Önce proje seçin"
-          />
-          {showError('customer') && <p className="mt-1 text-xs text-red-600">{showError('customer')}</p>}
         </div>
 
         <div>

@@ -16,7 +16,8 @@ public sealed class CreateProjectTaskCommandHandler(
 
         var task = ProjectTask.Create(
             request.ProjectId, request.Name, request.StartDate, request.EndDate,
-            request.EstimatedEffortHours, request.IsMilestone);
+            request.EstimatedEffortHours, request.IsMilestone,
+            request.ParentTaskId, request.DependsOnTaskId, request.AssignedEmployeeId);
 
         await repository.AddAsync(task, cancellationToken);
         await unitOfWork.SaveChangesAsync(cancellationToken);

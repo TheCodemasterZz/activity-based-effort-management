@@ -3,6 +3,7 @@ using EforTakip.Domain.Customers;
 using EforTakip.Domain.EmployeeLeaves;
 using EforTakip.Domain.Employees;
 using EforTakip.Domain.Projects;
+using EforTakip.Domain.Settings;
 using EforTakip.Domain.ValueStreams;
 using EforTakip.Domain.WorkLogApprovals;
 using EforTakip.Domain.WorkLogs;
@@ -45,6 +46,17 @@ public static class TestDataSeeder
         var topLevelActivities = await context.Activities.Where(a => a.ParentActivityId == null).ToListAsync();
         var subActivities = await context.Activities.Where(a => a.ParentActivityId != null).ToListAsync();
 
+        // Overview sekmesi için sabit stratejik hedef havuzu — gerçek bir strateji kataloğu
+        // yerine, Clarity örneğindeki gibi kısa/anlamlı cümleler.
+        var strategicGoalPool = new[]
+        {
+            "Dijital dönüşüm hedeflerine katkı",
+            "Operasyonel verimliliği artırma",
+            "Müşteri deneyimini iyileştirme",
+            "Pazar payını büyütme",
+            "Maliyet optimizasyonu",
+        };
+
         // Her proje, bugünden 2-8 ay önce başlayıp 1-4 ay sonra biten bir aralığa yayılır —
         // Clarity PPM örneğindeki gibi "hâlâ devam eden" projeler çoğunlukta olsun diye.
         var projects = new Faker<Project>("tr")
@@ -52,7 +64,12 @@ public static class TestDataSeeder
             {
                 var startDate = todayDate.AddDays(-random.Next(60, 240));
                 var endDate = todayDate.AddDays(random.Next(30, 120));
-                return Project.Create($"{f.Commerce.ProductName()} Projesi", f.Lorem.Sentence(), startDate, endDate);
+                var priority = (ProjectPriority)random.Next(1, 5);
+                return Project.Create(
+                    $"{f.Commerce.ProductName()} Projesi", f.Lorem.Sentence(), startDate, endDate,
+                    sponsor: f.Name.FullName(),
+                    priority: priority,
+                    strategicGoal: strategicGoalPool[random.Next(strategicGoalPool.Length)]);
             })
             .Generate(4);
 
@@ -78,6 +95,21 @@ public static class TestDataSeeder
             foreach (var project in projects.OrderBy(_ => random.Next()).Take(random.Next(1, 3)))
                 project.AssignEmployee(employee.Id);
         }
+
+        // Proje yöneticisi — atanmış çalışanlardan biri (Overview sekmesi). Employee ataması
+        // bittikten SONRA belirlenir ki gerçek bir proje üyesi olsun; Update tam-değiştirme
+        // şeklinde olduğu için diğer alanlar kendi mevcut değerleriyle geri yazılıyor.
+        foreach (var project in projects)
+        {
+            if (project.EmployeeIds.Count == 0)
+                continue;
+
+            var pmId = project.EmployeeIds.ElementAt(random.Next(project.EmployeeIds.Count));
+            project.Update(
+                project.Name, project.Description, project.StartDate, project.EndDate,
+                project.Sponsor, pmId, project.Priority, project.StrategicGoal);
+        }
+
         context.Projects.AddRange(projects);
 
         // Görevler (+ birer kilometre taşı) — Clarity kartındaki elmas-şeritli zaman çizelgesi ve
@@ -99,14 +131,35 @@ public static class TestDataSeeder
             var totalDays = Math.Max(taskCount, projectEnd.DayNumber - projectStart.DayNumber);
             var slice = totalDays / taskCount;
 
+            var projectEmployeeIds = project.EmployeeIds.ToList();
+            Guid? PickAssignee() => projectEmployeeIds.Count > 0 ? projectEmployeeIds[random.Next(projectEmployeeIds.Count)] : null;
+
+            // Basit 2 seviyeli WBS (Schedule sekmesi): ilk görev "Faz 1", ortadaki görev
+            // "Faz 2" başlığı olur (ParentTaskId=null); aradaki/sonraki görevler bu iki fazın
+            // altına dağıtılır. Aynı faz içinde ardışık görevler birbirine DependsOnTaskId ile
+            // (basit finish-to-start) zincirlenir — gerçek bir CPM hesaplaması yapılmaz.
+            var phase2Index = names.Count / 2;
+            ProjectTask? phase1 = null;
+            ProjectTask? phase2 = null;
+            var localTasks = new List<ProjectTask>();
+
             var cursor = projectStart;
-            foreach (var name in names)
+            for (var idx = 0; idx < names.Count; idx++)
             {
+                var name = names[idx];
                 var taskStart = cursor;
-                var taskEnd = name == names[^1] ? projectEnd : cursor.AddDays(Math.Max(1, slice));
+                var taskEnd = idx == names.Count - 1 ? projectEnd : cursor.AddDays(Math.Max(1, slice));
                 var estimatedHours = Math.Round((decimal)(random.NextDouble() * 30 + 10), 1);
 
-                var task = ProjectTask.Create(project.Id, name, taskStart, taskEnd, estimatedHours);
+                var isPhaseHeader = idx == 0 || idx == phase2Index;
+                Guid? parentTaskId = null;
+                if (!isPhaseHeader)
+                    parentTaskId = idx < phase2Index ? phase1?.Id : phase2?.Id;
+                Guid? dependsOnTaskId = !isPhaseHeader && localTasks.Count > 0 ? localTasks[^1].Id : null;
+
+                var task = ProjectTask.Create(
+                    project.Id, name, taskStart, taskEnd, estimatedHours, isMilestone: false,
+                    parentTaskId: parentTaskId, dependsOnTaskId: dependsOnTaskId, assignedEmployeeId: PickAssignee());
 
                 // Bitiş tarihi geçmişse çoğunlukla Bitti — ama bir kısmı kasıtlı olarak hâlâ
                 // Devam Ediyor durumunda bırakılıyor (SPI'nin 1'in altına düşmesini sağlayan,
@@ -118,6 +171,10 @@ public static class TestDataSeeder
                             ? ProjectTaskStatus.InProgress
                             : ProjectTaskStatus.NotStarted);
 
+                if (idx == 0) phase1 = task;
+                if (idx == phase2Index) phase2 = task;
+
+                localTasks.Add(task);
                 projectTasks.Add(task);
                 cursor = taskEnd;
             }
@@ -129,6 +186,73 @@ public static class TestDataSeeder
             projectTasks.Add(milestone);
         }
         context.ProjectTasks.AddRange(projectTasks);
+
+        // Risks/Issues sekmeleri için proje başına birkaç risk/sorun örneği.
+        var riskTitlePool = new[]
+        {
+            "Anahtar personel kaybı riski", "Üçüncü parti entegrasyon gecikmesi", "Bütçe aşımı riski",
+            "Kapsam genişlemesi (scope creep)", "Teknik borç birikimi", "Tedarikçi teslimat gecikmesi",
+            "Güvenlik açığı riski", "Performans/ölçeklenebilirlik riski",
+        };
+        var issueTitlePool = new[]
+        {
+            "Test ortamı erişim sorunu", "Onay sürecinde gecikme", "Eksik gereksinim dokümantasyonu",
+            "Entegrasyon test hatası", "Performans sorunu (yavaş yanıt süresi)", "Üçüncü parti API kesintisi",
+            "Kaynak yetersizliği", "İletişim/koordinasyon eksikliği",
+        };
+
+        var projectRisks = new List<ProjectRisk>();
+        var projectIssues = new List<ProjectIssue>();
+        foreach (var project in projects)
+        {
+            var projectEmployeeIds = project.EmployeeIds.ToList();
+            Guid? PickOwner() => projectEmployeeIds.Count > 0 ? projectEmployeeIds[random.Next(projectEmployeeIds.Count)] : null;
+
+            var riskTitles = riskTitlePool.OrderBy(_ => random.Next()).Take(random.Next(2, 5)).ToList();
+            for (var i = 0; i < riskTitles.Count; i++)
+            {
+                // En az biri yüksek olasılık×etki ile "kritik" bir demo senaryosu oluşturur.
+                var probability = i == 0 ? random.Next(4, 6) : random.Next(1, 6);
+                var impact = i == 0 ? random.Next(4, 6) : random.Next(1, 6);
+                var risk = ProjectRisk.Create(
+                    project.Id, riskTitles[i], bogus.Lorem.Sentence(8, 4), probability, impact,
+                    random.NextDouble() > 0.4 ? bogus.Lorem.Sentence(6, 4) : null, PickOwner(),
+                    todayDate.AddDays(-random.Next(5, 90)));
+
+                if (i > 0 && random.NextDouble() < 0.3) risk.SetStatus(ProjectRiskStatus.Mitigating);
+                else if (i > 1 && random.NextDouble() < 0.2) risk.SetStatus(ProjectRiskStatus.Closed);
+
+                projectRisks.Add(risk);
+            }
+
+            var issueTitles = issueTitlePool.OrderBy(_ => random.Next()).Take(random.Next(2, 5)).ToList();
+            for (var i = 0; i < issueTitles.Count; i++)
+            {
+                var priority = (ProjectIssuePriority)random.Next(1, 5);
+                // En az biri süresi geçmiş (overdue) ve hâlâ açık — Issues sekmesindeki kırmızı
+                // vurgu demo senaryosu için.
+                var dueDate = i == 0 ? todayDate.AddDays(-random.Next(1, 15)) : todayDate.AddDays(random.Next(-10, 30));
+                var issue = ProjectIssue.Create(project.Id, issueTitles[i], bogus.Lorem.Sentence(8, 4), priority, PickOwner(), dueDate);
+
+                if (i == 0)
+                {
+                    issue.SetStatus(ProjectIssueStatus.Open);
+                }
+                else
+                {
+                    var roll = random.NextDouble();
+                    issue.SetStatus(
+                        roll < 0.4 ? ProjectIssueStatus.Open
+                        : roll < 0.7 ? ProjectIssueStatus.InProgress
+                        : roll < 0.9 ? ProjectIssueStatus.Resolved
+                        : ProjectIssueStatus.Closed);
+                }
+
+                projectIssues.Add(issue);
+            }
+        }
+        context.ProjectRisks.AddRange(projectRisks);
+        context.ProjectIssues.AddRange(projectIssues);
 
         var valueStreams = new[] { "Ürün Geliştirme Süreci", "Müşteri Talep Süreci" }
             .Select(name => ValueStream.Create(name, null))
@@ -198,21 +322,24 @@ public static class TestDataSeeder
 
                 for (var date = rangeStart; date <= rangeEnd; date = date.AddDays(1))
                 {
-                    if (date.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday)
+                    var isWeekend = date.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday;
+
+                    // Hafta içi: ayın tamamı kapsansın diye yüksek olasılık (%90). Hafta sonu:
+                    // çok daha düşük ama SIFIR DEĞİL bir olasılık (%12) — Planlama Doğruluğu'nun
+                    // hafta sonu sütunlarının her zaman boş görünmesini önlemek için gerçekçi bir
+                    // "ara sıra hafta sonu çalışma" senaryosu (hem Actual hem Planned tarafında).
+                    var presenceProbability = isWeekend ? 0.12 : 0.9;
+                    if (random.NextDouble() > presenceProbability)
                         continue;
 
-                    // Ayın tamamı kapsansın istendiği için yüksek olasılık (%90) kullanılıyor —
-                    // yine de her gün deterministik olmasın diye tam %100 değil.
-                    if (random.NextDouble() > 0.9)
-                        continue;
-
-                    var dailyTotal = Math.Round((decimal)(random.NextDouble() * 5 + 3), 2); // ~3-8h/gün
+                    // Hafta sonu çalışması genelde kısa/münferit olur (acil müdahale, yetişmeyen
+                    // iş) — hafta içi ~3-8h yerine ~1-4h.
+                    var dailyTotal = isWeekend
+                        ? Math.Round((decimal)(random.NextDouble() * 3 + 1), 2)
+                        : Math.Round((decimal)(random.NextDouble() * 5 + 3), 2);
                     foreach (var chunkHours in SplitIntoChunks(dailyTotal))
                     {
                         var project = assignedProjects[random.Next(assignedProjects.Count)];
-                        var assignedCustomerIds = project.CustomerIds.ToList();
-                        if (assignedCustomerIds.Count == 0)
-                            continue;
 
                         var activityL1 = topLevelActivities[random.Next(topLevelActivities.Count)];
                         var candidatesL2 = subActivities.Where(a => a.ParentActivityId == activityL1.Id).ToList();
@@ -221,7 +348,6 @@ public static class TestDataSeeder
                         result.Add(EmployeeWorkLog.Create(
                             employee.Id,
                             project.Id,
-                            assignedCustomerIds[random.Next(assignedCustomerIds.Count)],
                             activityL1.Id,
                             activityL2.Id,
                             date,
@@ -237,6 +363,43 @@ public static class TestDataSeeder
         var workLogs = new List<EmployeeWorkLog>();
         workLogs.AddRange(GenerateWorkLogs(WorkLogEntryType.Actual, monthStart, todayDate));
         workLogs.AddRange(GenerateWorkLogs(WorkLogEntryType.Planned, monthStart, monthEnd));
+
+        // Güvenilirlik Skoru motorunu (bkz. lib/confidenceScore.ts) demo'da gösterebilmek için,
+        // bilinçli olarak "dikkatsiz/tahmini girilmiş" birkaç Actual kayıt ekleniyor. Mevcut ayın
+        // (monthStart..todayDate) dışında, 5 hafta öncesine denk gelen tamamen ayrı bir haftaya
+        // yerleştiriliyor ki rastgele üretilen normal kayıtlarla asla çakışmasın (temiz, deterministik
+        // bir demo senaryosu olsun).
+        var badDataMonday = todayDate.AddDays(-(((int)todayDate.DayOfWeek + 6) % 7) - 35);
+        var badDataEmployees = employeeProjects.Where(kv => kv.Value.Count > 0).Take(2).Select(kv => kv.Key).ToList();
+
+        void AddBadLog(Guid employeeId, DateOnly date, decimal hours, string description)
+        {
+            var project = employeeProjects[employeeId][0];
+            var activityL1 = topLevelActivities[0];
+            var activityL2 = subActivities.First(a => a.ParentActivityId == activityL1.Id);
+            workLogs.Add(EmployeeWorkLog.Create(
+                employeeId, project.Id, activityL1.Id, activityL2.Id, date, hours, description, WorkLogEntryType.Actual));
+        }
+
+        if (badDataEmployees.Count >= 1)
+        {
+            var e1 = badDataEmployees[0];
+            AddBadLog(e1, badDataMonday, 8m, "toplantı"); // jenerik + kısa + tam saat (tekil) + günlük toplam yuvarlak
+            AddBadLog(e1, badDataMonday.AddDays(1), 8m, "toplantı"); // önceki günle birebir aynı açıklama (tekrar)
+            AddBadLog(e1, badDataMonday.AddDays(2), 7m, "genel işler"); // + aşağıdakiyle birlikte günlük toplam 13h (şüpheli)
+            AddBadLog(e1, badDataMonday.AddDays(2), 6m, "rutin işler");
+            AddBadLog(e1, badDataMonday.AddDays(3), 5m, "iş"); // uzun süre + çok kısa açıklama orantısızlığı
+            AddBadLog(e1, badDataMonday.AddDays(5), 4m, "email"); // hafta sonu (Cumartesi) + jenerik + kısa
+        }
+
+        if (badDataEmployees.Count >= 2)
+        {
+            var e2 = badDataEmployees[1];
+            AddBadLog(e2, badDataMonday, 3m, "misc");
+            AddBadLog(e2, badDataMonday.AddDays(1), 3m, "misc"); // tekrar
+            AddBadLog(e2, badDataMonday.AddDays(6), 2m, "ofis işleri"); // hafta sonu (Pazar) + jenerik
+        }
+
         context.EmployeeWorkLogs.AddRange(workLogs);
 
         var actualWorkLogs = workLogs.Where(l => l.EntryType == WorkLogEntryType.Actual).ToList();
@@ -328,6 +491,11 @@ public static class TestDataSeeder
         // gömülü — Program.cs'teki EnsureCreatedAsync() çağrısı bunları Test Mode'da da
         // (InMemory sağlayıcısında) otomatik olarak uygular, gerçek DB'ye migration
         // uygulandığında da aynı satırlar eklenir. Burada tekrar eklemeye gerek yok.
+
+        // Güvenilirlik skoru ayarları — tek satırlık, varsayılan değerlerle (bkz.
+        // ConfidenceScoreSettings.CreateDefault) sabit bir Id ile seed edilir; admin panelinden
+        // güncellenebilir.
+        context.ConfidenceScoreSettings.Add(ConfidenceScoreSettings.CreateDefault(ConfidenceScoreSettingsSeedData.SettingsId));
 
         await context.SaveChangesAsync();
     }

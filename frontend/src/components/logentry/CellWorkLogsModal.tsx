@@ -15,7 +15,6 @@ interface CellWorkLogsModalProps {
   date: string;
   resolveEmployee: (id: string) => string;
   resolveProject: (id: string) => string;
-  resolveCustomer: (id: string) => string;
   resolveActivity: (id: string) => string;
   addPrefill: WorkLogFormInitialValues;
   entryType?: WorkLogEntryType;
@@ -32,7 +31,6 @@ export function CellWorkLogsModal({
   date,
   resolveEmployee,
   resolveProject,
-  resolveCustomer,
   resolveActivity,
   addPrefill,
   entryType = WORK_LOG_ENTRY_TYPE.Actual,
@@ -98,9 +96,6 @@ export function CellWorkLogsModal({
 
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
           <div>
-            <label className="mb-1 block text-xs font-medium text-slate-500">
-              {editingLog ? 'Kaydı Düzenle' : 'Yeni Kayıt Ekle'}
-            </label>
             <WorkLogForm
               key={editingLog ? `edit-${editingLog.id}` : 'create'}
               mode={editingLog ? 'edit' : 'create'}
@@ -113,8 +108,6 @@ export function CellWorkLogsModal({
                       employeeLabel: resolveEmployee(editingLog.employeeId),
                       projectId: editingLog.projectId,
                       projectLabel: resolveProject(editingLog.projectId),
-                      customerId: editingLog.customerId,
-                      customerLabel: resolveCustomer(editingLog.customerId),
                       activityL1Id: editingLog.activityL1Id,
                       activityL2Id: editingLog.activityL2Id,
                       date: editingLog.workDate,
@@ -156,7 +149,6 @@ export function CellWorkLogsModal({
                             </span>
                           )}
                         </div>
-                        <div className="text-xs text-slate-500">{resolveCustomer(log.customerId)}</div>
                         <div className="text-xs text-slate-500">
                           {resolveActivity(log.activityL1Id)} / {resolveActivity(log.activityL2Id)}
                         </div>

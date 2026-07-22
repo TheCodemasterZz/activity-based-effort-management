@@ -8,7 +8,6 @@ export type AppPage =
   | 'planningAccuracy'
   | 'projects'
   | 'employees'
-  | 'widgets'
   | 'admin';
 
 export const NAV_ITEMS: { page: AppPage; label: string }[] = [
@@ -19,5 +18,4 @@ export const NAV_ITEMS: { page: AppPage; label: string }[] = [
   { page: 'capacityManagement', label: 'Kapasite Yönetimi' },
   { page: 'planningAccuracy', label: 'Planlama Doğruluğu' },
   { page: 'employees', label: 'Çalışanlar' },
-  { page: 'widgets', label: 'Widgets' },
 ];

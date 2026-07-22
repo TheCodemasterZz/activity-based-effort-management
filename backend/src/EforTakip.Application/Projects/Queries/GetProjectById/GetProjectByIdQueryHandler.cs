@@ -43,6 +43,10 @@ public sealed class GetProjectByIdQueryHandler(IApplicationDbContext db)
             StartDate = project.StartDate,
             EndDate = project.EndDate,
             HealthStatus = project.HealthStatus.ToString(),
+            Sponsor = project.Sponsor,
+            ProjectManagerEmployeeId = project.ProjectManagerEmployeeId,
+            Priority = project.Priority.ToString(),
+            StrategicGoal = project.StrategicGoal,
             Customers = customers,
             Employees = employees
         };

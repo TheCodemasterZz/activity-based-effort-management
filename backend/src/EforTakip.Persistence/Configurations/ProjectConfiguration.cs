@@ -34,6 +34,22 @@ public sealed class ProjectConfiguration : IEntityTypeConfiguration<Project>
             .HasMaxLength(20)
             .IsRequired();
 
+        builder.Property(p => p.Sponsor)
+            .HasMaxLength(200);
+
+        builder.Property(p => p.Priority)
+            .HasConversion<string>()
+            .HasMaxLength(20)
+            .IsRequired();
+
+        builder.Property(p => p.StrategicGoal)
+            .HasMaxLength(500);
+
+        builder.HasOne<EforTakip.Domain.Employees.Employee>()
+            .WithMany()
+            .HasForeignKey(p => p.ProjectManagerEmployeeId)
+            .OnDelete(DeleteBehavior.Restrict);
+
         // Soft delete: pasife alınmış projeler tüm sorgulardan (liste, GetById) otomatik
         // hariç tutulur; veri fiziksel olarak silinmez.
         builder.HasQueryFilter(p => p.IsActive);

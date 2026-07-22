@@ -1,12 +1,11 @@
 import type { EmployeeWorkLogDto } from '../api/types';
 import type { PeriodColumn } from './dateUtils';
 
-export type GroupByDimension = 'employee' | 'project' | 'customer' | 'activityL1' | 'activityL2';
+export type GroupByDimension = 'employee' | 'project' | 'activityL1' | 'activityL2';
 
 export const GROUP_BY_OPTIONS: { value: GroupByDimension; label: string }[] = [
   { value: 'employee', label: 'Kişi' },
   { value: 'project', label: 'Proje' },
-  { value: 'customer', label: 'Müşteri' },
   { value: 'activityL1', label: 'Activity L1' },
   { value: 'activityL2', label: 'Activity L2' },
 ];

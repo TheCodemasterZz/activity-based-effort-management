@@ -7,7 +7,6 @@ public sealed class EmployeeWorkLog : Entity, IAggregateRoot
 {
     public Guid EmployeeId { get; private set; }
     public Guid ProjectId { get; private set; }
-    public Guid CustomerId { get; private set; }
     public Guid ActivityL1Id { get; private set; }
     public Guid ActivityL2Id { get; private set; }
     public DateOnly WorkDate { get; private set; }
@@ -25,7 +24,6 @@ public sealed class EmployeeWorkLog : Entity, IAggregateRoot
     public static EmployeeWorkLog Create(
         Guid employeeId,
         Guid projectId,
-        Guid customerId,
         Guid activityL1Id,
         Guid activityL2Id,
         DateOnly workDate,
@@ -43,7 +41,6 @@ public sealed class EmployeeWorkLog : Entity, IAggregateRoot
         {
             EmployeeId = employeeId,
             ProjectId = projectId,
-            CustomerId = customerId,
             ActivityL1Id = activityL1Id,
             ActivityL2Id = activityL2Id,
             WorkDate = workDate,
@@ -56,7 +53,6 @@ public sealed class EmployeeWorkLog : Entity, IAggregateRoot
     public void Update(
         Guid employeeId,
         Guid projectId,
-        Guid customerId,
         Guid activityL1Id,
         Guid activityL2Id,
         DateOnly workDate,
@@ -80,7 +76,6 @@ public sealed class EmployeeWorkLog : Entity, IAggregateRoot
 
         EmployeeId = employeeId;
         ProjectId = projectId;
-        CustomerId = customerId;
         ActivityL1Id = activityL1Id;
         ActivityL2Id = activityL2Id;
         WorkDate = workDate;

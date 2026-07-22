@@ -12,6 +12,10 @@ public sealed class Project : Entity, IAggregateRoot
     public DateOnly? StartDate { get; private set; }
     public DateOnly? EndDate { get; private set; }
     public ProjectHealthStatus HealthStatus { get; private set; } = ProjectHealthStatus.OnTrack;
+    public string? Sponsor { get; private set; }
+    public Guid? ProjectManagerEmployeeId { get; private set; }
+    public ProjectPriority Priority { get; private set; } = ProjectPriority.Medium;
+    public string? StrategicGoal { get; private set; }
 
     private readonly List<ProjectCustomerAssignment> _customerAssignments = [];
     public IReadOnlyCollection<ProjectCustomerAssignment> CustomerAssignments => _customerAssignments.AsReadOnly();
@@ -26,7 +30,15 @@ public sealed class Project : Entity, IAggregateRoot
         // EF Core
     }
 
-    public static Project Create(string name, string? description, DateOnly? startDate = null, DateOnly? endDate = null)
+    public static Project Create(
+        string name,
+        string? description,
+        DateOnly? startDate = null,
+        DateOnly? endDate = null,
+        string? sponsor = null,
+        Guid? projectManagerEmployeeId = null,
+        ProjectPriority priority = ProjectPriority.Medium,
+        string? strategicGoal = null)
     {
         if (string.IsNullOrWhiteSpace(name))
             throw new BusinessRuleValidationException("Proje adı boş olamaz.");
@@ -40,11 +52,23 @@ public sealed class Project : Entity, IAggregateRoot
             Status = ProjectStatus.Active,
             StartDate = startDate,
             EndDate = endDate,
-            HealthStatus = ProjectHealthStatus.OnTrack
+            HealthStatus = ProjectHealthStatus.OnTrack,
+            Sponsor = sponsor,
+            ProjectManagerEmployeeId = projectManagerEmployeeId,
+            Priority = priority,
+            StrategicGoal = strategicGoal
         };
     }
 
-    public void Update(string name, string? description, DateOnly? startDate, DateOnly? endDate)
+    public void Update(
+        string name,
+        string? description,
+        DateOnly? startDate,
+        DateOnly? endDate,
+        string? sponsor,
+        Guid? projectManagerEmployeeId,
+        ProjectPriority priority,
+        string? strategicGoal)
     {
         if (string.IsNullOrWhiteSpace(name))
             throw new BusinessRuleValidationException("Proje adı boş olamaz.");
@@ -55,6 +79,10 @@ public sealed class Project : Entity, IAggregateRoot
         Description = description;
         StartDate = startDate;
         EndDate = endDate;
+        Sponsor = sponsor;
+        ProjectManagerEmployeeId = projectManagerEmployeeId;
+        Priority = priority;
+        StrategicGoal = strategicGoal;
     }
 
     /// <summary>Proje yöneticisinin elle güncellediği genel sağlık rozeti (On Track/At Risk/Needs

@@ -30,7 +30,6 @@ export function getWorkLogs(params: GetWorkLogsParams) {
 export interface LogWorkPayload {
   employeeId: string;
   projectId: string;
-  customerId: string;
   activityL1Id: string;
   activityL2Id: string;
   startDate: string;
@@ -47,7 +46,6 @@ export function logWork(payload: LogWorkPayload) {
 export interface UpdateWorkLogPayload {
   employeeId: string;
   projectId: string;
-  customerId: string;
   activityL1Id: string;
   activityL2Id: string;
   workDate: string;

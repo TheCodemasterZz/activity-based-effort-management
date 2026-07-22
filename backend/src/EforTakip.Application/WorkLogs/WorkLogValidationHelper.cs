@@ -8,7 +8,7 @@ namespace EforTakip.Application.WorkLogs;
 
 /// <summary>
 /// LogWork ve UpdateWorkLog komutlarının ortak cross-aggregate doğrulamasını taşır
-/// (proje/müşteri/çalışan ataması, ActivityL1/L2 ilişkisi) — DRY.
+/// (proje/çalışan ataması, ActivityL1/L2 ilişkisi) — DRY.
 /// </summary>
 internal static class WorkLogValidationHelper
 {
@@ -16,7 +16,6 @@ internal static class WorkLogValidationHelper
         IProjectRepository projectRepository,
         IRepository<DomainActivity> activityRepository,
         Guid projectId,
-        Guid customerId,
         Guid employeeId,
         Guid activityL1Id,
         Guid activityL2Id,
@@ -24,9 +23,6 @@ internal static class WorkLogValidationHelper
     {
         var project = await projectRepository.GetByIdAsync(projectId, cancellationToken)
             ?? throw new NotFoundException(nameof(Project), projectId);
-
-        if (!project.CustomerIds.Contains(customerId))
-            throw new BusinessRuleValidationException("Seçilen müşteri bu projeye atanmamış.");
 
         if (!project.EmployeeIds.Contains(employeeId))
             throw new BusinessRuleValidationException("Seçilen çalışan bu projeye atanmamış.");

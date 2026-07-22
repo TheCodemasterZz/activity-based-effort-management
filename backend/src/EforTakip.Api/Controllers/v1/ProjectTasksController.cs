@@ -36,7 +36,9 @@ public sealed class ProjectTasksController(ISender mediator) : ControllerBase
     public async Task<IActionResult> Update(Guid id, UpdateProjectTaskRequestBody body, CancellationToken cancellationToken)
     {
         await mediator.Send(
-            new UpdateProjectTaskCommand(id, body.Name, body.StartDate, body.EndDate, body.EstimatedEffortHours, body.IsMilestone),
+            new UpdateProjectTaskCommand(
+                id, body.Name, body.StartDate, body.EndDate, body.EstimatedEffortHours, body.IsMilestone,
+                body.ParentTaskId, body.DependsOnTaskId, body.AssignedEmployeeId),
             cancellationToken);
         return NoContent();
     }

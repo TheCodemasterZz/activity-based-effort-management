@@ -21,6 +21,9 @@ export interface SaveProjectTaskPayload {
   endDate: string;
   estimatedEffortHours: number;
   isMilestone: boolean;
+  parentTaskId?: string | null;
+  dependsOnTaskId?: string | null;
+  assignedEmployeeId?: string | null;
 }
 
 export function createProjectTask(payload: SaveProjectTaskPayload) {

@@ -18,7 +18,7 @@ public sealed class LogWorkCommandHandler(
     {
         await WorkLogValidationHelper.ValidateAsync(
             projectRepository, activityRepository,
-            request.ProjectId, request.CustomerId, request.EmployeeId,
+            request.ProjectId, request.EmployeeId,
             request.ActivityL1Id, request.ActivityL2Id, cancellationToken);
 
         await WorkLogApprovalGuard.EnsureRangeNotApprovedAsync(
@@ -28,7 +28,7 @@ public sealed class LogWorkCommandHandler(
         for (var date = request.StartDate; date <= request.EndDate; date = date.AddDays(1))
         {
             logs.Add(EmployeeWorkLog.Create(
-                request.EmployeeId, request.ProjectId, request.CustomerId,
+                request.EmployeeId, request.ProjectId,
                 request.ActivityL1Id, request.ActivityL2Id, date, request.Hours, request.Description,
                 request.EntryType));
         }
