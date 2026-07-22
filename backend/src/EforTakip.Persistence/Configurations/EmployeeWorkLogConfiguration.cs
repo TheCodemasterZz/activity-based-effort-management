@@ -27,7 +27,12 @@ public sealed class EmployeeWorkLogConfiguration : IEntityTypeConfiguration<Empl
             .IsRequired()
             .HasMaxLength(1000);
 
-        builder.HasIndex(w => new { w.EmployeeId, w.WorkDate });
+        builder.Property(w => w.EntryType)
+            .HasConversion<string>()
+            .HasMaxLength(20)
+            .IsRequired();
+
+        builder.HasIndex(w => new { w.EmployeeId, w.EntryType, w.WorkDate });
 
         builder.HasOne<Employee>().WithMany().HasForeignKey(w => w.EmployeeId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne<Project>().WithMany().HasForeignKey(w => w.ProjectId).OnDelete(DeleteBehavior.Restrict);

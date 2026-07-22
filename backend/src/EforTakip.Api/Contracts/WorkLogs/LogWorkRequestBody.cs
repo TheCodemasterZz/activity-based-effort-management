@@ -1,3 +1,5 @@
+using EforTakip.Domain.WorkLogs;
+
 namespace EforTakip.Api.Contracts.WorkLogs;
 
 public sealed record LogWorkRequestBody(
@@ -9,4 +11,5 @@ public sealed record LogWorkRequestBody(
     DateOnly StartDate,
     DateOnly EndDate,
     decimal Hours,
-    string Description);
+    string Description,
+    WorkLogEntryType EntryType = WorkLogEntryType.Actual);

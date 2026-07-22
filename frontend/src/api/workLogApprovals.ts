@@ -1,5 +1,5 @@
 import { apiClient } from './client';
-import type { ApprovalPeriodType, PagedResult } from './types';
+import { WORK_LOG_ENTRY_TYPE, type ApprovalPeriodType, type PagedResult, type WorkLogEntryType } from './types';
 
 export interface CreateWorkLogApprovalPayload {
   employeeId: string;
@@ -7,6 +7,7 @@ export interface CreateWorkLogApprovalPayload {
   periodStart: string;
   periodEnd: string;
   description?: string | null;
+  entryType?: WorkLogEntryType;
 }
 
 export function createWorkLogApproval(payload: CreateWorkLogApprovalPayload) {
@@ -19,8 +20,9 @@ export interface WorkLogApprovalDto {
   periodStart: string;
   periodEnd: string;
   description?: string | null;
+  entryType: WorkLogEntryType;
 }
 
-export function getWorkLogApprovals() {
-  return apiClient.get<PagedResult<WorkLogApprovalDto>>('/api/v1/workLogApprovals', { pageSize: 100 });
+export function getWorkLogApprovals(entryType: WorkLogEntryType = WORK_LOG_ENTRY_TYPE.Actual) {
+  return apiClient.get<PagedResult<WorkLogApprovalDto>>('/api/v1/workLogApprovals', { pageSize: 100, entryType });
 }

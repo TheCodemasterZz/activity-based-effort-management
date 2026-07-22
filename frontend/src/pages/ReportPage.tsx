@@ -131,8 +131,8 @@ export function ReportPage() {
 
   const logs = workLogs.data?.items ?? [];
 
-  // MQL (Mesainâme Query Language) — JQL mantığında serbest metin sorgusu; tanımlıysa
-  // tablonun ve tüm özet hesaplamaların girdisi bu filtrelenmiş alt küme olur.
+  // MQL (Mesainâme Query Language) — serbest metin sorgusu; tanımlıysa tablonun ve
+  // tüm özet hesaplamaların girdisi bu filtrelenmiş alt küme olur.
   const filteredLogs = useMemo(() => {
     if (!mqlAst) return logs;
     return logs.filter((log) =>
@@ -149,9 +149,19 @@ export function ReportPage() {
     );
   }, [logs, mqlAst, employeesById, projectsById, customersById, activitiesById]);
 
+  // Boş satırları tamamlamak için tüm çalışan kadrosu (bkz. groupWorkLogs) yalnızca MQL
+  // filtresi yokken enjekte edilir — aksi halde ör. "employee = X" filtresi girildiğinde
+  // filtrelenmiş kayıtların yanına yine tüm 100 çalışan satır olarak eklenmiş olurdu.
   const grouped = useMemo(
-    () => groupWorkLogs(filteredLogs, periodRange.columns, groupBy, resolveDimension, employees.data?.items),
-    [filteredLogs, periodRange.columns, groupBy, resolveDimension, employees.data],
+    () =>
+      groupWorkLogs(
+        filteredLogs,
+        periodRange.columns,
+        groupBy,
+        resolveDimension,
+        mqlAst ? undefined : employees.data?.items,
+      ),
+    [filteredLogs, periodRange.columns, groupBy, resolveDimension, employees.data, mqlAst],
   );
 
   const totalHours = filteredLogs.reduce((sum, l) => sum + l.hours, 0);

@@ -9,6 +9,9 @@ public sealed class Project : Entity, IAggregateRoot
     public string? Description { get; private set; }
     public ProjectStatus Status { get; private set; }
     public bool IsActive { get; private set; } = true;
+    public DateOnly? StartDate { get; private set; }
+    public DateOnly? EndDate { get; private set; }
+    public ProjectHealthStatus HealthStatus { get; private set; } = ProjectHealthStatus.OnTrack;
 
     private readonly List<ProjectCustomerAssignment> _customerAssignments = [];
     public IReadOnlyCollection<ProjectCustomerAssignment> CustomerAssignments => _customerAssignments.AsReadOnly();
@@ -23,26 +26,42 @@ public sealed class Project : Entity, IAggregateRoot
         // EF Core
     }
 
-    public static Project Create(string name, string? description)
+    public static Project Create(string name, string? description, DateOnly? startDate = null, DateOnly? endDate = null)
     {
         if (string.IsNullOrWhiteSpace(name))
             throw new BusinessRuleValidationException("Proje adı boş olamaz.");
+        if (startDate is not null && endDate is not null && endDate < startDate)
+            throw new BusinessRuleValidationException("Bitiş tarihi başlangıç tarihinden önce olamaz.");
 
         return new Project
         {
             Name = name.Trim(),
             Description = description,
-            Status = ProjectStatus.Active
+            Status = ProjectStatus.Active,
+            StartDate = startDate,
+            EndDate = endDate,
+            HealthStatus = ProjectHealthStatus.OnTrack
         };
     }
 
-    public void Update(string name, string? description)
+    public void Update(string name, string? description, DateOnly? startDate, DateOnly? endDate)
     {
         if (string.IsNullOrWhiteSpace(name))
             throw new BusinessRuleValidationException("Proje adı boş olamaz.");
+        if (startDate is not null && endDate is not null && endDate < startDate)
+            throw new BusinessRuleValidationException("Bitiş tarihi başlangıç tarihinden önce olamaz.");
 
         Name = name.Trim();
         Description = description;
+        StartDate = startDate;
+        EndDate = endDate;
+    }
+
+    /// <summary>Proje yöneticisinin elle güncellediği genel sağlık rozeti (On Track/At Risk/Needs
+    /// Help) — diğer alanlardan bağımsız, daha sık değişebileceği için ayrı bir komutla yönetilir.</summary>
+    public void SetHealthStatus(ProjectHealthStatus status)
+    {
+        HealthStatus = status;
     }
 
     public void Deactivate()

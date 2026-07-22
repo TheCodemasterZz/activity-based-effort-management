@@ -1,5 +1,6 @@
 using EforTakip.Domain.Common;
 using EforTakip.Domain.Exceptions;
+using EforTakip.Domain.WorkLogs;
 
 namespace EforTakip.Domain.WorkLogApprovals;
 
@@ -16,6 +17,7 @@ public sealed class WorkLogApproval : Entity, IAggregateRoot
     public DateOnly PeriodEnd { get; private set; }
     public string Description { get; private set; } = default!;
     public DateTime ApprovedAtUtc { get; private set; }
+    public WorkLogEntryType EntryType { get; private set; }
 
     private WorkLogApproval()
     {
@@ -23,7 +25,12 @@ public sealed class WorkLogApproval : Entity, IAggregateRoot
     }
 
     public static WorkLogApproval Create(
-        Guid employeeId, ApprovalPeriodType periodType, DateOnly periodStart, DateOnly periodEnd, string description)
+        Guid employeeId,
+        ApprovalPeriodType periodType,
+        DateOnly periodStart,
+        DateOnly periodEnd,
+        string description,
+        WorkLogEntryType entryType = WorkLogEntryType.Actual)
     {
         if (periodStart.DayOfWeek != DayOfWeek.Monday)
             throw new BusinessRuleValidationException("Onay dönemi Pazartesi gününden başlamalıdır.");
@@ -41,7 +48,8 @@ public sealed class WorkLogApproval : Entity, IAggregateRoot
             PeriodStart = periodStart,
             PeriodEnd = periodEnd,
             Description = description.Trim(),
-            ApprovedAtUtc = DateTime.UtcNow
+            ApprovedAtUtc = DateTime.UtcNow,
+            EntryType = entryType
         };
     }
 }

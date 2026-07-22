@@ -1,5 +1,5 @@
 import { apiClient } from './client';
-import type { PagedResult, ProjectDetailDto, ProjectDto } from './types';
+import type { PagedResult, ProjectDetailDto, ProjectDto, ProjectHealthStatusValue } from './types';
 
 export function getProjects(options?: { nameFilter?: string; employeeId?: string; pageSize?: number }) {
   return apiClient.get<PagedResult<ProjectDto>>('/api/v1/projects', {
@@ -16,6 +16,8 @@ export function getProjectById(id: string) {
 export interface SaveProjectPayload {
   name: string;
   description?: string | null;
+  startDate?: string | null;
+  endDate?: string | null;
 }
 
 export function createProject(payload: SaveProjectPayload) {
@@ -28,4 +30,8 @@ export function updateProject(id: string, payload: SaveProjectPayload) {
 
 export function deleteProject(id: string) {
   return apiClient.delete<void>(`/api/v1/projects/${id}`);
+}
+
+export function updateProjectHealth(id: string, healthStatus: ProjectHealthStatusValue) {
+  return apiClient.put<void>(`/api/v1/projects/${id}/health`, { healthStatus });
 }

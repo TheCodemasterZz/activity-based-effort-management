@@ -40,6 +40,9 @@ public sealed class GetProjectByIdQueryHandler(IApplicationDbContext db)
             Name = project.Name,
             Description = project.Description,
             Status = project.Status.ToString(),
+            StartDate = project.StartDate,
+            EndDate = project.EndDate,
+            HealthStatus = project.HealthStatus.ToString(),
             Customers = customers,
             Employees = employees
         };

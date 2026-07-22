@@ -14,7 +14,8 @@ public sealed class GetWorkLogApprovalsQueryHandler(IApplicationDbContext db)
     public async Task<PagedResult<WorkLogApprovalDto>> Handle(
         GetWorkLogApprovalsQuery request, CancellationToken cancellationToken)
     {
-        IQueryable<WorkLogApproval> query = db.WorkLogApprovals.AsNoTracking();
+        IQueryable<WorkLogApproval> query = db.WorkLogApprovals.AsNoTracking()
+            .Where(a => a.EntryType == request.EntryType);
 
         if (request.EmployeeId is { } employeeId)
             query = query.Where(a => a.EmployeeId == employeeId);

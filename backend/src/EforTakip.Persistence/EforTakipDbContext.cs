@@ -27,6 +27,8 @@ public sealed class EforTakipDbContext(DbContextOptions<EforTakipDbContext> opti
 
     public DbSet<ProjectEmployeeAssignment> ProjectEmployeeAssignments => Set<ProjectEmployeeAssignment>();
 
+    public DbSet<ProjectTask> ProjectTasks => Set<ProjectTask>();
+
     public DbSet<ValueStream> ValueStreams => Set<ValueStream>();
 
     public DbSet<ValueStreamStage> ValueStreamStages => Set<ValueStreamStage>();

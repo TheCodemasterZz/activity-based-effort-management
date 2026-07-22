@@ -912,6 +912,41 @@ namespace EforTakip.Persistence.Migrations
                     b.ToTable("Customers", (string)null);
                 });
 
+            modelBuilder.Entity("EforTakip.Domain.EmployeeLeaves.EmployeeLeave", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<Guid>("EmployeeId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateOnly>("EndDate")
+                        .HasColumnType("date");
+
+                    b.Property<TimeOnly?>("EndTime")
+                        .HasColumnType("time without time zone");
+
+                    b.Property<bool>("IsFullDay")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateOnly>("StartDate")
+                        .HasColumnType("date");
+
+                    b.Property<TimeOnly?>("StartTime")
+                        .HasColumnType("time without time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EmployeeId", "StartDate", "EndDate");
+
+                    b.ToTable("EmployeeLeaves", (string)null);
+                });
+
             modelBuilder.Entity("EforTakip.Domain.Employees.Employee", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1072,10 +1107,24 @@ namespace EforTakip.Persistence.Migrations
                         .HasMaxLength(2000)
                         .HasColumnType("character varying(2000)");
 
+                    b.Property<DateOnly?>("EndDate")
+                        .HasColumnType("date");
+
+                    b.Property<string>("HealthStatus")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
+
+                    b.Property<DateOnly?>("StartDate")
+                        .HasColumnType("date");
 
                     b.Property<string>("Status")
                         .IsRequired()
@@ -1129,6 +1178,52 @@ namespace EforTakip.Persistence.Migrations
                         .IsUnique();
 
                     b.ToTable("ProjectEmployees", (string)null);
+                });
+
+            modelBuilder.Entity("EforTakip.Domain.Projects.ProjectTask", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("BaselineEffortHours")
+                        .HasPrecision(9, 2)
+                        .HasColumnType("numeric(9,2)");
+
+                    b.Property<DateOnly>("BaselineEndDate")
+                        .HasColumnType("date");
+
+                    b.Property<DateOnly>("EndDate")
+                        .HasColumnType("date");
+
+                    b.Property<decimal>("EstimatedEffortHours")
+                        .HasPrecision(9, 2)
+                        .HasColumnType("numeric(9,2)");
+
+                    b.Property<bool>("IsMilestone")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<Guid>("ProjectId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateOnly>("StartDate")
+                        .HasColumnType("date");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProjectId");
+
+                    b.ToTable("ProjectTasks", (string)null);
                 });
 
             modelBuilder.Entity("EforTakip.Domain.ValueStreams.StageActivityAssignment", b =>
@@ -1845,6 +1940,46 @@ namespace EforTakip.Persistence.Migrations
                         });
                 });
 
+            modelBuilder.Entity("EforTakip.Domain.WorkLogApprovals.WorkLogApproval", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("ApprovedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<Guid>("EmployeeId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("EntryType")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<DateOnly>("PeriodEnd")
+                        .HasColumnType("date");
+
+                    b.Property<DateOnly>("PeriodStart")
+                        .HasColumnType("date");
+
+                    b.Property<string>("PeriodType")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EmployeeId", "EntryType", "PeriodStart", "PeriodEnd");
+
+                    b.ToTable("WorkLogApprovals", (string)null);
+                });
+
             modelBuilder.Entity("EforTakip.Domain.WorkLogs.EmployeeWorkLog", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1857,6 +1992,9 @@ namespace EforTakip.Persistence.Migrations
                     b.Property<Guid>("ActivityL2Id")
                         .HasColumnType("uuid");
 
+                    b.Property<Guid?>("ApprovalId")
+                        .HasColumnType("uuid");
+
                     b.Property<Guid>("CustomerId")
                         .HasColumnType("uuid");
 
@@ -1867,6 +2005,11 @@ namespace EforTakip.Persistence.Migrations
 
                     b.Property<Guid>("EmployeeId")
                         .HasColumnType("uuid");
+
+                    b.Property<string>("EntryType")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
 
                     b.Property<decimal>("Hours")
                         .HasColumnType("decimal(5,2)");
@@ -1883,11 +2026,13 @@ namespace EforTakip.Persistence.Migrations
 
                     b.HasIndex("ActivityL2Id");
 
+                    b.HasIndex("ApprovalId");
+
                     b.HasIndex("CustomerId");
 
                     b.HasIndex("ProjectId");
 
-                    b.HasIndex("EmployeeId", "WorkDate");
+                    b.HasIndex("EmployeeId", "EntryType", "WorkDate");
 
                     b.ToTable("EmployeeWorkLogs", (string)null);
                 });
@@ -1898,6 +2043,15 @@ namespace EforTakip.Persistence.Migrations
                         .WithMany()
                         .HasForeignKey("ParentActivityId")
                         .OnDelete(DeleteBehavior.Restrict);
+                });
+
+            modelBuilder.Entity("EforTakip.Domain.EmployeeLeaves.EmployeeLeave", b =>
+                {
+                    b.HasOne("EforTakip.Domain.Employees.Employee", null)
+                        .WithMany()
+                        .HasForeignKey("EmployeeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("EforTakip.Domain.Employees.Employee", b =>
@@ -1985,6 +2139,11 @@ namespace EforTakip.Persistence.Migrations
                         .HasForeignKey("ActivityL2Id")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.HasOne("EforTakip.Domain.WorkLogApprovals.WorkLogApproval", null)
+                        .WithMany()
+                        .HasForeignKey("ApprovalId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("EforTakip.Domain.Customers.Customer", null)
                         .WithMany()

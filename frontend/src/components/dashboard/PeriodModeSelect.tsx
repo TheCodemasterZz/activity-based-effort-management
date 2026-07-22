@@ -44,7 +44,7 @@ export function PeriodModeSelect({ value, onChange }: PeriodModeSelectProps) {
       </button>
 
       {isOpen && (
-        <div className="absolute left-0 top-full z-20 mt-2 w-36 rounded-lg border border-slate-200 bg-white p-1 shadow-lg">
+        <div className="absolute left-0 top-full z-40 mt-2 w-36 rounded-lg border border-slate-200 bg-white p-1 shadow-lg">
           {OPTIONS.map((option) => (
             <button
               key={option.mode}

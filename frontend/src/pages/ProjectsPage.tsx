@@ -1,19 +1,30 @@
 import { useMemo, useState } from 'react';
 import { useProjects } from '../hooks/useProjects';
+import { useAllProjectTasks } from '../hooks/useProjectTasks';
+import { useWorkLogs } from '../hooks/useWorkLogs';
 import { useDeleteProjectMutation } from '../hooks/useDeleteProjectMutation';
+import { ProjectCard } from '../components/projects/ProjectCard';
 import { ProjectFormModal } from '../components/projects/ProjectFormModal';
 import { ProjectDetailModal } from '../components/projects/ProjectDetailModal';
 import { ApiError } from '../api/client';
-import type { ProjectDto } from '../api/types';
+import { WORK_LOG_ENTRY_TYPE, type ProjectDto, type ProjectTaskDto } from '../api/types';
 
-const STATUS_LABEL: Record<string, { label: string; className: string }> = {
-  Active: { label: 'Aktif', className: 'bg-emerald-50 text-emerald-700' },
-  Completed: { label: 'Tamamlandı', className: 'bg-slate-100 text-slate-600' },
-  Cancelled: { label: 'İptal Edildi', className: 'bg-red-50 text-red-600' },
-};
+function dateKeyDaysAgo(days: number): string {
+  const d = new Date();
+  d.setDate(d.getDate() - days);
+  return d.toISOString().slice(0, 10);
+}
+
+function todayKey(): string {
+  return new Date().toISOString().slice(0, 10);
+}
 
 export function ProjectsPage() {
   const projects = useProjects();
+  const allTasks = useAllProjectTasks();
+  // Kartlardaki "Gerçekleşen" ve "Aktif Kişi" göstergeleri için — son 90 gün, mock verinin
+  // (içinde bulunulan ay) her koşulda kapsanmasını garanti eden güvenli bir pencere.
+  const recentActualLogs = useWorkLogs(dateKeyDaysAgo(90), todayKey(), WORK_LOG_ENTRY_TYPE.Actual);
   const deleteMutation = useDeleteProjectMutation();
 
   const [search, setSearch] = useState('');
@@ -29,7 +40,28 @@ export function ProjectsPage() {
     return items.filter((p) => p.name.toLocaleLowerCase('tr').includes(query));
   }, [projects.data, search]);
 
-  const handleDelete = async (project: ProjectDto) => {
+  const tasksByProject = useMemo(() => {
+    const map = new Map<string, ProjectTaskDto[]>();
+    for (const task of allTasks.data?.items ?? []) {
+      const list = map.get(task.projectId) ?? [];
+      list.push(task);
+      map.set(task.projectId, list);
+    }
+    return map;
+  }, [allTasks.data]);
+
+  const projectStatsById = useMemo(() => {
+    const map = new Map<string, { actualHours: number; employeeIds: Set<string> }>();
+    for (const log of recentActualLogs.data?.items ?? []) {
+      const entry = map.get(log.projectId) ?? { actualHours: 0, employeeIds: new Set<string>() };
+      entry.actualHours += log.hours;
+      entry.employeeIds.add(log.employeeId);
+      map.set(log.projectId, entry);
+    }
+    return map;
+  }, [recentActualLogs.data]);
+
+  const handleDeactivate = async (project: ProjectDto) => {
     if (!window.confirm(`"${project.name}" projesini pasife almak istediğinize emin misiniz?`)) return;
     setErrorMessage(null);
     try {
@@ -38,6 +70,8 @@ export function ProjectsPage() {
       setErrorMessage(err instanceof ApiError ? err.message : 'Beklenmeyen bir hata oluştu.');
     }
   };
+
+  const isLoading = projects.isLoading || allTasks.isLoading || recentActualLogs.isLoading;
 
   return (
     <div className="flex flex-1 flex-col overflow-y-auto bg-slate-50 p-6">
@@ -68,70 +102,36 @@ export function ProjectsPage() {
         </div>
       )}
 
-      <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
-        {projects.isLoading ? (
-          <div className="p-8 text-center text-slate-400">Yükleniyor…</div>
-        ) : projects.isError ? (
-          <div className="p-8 text-center text-red-600">Projeler yüklenemedi.</div>
-        ) : filteredItems.length === 0 ? (
-          <div className="p-8 text-center text-slate-400">Proje bulunamadı.</div>
-        ) : (
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-slate-200 bg-slate-50 text-left text-xs font-medium uppercase tracking-wide text-slate-500">
-                <th className="px-4 py-3">Proje Adı</th>
-                <th className="px-4 py-3">Açıklama</th>
-                <th className="px-4 py-3">Durum</th>
-                <th className="px-4 py-3 text-right">İşlemler</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredItems.map((project) => {
-                const status = STATUS_LABEL[project.status] ?? {
-                  label: project.status,
-                  className: 'bg-slate-100 text-slate-600',
-                };
-                return (
-                  <tr key={project.id} className="border-b border-slate-100 last:border-0 hover:bg-slate-50">
-                    <td className="px-4 py-3 font-medium text-slate-800">{project.name}</td>
-                    <td className="max-w-xs truncate px-4 py-3 text-slate-500">{project.description || '—'}</td>
-                    <td className="px-4 py-3">
-                      <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${status.className}`}>
-                        {status.label}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex justify-end gap-2 text-xs font-medium">
-                        <button
-                          type="button"
-                          onClick={() => setViewingProjectId(project.id)}
-                          className="rounded-lg border border-slate-200 px-2.5 py-1.5 text-slate-600 hover:bg-slate-100"
-                        >
-                          Görüntüle
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setEditingProject(project)}
-                          className="rounded-lg border border-slate-200 px-2.5 py-1.5 text-slate-600 hover:bg-slate-100"
-                        >
-                          Düzenle
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleDelete(project)}
-                          className="rounded-lg border border-red-200 px-2.5 py-1.5 text-red-600 hover:bg-red-50"
-                        >
-                          Pasife Al
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        )}
-      </div>
+      {isLoading ? (
+        <div className="rounded-xl border border-slate-200 bg-white p-8 text-center text-slate-400">Yükleniyor…</div>
+      ) : projects.isError ? (
+        <div className="rounded-xl border border-slate-200 bg-white p-8 text-center text-red-600">
+          Projeler yüklenemedi.
+        </div>
+      ) : filteredItems.length === 0 ? (
+        <div className="rounded-xl border border-slate-200 bg-white p-8 text-center text-slate-400">
+          Proje bulunamadı.
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {filteredItems.map((project, index) => {
+            const stats = projectStatsById.get(project.id);
+            return (
+              <ProjectCard
+                key={project.id}
+                project={project}
+                tasks={tasksByProject.get(project.id) ?? []}
+                actualHours={stats?.actualHours ?? 0}
+                employeeCount={stats?.employeeIds.size ?? 0}
+                colorIndex={index}
+                onView={() => setViewingProjectId(project.id)}
+                onEdit={() => setEditingProject(project)}
+                onDeactivate={() => handleDeactivate(project)}
+              />
+            );
+          })}
+        </div>
+      )}
 
       {createOpen && <ProjectFormModal mode="create" onClose={() => setCreateOpen(false)} />}
 

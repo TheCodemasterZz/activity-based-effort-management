@@ -15,6 +15,8 @@ interface ProjectFormModalProps {
 export function ProjectFormModal({ mode, project, onClose, onDeleted }: ProjectFormModalProps) {
   const [name, setName] = useState(project?.name ?? '');
   const [description, setDescription] = useState(project?.description ?? '');
+  const [startDate, setStartDate] = useState(project?.startDate ?? '');
+  const [endDate, setEndDate] = useState(project?.endDate ?? '');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const createMutation = useCreateProjectMutation();
@@ -29,7 +31,12 @@ export function ProjectFormModal({ mode, project, onClose, onDeleted }: ProjectF
     setErrorMessage(null);
 
     try {
-      const payload = { name: name.trim(), description: description.trim() || null };
+      const payload = {
+        name: name.trim(),
+        description: description.trim() || null,
+        startDate: startDate || null,
+        endDate: endDate || null,
+      };
       if (mode === 'edit' && project) {
         await updateMutation.mutateAsync({ id: project.id, payload });
       } else {
@@ -89,6 +96,28 @@ export function ProjectFormModal({ mode, project, onClose, onDeleted }: ProjectF
               rows={4}
               className="w-full resize-none rounded-lg border border-slate-200 px-3 py-2 text-sm"
             />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="mb-1 block text-xs font-medium text-slate-500">Başlangıç Tarihi</label>
+              <input
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-medium text-slate-500">Bitiş Tarihi</label>
+              <input
+                type="date"
+                value={endDate}
+                min={startDate || undefined}
+                onChange={(e) => setEndDate(e.target.value)}
+                className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+              />
+            </div>
           </div>
 
           {errorMessage && <p className="text-sm text-red-600">{errorMessage}</p>}
