@@ -282,6 +282,35 @@ public class SyncDirectoryCommandHandlerTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task Handle_OtherDirectorysSyncedMappingsAreNotApplied()
+    {
+        var directory = ValidAd();
+        var otherDirectory = ValidAd();
+        var mapping = DirectoryAttributeMapping.Create(directory.Id, "company", "Kurum", "text", isSynced: true, 0);
+        var otherDirectoryMapping = DirectoryAttributeMapping.Create(
+            otherDirectory.Id, "department", "Departman", "text", isSynced: true, 0);
+        _db.DirectoryAttributeMappings.AddRange(mapping, otherDirectoryMapping);
+        await _db.SaveChangesAsync();
+
+        _directoryRepository.GetByIdAsync(directory.Id, Arg.Any<CancellationToken>()).Returns(directory);
+        _ldapService.SearchUsersAsync(directory, Arg.Any<IReadOnlyCollection<string>>(), Arg.Any<IReadOnlyCollection<string>>(), Arg.Any<CancellationToken>())
+            .Returns(new List<LdapUser> { LdapUserOf("serkan.gultepe", "guid-1", company: "Kızılay") });
+
+        await CreateHandler().Handle(new SyncDirectoryCommand(directory.Id), CancellationToken.None);
+
+        var user = _db.DirectoryUsers.Include(u => u.Attributes).Single();
+        user.Attributes.Should().ContainSingle();
+        user.Attributes.Single().AttributeMappingId.Should().Be(mapping.Id);
+
+        await _ldapService.Received(1).SearchUsersAsync(
+            directory,
+            Arg.Is<IReadOnlyCollection<string>>(names => names.Count == 1 && names.Contains("company")
+                && !names.Contains("department")),
+            Arg.Any<IReadOnlyCollection<string>>(),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
     public async Task Handle_MarksDirectoryAsSynced()
     {
         var directory = ValidAd();

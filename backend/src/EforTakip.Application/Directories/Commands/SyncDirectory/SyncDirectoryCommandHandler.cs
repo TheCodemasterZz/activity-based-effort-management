@@ -28,7 +28,7 @@ public sealed partial class SyncDirectoryCommandHandler(
             throw new BusinessRuleValidationException("Yalnızca Active Directory dizinleri senkronize edilebilir.");
 
         var syncedMappings = await db.DirectoryAttributeMappings
-            .Where(m => m.IsSynced)
+            .Where(m => m.DirectoryId == directory.Id && m.IsSynced)
             .ToListAsync(cancellationToken);
 
         var extraAttributeNames = syncedMappings
