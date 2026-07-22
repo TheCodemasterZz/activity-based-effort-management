@@ -158,8 +158,8 @@ public class SyncDirectoryCommandHandlerTests : IAsyncDisposable
     public async Task Handle_WithSyncedMapping_WritesAttributeValue()
     {
         var directory = ValidAd();
-        var mapping = DirectoryAttributeMapping.Create("company", "Kurum", "text", isSynced: true, 0);
-        var ignored = DirectoryAttributeMapping.Create("department", "Departman", "text", isSynced: false, 1);
+        var mapping = DirectoryAttributeMapping.Create(directory.Id, "company", "Kurum", "text", isSynced: true, 0);
+        var ignored = DirectoryAttributeMapping.Create(directory.Id, "department", "Departman", "text", isSynced: false, 1);
         _db.DirectoryAttributeMappings.AddRange(mapping, ignored);
         await _db.SaveChangesAsync();
 
@@ -179,7 +179,7 @@ public class SyncDirectoryCommandHandlerTests : IAsyncDisposable
     public async Task Handle_UserFieldMatchingAnotherSyncedUser_ResolvesReference()
     {
         var directory = ValidAd();
-        var mapping = DirectoryAttributeMapping.Create("manager", "Yönetici", "user", isSynced: true, 0);
+        var mapping = DirectoryAttributeMapping.Create(directory.Id, "manager", "Yönetici", "user", isSynced: true, 0);
         _db.DirectoryAttributeMappings.Add(mapping);
         await _db.SaveChangesAsync();
 
@@ -210,7 +210,7 @@ public class SyncDirectoryCommandHandlerTests : IAsyncDisposable
         // "manager" alanında farklı boşluklama/Unicode normalizasyonuyla döndürebiliyor —
         // gerçek bir üretim ortamında bu yüzden eşleşme sessizce başarısız oluyordu.
         var directory = ValidAd();
-        var mapping = DirectoryAttributeMapping.Create("manager", "Yönetici", "user", isSynced: true, 0);
+        var mapping = DirectoryAttributeMapping.Create(directory.Id, "manager", "Yönetici", "user", isSynced: true, 0);
         _db.DirectoryAttributeMappings.Add(mapping);
         await _db.SaveChangesAsync();
 
@@ -237,7 +237,7 @@ public class SyncDirectoryCommandHandlerTests : IAsyncDisposable
     public async Task Handle_UserFieldWithNoMatchingUser_FallsBackToPlainNameFromDn()
     {
         var directory = ValidAd();
-        var mapping = DirectoryAttributeMapping.Create("manager", "Yönetici", "user", isSynced: true, 0);
+        var mapping = DirectoryAttributeMapping.Create(directory.Id, "manager", "Yönetici", "user", isSynced: true, 0);
         _db.DirectoryAttributeMappings.Add(mapping);
         await _db.SaveChangesAsync();
 
@@ -264,8 +264,8 @@ public class SyncDirectoryCommandHandlerTests : IAsyncDisposable
     {
         var directory = ValidAd();
         _db.DirectoryAttributeMappings.AddRange(
-            DirectoryAttributeMapping.Create("company", "Kurum", "text", isSynced: true, 0),
-            DirectoryAttributeMapping.Create("department", "Departman", "text", isSynced: false, 1));
+            DirectoryAttributeMapping.Create(directory.Id, "company", "Kurum", "text", isSynced: true, 0),
+            DirectoryAttributeMapping.Create(directory.Id, "department", "Departman", "text", isSynced: false, 1));
         await _db.SaveChangesAsync();
 
         _directoryRepository.GetByIdAsync(directory.Id, Arg.Any<CancellationToken>()).Returns(directory);

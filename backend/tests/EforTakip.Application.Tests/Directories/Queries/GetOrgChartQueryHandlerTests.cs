@@ -46,7 +46,7 @@ public sealed class GetOrgChartQueryHandlerTests : IAsyncDisposable
     public async Task Handle_WithManagerMapping_ResolvesManagerId()
     {
         var directory = ValidAd();
-        var mapping = DirectoryAttributeMapping.Create("manager", "Yönetici", "user", isSynced: true, 0);
+        var mapping = DirectoryAttributeMapping.Create(directory.Id, "manager", "Yönetici", "user", isSynced: true, 0);
         _db.Directories.Add(directory);
         _db.DirectoryAttributeMappings.Add(mapping);
 
@@ -74,7 +74,7 @@ public sealed class GetOrgChartQueryHandlerTests : IAsyncDisposable
         // girmediği için sistemde hiç DirectoryUser kaydı yok — ManagerId null kalır ama frontend'in
         // hiyerarşiyi kırmadan bir "harici" kutu gösterebilmesi için düz isim burada dönmelidir.
         var directory = ValidAd();
-        var mapping = DirectoryAttributeMapping.Create("manager", "Yönetici", "user", isSynced: true, 0);
+        var mapping = DirectoryAttributeMapping.Create(directory.Id, "manager", "Yönetici", "user", isSynced: true, 0);
         _db.Directories.Add(directory);
         _db.DirectoryAttributeMappings.Add(mapping);
 

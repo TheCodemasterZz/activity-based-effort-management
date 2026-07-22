@@ -75,7 +75,7 @@ public sealed class SyncDirectoryCommandHandlerRealDbContextTests : IAsyncDispos
         await using (var db = new EforTakipDbContext(_options))
         {
             db.DirectoryAttributeMappings.Add(
-                DirectoryAttributeMapping.Create("company", "Kurum", "text", isSynced: true, 0));
+                DirectoryAttributeMapping.Create(directoryId, "company", "Kurum", "text", isSynced: true, 0));
             await db.SaveChangesAsync();
         }
 
