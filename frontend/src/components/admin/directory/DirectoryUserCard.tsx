@@ -206,7 +206,7 @@ export function DirectoryUserCard({ userId, onBack, onSelectUser }: DirectoryUse
             </h4>
             {otherAttributes.length === 0 ? (
               <p className="py-2 text-sm text-slate-400">
-                Senkronize edilmiş alan yok. Alan Eşlemeleri bölümünden alan tanımlayıp dizini
+                Senkronize edilmiş alan yok. AD Attributes bölümünden alan tanımlayıp dizini
                 yeniden senkronize edin.
               </p>
             ) : (

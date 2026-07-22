@@ -22,7 +22,7 @@ const SCHEDULE_LABEL: Record<number, string> = {
 interface DirectoryListProps {
   onAdd: () => void;
   onEdit: (directory: DirectoryDto) => void;
-  onViewUsers: (directory: DirectoryDto) => void;
+  onViewAttributeMappings: (directory: DirectoryDto) => void;
 }
 
 function formatLastSynced(value: string | null): string {
@@ -30,7 +30,7 @@ function formatLastSynced(value: string | null): string {
   return new Date(value).toLocaleString('tr-TR');
 }
 
-export function DirectoryList({ onAdd, onEdit, onViewUsers }: DirectoryListProps) {
+export function DirectoryList({ onAdd, onEdit, onViewAttributeMappings }: DirectoryListProps) {
   const directories = useDirectories();
   const syncMutation = useSyncDirectoryMutation();
   const deleteMutation = useDeleteDirectoryMutation();
@@ -142,13 +142,15 @@ export function DirectoryList({ onAdd, onEdit, onViewUsers }: DirectoryListProps
                 </td>
                 <td className="py-2">
                   <div className="flex gap-2 text-xs">
-                    <button
-                      type="button"
-                      onClick={() => onViewUsers(directory)}
-                      className="text-indigo-600 hover:underline"
-                    >
-                      Kullanıcılar
-                    </button>
+                    {directory.source === 1 && (
+                      <button
+                        type="button"
+                        onClick={() => onViewAttributeMappings(directory)}
+                        className="text-indigo-600 hover:underline"
+                      >
+                        AD Attributes
+                      </button>
+                    )}
                     {directory.source === 1 && (
                       <button
                         type="button"
