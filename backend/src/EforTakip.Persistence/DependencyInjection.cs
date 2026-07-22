@@ -47,6 +47,7 @@ public static class DependencyInjection
         services.AddScoped<IRepository<Customer>, RepositoryBase<Customer>>();
         services.AddScoped<IRepository<Employee>, RepositoryBase<Employee>>();
         services.AddScoped<IProjectRepository, ProjectRepository>();
+        services.AddScoped<IRepository<ProjectTask>, RepositoryBase<ProjectTask>>();
         services.AddScoped<IValueStreamRepository, ValueStreamRepository>();
         services.AddScoped<IRepository<DomainActivity>, RepositoryBase<DomainActivity>>();
         services.AddScoped<IRepository<EmployeeWorkLog>, RepositoryBase<EmployeeWorkLog>>();

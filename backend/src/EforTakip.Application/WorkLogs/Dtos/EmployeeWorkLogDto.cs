@@ -1,3 +1,5 @@
+using EforTakip.Domain.WorkLogs;
+
 namespace EforTakip.Application.WorkLogs.Dtos;
 
 public sealed class EmployeeWorkLogDto
@@ -12,4 +14,5 @@ public sealed class EmployeeWorkLogDto
     public decimal Hours { get; init; }
     public string Description { get; init; } = default!;
     public bool IsApproved { get; init; }
+    public WorkLogEntryType EntryType { get; init; }
 }

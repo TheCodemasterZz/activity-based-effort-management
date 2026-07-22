@@ -18,7 +18,7 @@ function TrendBadge({ percent }: { percent: number | null | undefined }) {
   );
 }
 
-interface StatCardShellProps {
+export interface StatCardShellProps {
   icon: string;
   iconBg: string;
   label: string;
@@ -28,7 +28,9 @@ interface StatCardShellProps {
   chart?: ReactNode;
 }
 
-function StatCardShell({ icon, iconBg, label, value, caption, trendPercent, chart }: StatCardShellProps) {
+/** Diğer sayfalardaki özet widget'ların (bkz. Planlama Doğruluğu) da kullandığı ortak kart
+ * kabuğu — ikon rozeti + etiket + değer + alt açıklama + sağda opsiyonel küçük grafik/gösterge. */
+export function StatCardShell({ icon, iconBg, label, value, caption, trendPercent, chart }: StatCardShellProps) {
   return (
     <div className="flex flex-1 flex-col justify-between gap-2 overflow-hidden rounded-xl border border-slate-200 bg-white p-3">
       <div className="flex items-center justify-between gap-2">

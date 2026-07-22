@@ -3,16 +3,20 @@ import { WorkLogFormModal, type WorkLogFormInitialValues } from '../components/l
 import { useEmployeeById } from '../hooks/useEmployeeById';
 import { useProjectDetail } from '../hooks/useProjects';
 import { useCustomerSearch } from '../hooks/useCustomers';
+import { WORK_LOG_ENTRY_TYPE } from '../api/types';
 
 /**
  * Uygulamanın geri kalanından bağımsız, chrome'suz (header/menü yok) tek başına açılabilen
  * "widget" sayfası — ör. Jira'daki "Log Work" butonundan `?widget=log-work&employeeId=...`
- * gibi bir URL ile derin bağlantı (deep link) olarak açılması hedeflenir. Bu uygulamada
- * gerçek bir router yok; App.tsx bu sayfayı `window.location.search`'teki `widget` parametresine
- * bakarak normal navigasyonun tamamen dışında, doğrudan render eder.
+ * gibi bir URL ile derin bağlantı (deep link) olarak açılması hedeflenir. `widget=plan-work`
+ * ile aynı sayfa Planned (Plan Work) modunda açılır. Bu uygulamada gerçek bir router yok;
+ * App.tsx bu sayfayı `window.location.search`'teki `widget` parametresine bakarak normal
+ * navigasyonun tamamen dışında, doğrudan render eder.
  */
 export function WidgetLogWorkPage() {
   const params = useMemo(() => new URLSearchParams(window.location.search), []);
+  const entryType =
+    params.get('widget') === 'plan-work' ? WORK_LOG_ENTRY_TYPE.Planned : WORK_LOG_ENTRY_TYPE.Actual;
   // Bu bir prototip/demo geçidi — gerçek bir imza/JWT doğrulaması backend'de yapılmıyor
   // (Test Mode'da böyle bir altyapı yok), sadece linkte bir token parametresinin bulunması
   // zorunlu kılınıyor; token'sız açılan bir link doğrudan reddedilir.
@@ -93,7 +97,13 @@ export function WidgetLogWorkPage() {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <WorkLogFormModal mode="create" allowDateRange={false} initialValues={initialValues} onClose={() => setClosed(true)} />
+      <WorkLogFormModal
+        mode="create"
+        allowDateRange={false}
+        initialValues={initialValues}
+        entryType={entryType}
+        onClose={() => setClosed(true)}
+      />
     </div>
   );
 }

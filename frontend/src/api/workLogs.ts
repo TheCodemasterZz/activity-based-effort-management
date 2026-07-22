@@ -1,5 +1,5 @@
 import { apiClient } from './client';
-import type { EmployeeWorkLogDto, PagedResult } from './types';
+import { WORK_LOG_ENTRY_TYPE, type EmployeeWorkLogDto, type PagedResult, type WorkLogEntryType } from './types';
 
 export interface GetWorkLogsParams {
   dateFrom?: string;
@@ -8,6 +8,7 @@ export interface GetWorkLogsParams {
   projectId?: string;
   pageNumber?: number;
   pageSize?: number;
+  entryType?: WorkLogEntryType;
 }
 
 export function getWorkLogs(params: GetWorkLogsParams) {
@@ -17,7 +18,12 @@ export function getWorkLogs(params: GetWorkLogsParams) {
     employeeId: params.employeeId,
     projectId: params.projectId,
     pageNumber: params.pageNumber ?? 1,
-    pageSize: params.pageSize ?? 1000,
+    // Backend'in PaginationParams.MaxPageSize'ı (bkz. PaginationParams.cs) 5000 — sayfasız "tüm
+    // dönemi çek" istekleri bu üst sınırla eşleşmeli, aksi halde bir dönemdeki kayıt sayısı bu
+    // değeri aşınca (ör. çok-parçalı mock veri sonrası bir ayda 3000+ kayıt) sonuç sessizce
+    // kırpılır ve en son eklenen kayıtlar tabloda hiç görünmez.
+    pageSize: params.pageSize ?? 5000,
+    entryType: params.entryType ?? WORK_LOG_ENTRY_TYPE.Actual,
   });
 }
 
@@ -31,6 +37,7 @@ export interface LogWorkPayload {
   endDate: string;
   hours: number;
   description: string;
+  entryType?: WorkLogEntryType;
 }
 
 export function logWork(payload: LogWorkPayload) {

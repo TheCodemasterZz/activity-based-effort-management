@@ -26,6 +26,14 @@ public sealed class ProjectConfiguration : IEntityTypeConfiguration<Project>
         builder.Property(p => p.IsActive)
             .IsRequired();
 
+        builder.Property(p => p.StartDate);
+        builder.Property(p => p.EndDate);
+
+        builder.Property(p => p.HealthStatus)
+            .HasConversion<string>()
+            .HasMaxLength(20)
+            .IsRequired();
+
         // Soft delete: pasife alınmış projeler tüm sorgulardan (liste, GetById) otomatik
         // hariç tutulur; veri fiziksel olarak silinmez.
         builder.HasQueryFilter(p => p.IsActive);

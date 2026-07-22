@@ -912,237 +912,6 @@ namespace EforTakip.Persistence.Migrations
                     b.ToTable("Customers", (string)null);
                 });
 
-            modelBuilder.Entity("EforTakip.Domain.Directories.Directory", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("AdditionalGroupDn")
-                        .HasMaxLength(512)
-                        .HasColumnType("character varying(512)");
-
-                    b.Property<string>("AdditionalUserDn")
-                        .HasMaxLength(512)
-                        .HasColumnType("character varying(512)");
-
-                    b.Property<string>("BaseDn")
-                        .HasMaxLength(512)
-                        .HasColumnType("character varying(512)");
-
-                    b.Property<string>("BindPasswordEncrypted")
-                        .HasMaxLength(1024)
-                        .HasColumnType("character varying(1024)");
-
-                    b.Property<string>("BindUsername")
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
-
-                    b.Property<string>("DirectoryType")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<string>("DisplayNameAttribute")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<string>("EmailAttribute")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<string>("FirstNameAttribute")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<string>("Hostname")
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("boolean");
-
-                    b.Property<string>("LastNameAttribute")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<DateTime?>("LastSyncedUtc")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
-
-                    b.Property<string>("Permission")
-                        .IsRequired()
-                        .HasMaxLength(30)
-                        .HasColumnType("character varying(30)");
-
-                    b.Property<int>("Port")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("SortOrder")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("Source")
-                        .IsRequired()
-                        .HasMaxLength(30)
-                        .HasColumnType("character varying(30)");
-
-                    b.Property<string>("SyncSchedule")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("character varying(20)");
-
-                    b.Property<string>("UniqueIdAttribute")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<bool>("UseSsl")
-                        .HasColumnType("boolean");
-
-                    b.Property<string>("UserObjectClass")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<string>("UserObjectFilter")
-                        .HasMaxLength(1024)
-                        .HasColumnType("character varying(1024)");
-
-                    b.Property<string>("UsernameAttribute")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<string>("UsernameRdnAttribute")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("Directories", (string)null);
-                });
-
-            modelBuilder.Entity("EforTakip.Domain.Directories.DirectoryAttributeMapping", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("AdAttributeName")
-                        .IsRequired()
-                        .HasMaxLength(150)
-                        .HasColumnType("character varying(150)");
-
-                    b.Property<string>("FieldType")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
-
-                    b.Property<bool>("IsSynced")
-                        .HasColumnType("boolean");
-
-                    b.Property<int>("SortOrder")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("SystemFieldName")
-                        .IsRequired()
-                        .HasMaxLength(150)
-                        .HasColumnType("character varying(150)");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("DirectoryAttributeMappings", (string)null);
-                });
-
-            modelBuilder.Entity("EforTakip.Domain.Directories.DirectoryUser", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("DirectoryId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("DisplayName")
-                        .HasMaxLength(300)
-                        .HasColumnType("character varying(300)");
-
-                    b.Property<string>("Email")
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
-
-                    b.Property<string>("FirstName")
-                        .HasMaxLength(150)
-                        .HasColumnType("character varying(150)");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("boolean");
-
-                    b.Property<string>("LastName")
-                        .HasMaxLength(150)
-                        .HasColumnType("character varying(150)");
-
-                    b.Property<DateTime?>("LastSyncedUtc")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("ObjectGuid")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<string>("PasswordHash")
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
-
-                    b.Property<string>("Source")
-                        .IsRequired()
-                        .HasMaxLength(30)
-                        .HasColumnType("character varying(30)");
-
-                    b.Property<string>("Username")
-                        .IsRequired()
-                        .HasMaxLength(150)
-                        .HasColumnType("character varying(150)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("DirectoryId");
-
-                    b.HasIndex("Username")
-                        .IsUnique();
-
-                    b.ToTable("DirectoryUsers", (string)null);
-                });
-
-            modelBuilder.Entity("EforTakip.Domain.Directories.DirectoryUserAttribute", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("AttributeMappingId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("DirectoryUserId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid?>("ReferencedDirectoryUserId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Value")
-                        .HasColumnType("text");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("AttributeMappingId");
-
-                    b.HasIndex("ReferencedDirectoryUserId");
-
-                    b.HasIndex("DirectoryUserId", "AttributeMappingId")
-                        .IsUnique();
-
-                    b.ToTable("DirectoryUserAttributes", (string)null);
-                });
-
             modelBuilder.Entity("EforTakip.Domain.EmployeeLeaves.EmployeeLeave", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1338,6 +1107,14 @@ namespace EforTakip.Persistence.Migrations
                         .HasMaxLength(2000)
                         .HasColumnType("character varying(2000)");
 
+                    b.Property<DateOnly?>("EndDate")
+                        .HasColumnType("date");
+
+                    b.Property<string>("HealthStatus")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean");
 
@@ -1345,6 +1122,9 @@ namespace EforTakip.Persistence.Migrations
                         .IsRequired()
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
+
+                    b.Property<DateOnly?>("StartDate")
+                        .HasColumnType("date");
 
                     b.Property<string>("Status")
                         .IsRequired()
@@ -1398,6 +1178,52 @@ namespace EforTakip.Persistence.Migrations
                         .IsUnique();
 
                     b.ToTable("ProjectEmployees", (string)null);
+                });
+
+            modelBuilder.Entity("EforTakip.Domain.Projects.ProjectTask", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("BaselineEffortHours")
+                        .HasPrecision(9, 2)
+                        .HasColumnType("numeric(9,2)");
+
+                    b.Property<DateOnly>("BaselineEndDate")
+                        .HasColumnType("date");
+
+                    b.Property<DateOnly>("EndDate")
+                        .HasColumnType("date");
+
+                    b.Property<decimal>("EstimatedEffortHours")
+                        .HasPrecision(9, 2)
+                        .HasColumnType("numeric(9,2)");
+
+                    b.Property<bool>("IsMilestone")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<Guid>("ProjectId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateOnly>("StartDate")
+                        .HasColumnType("date");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProjectId");
+
+                    b.ToTable("ProjectTasks", (string)null);
                 });
 
             modelBuilder.Entity("EforTakip.Domain.ValueStreams.StageActivityAssignment", b =>
@@ -2131,6 +1957,11 @@ namespace EforTakip.Persistence.Migrations
                     b.Property<Guid>("EmployeeId")
                         .HasColumnType("uuid");
 
+                    b.Property<string>("EntryType")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
                     b.Property<DateOnly>("PeriodEnd")
                         .HasColumnType("date");
 
@@ -2144,7 +1975,7 @@ namespace EforTakip.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("EmployeeId", "PeriodStart", "PeriodEnd");
+                    b.HasIndex("EmployeeId", "EntryType", "PeriodStart", "PeriodEnd");
 
                     b.ToTable("WorkLogApprovals", (string)null);
                 });
@@ -2175,6 +2006,11 @@ namespace EforTakip.Persistence.Migrations
                     b.Property<Guid>("EmployeeId")
                         .HasColumnType("uuid");
 
+                    b.Property<string>("EntryType")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
                     b.Property<decimal>("Hours")
                         .HasColumnType("decimal(5,2)");
 
@@ -2196,7 +2032,7 @@ namespace EforTakip.Persistence.Migrations
 
                     b.HasIndex("ProjectId");
 
-                    b.HasIndex("EmployeeId", "WorkDate");
+                    b.HasIndex("EmployeeId", "EntryType", "WorkDate");
 
                     b.ToTable("EmployeeWorkLogs", (string)null);
                 });
@@ -2206,35 +2042,6 @@ namespace EforTakip.Persistence.Migrations
                     b.HasOne("EforTakip.Domain.Activities.Activity", null)
                         .WithMany()
                         .HasForeignKey("ParentActivityId")
-                        .OnDelete(DeleteBehavior.Restrict);
-                });
-
-            modelBuilder.Entity("EforTakip.Domain.Directories.DirectoryUser", b =>
-                {
-                    b.HasOne("EforTakip.Domain.Directories.Directory", null)
-                        .WithMany()
-                        .HasForeignKey("DirectoryId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("EforTakip.Domain.Directories.DirectoryUserAttribute", b =>
-                {
-                    b.HasOne("EforTakip.Domain.Directories.DirectoryAttributeMapping", null)
-                        .WithMany()
-                        .HasForeignKey("AttributeMappingId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("EforTakip.Domain.Directories.DirectoryUser", null)
-                        .WithMany("Attributes")
-                        .HasForeignKey("DirectoryUserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("EforTakip.Domain.Directories.DirectoryUser", null)
-                        .WithMany()
-                        .HasForeignKey("ReferencedDirectoryUserId")
                         .OnDelete(DeleteBehavior.Restrict);
                 });
 
@@ -2355,11 +2162,6 @@ namespace EforTakip.Persistence.Migrations
                         .HasForeignKey("ProjectId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
-                });
-
-            modelBuilder.Entity("EforTakip.Domain.Directories.DirectoryUser", b =>
-                {
-                    b.Navigation("Attributes");
                 });
 
             modelBuilder.Entity("EforTakip.Domain.Projects.Project", b =>

@@ -6,6 +6,7 @@ using EforTakip.Application.Projects.Commands.AssignEmployeeToProject;
 using EforTakip.Application.Projects.Commands.CreateProject;
 using EforTakip.Application.Projects.Commands.DeleteProject;
 using EforTakip.Application.Projects.Commands.UpdateProject;
+using EforTakip.Application.Projects.Commands.UpdateProjectHealth;
 using EforTakip.Application.Projects.Dtos;
 using EforTakip.Application.Projects.Queries.GetProjectById;
 using EforTakip.Application.Projects.Queries.GetProjects;
@@ -42,7 +43,16 @@ public sealed class ProjectsController(ISender mediator) : ControllerBase
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> Update(Guid id, UpdateProjectRequestBody body, CancellationToken cancellationToken)
     {
-        await mediator.Send(new UpdateProjectCommand(id, body.Name, body.Description), cancellationToken);
+        await mediator.Send(
+            new UpdateProjectCommand(id, body.Name, body.Description, body.StartDate, body.EndDate), cancellationToken);
+        return NoContent();
+    }
+
+    [HttpPut("{id:guid}/health")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> UpdateHealth(Guid id, UpdateProjectHealthRequestBody body, CancellationToken cancellationToken)
+    {
+        await mediator.Send(new UpdateProjectHealthCommand(id, body.HealthStatus), cancellationToken);
         return NoContent();
     }
 

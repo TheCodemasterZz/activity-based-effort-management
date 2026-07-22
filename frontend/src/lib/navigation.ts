@@ -5,6 +5,7 @@ export type AppPage =
   | 'planWork'
   | 'workLog'
   | 'capacityManagement'
+  | 'planningAccuracy'
   | 'projects'
   | 'employees'
   | 'widgets'
@@ -12,10 +13,11 @@ export type AppPage =
 
 export const NAV_ITEMS: { page: AppPage; label: string }[] = [
   { page: 'home', label: 'Ana Sayfa' },
-  { page: 'planWork', label: 'Plan Work' },
-  { page: 'workLog', label: 'Work Log' },
-  { page: 'capacityManagement', label: 'Kapasite Yönetimi' },
   { page: 'projects', label: 'Projeler' },
+  { page: 'planWork', label: 'Planlanan Efor' },
+  { page: 'workLog', label: 'Gerçekleşen Efor' },
+  { page: 'capacityManagement', label: 'Kapasite Yönetimi' },
+  { page: 'planningAccuracy', label: 'Planlama Doğruluğu' },
   { page: 'employees', label: 'Çalışanlar' },
   { page: 'widgets', label: 'Widgets' },
 ];

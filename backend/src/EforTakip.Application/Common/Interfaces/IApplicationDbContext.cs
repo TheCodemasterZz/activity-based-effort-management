@@ -26,6 +26,8 @@ public interface IApplicationDbContext
 
     DbSet<ProjectEmployeeAssignment> ProjectEmployeeAssignments { get; }
 
+    DbSet<ProjectTask> ProjectTasks { get; }
+
     DbSet<ValueStream> ValueStreams { get; }
 
     DbSet<ValueStreamStage> ValueStreamStages { get; }

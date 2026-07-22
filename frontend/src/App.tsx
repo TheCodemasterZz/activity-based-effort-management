@@ -5,6 +5,7 @@ import { NotificationHost } from './components/common/NotificationHost';
 import { HomePage } from './pages/HomePage';
 import { PlanWorkPage } from './pages/PlanWorkPage';
 import { CapacityManagementPage } from './pages/CapacityManagementPage';
+import { PlanningAccuracyPage } from './pages/PlanningAccuracyPage';
 import { ReportPage } from './pages/ReportPage';
 import { ProjectsPage } from './pages/ProjectsPage';
 import { EmployeesPage } from './pages/EmployeesPage';
@@ -29,14 +30,15 @@ const queryClient = new QueryClient({
 });
 
 // Uygulamada gerçek bir router yok (bkz. WidgetLogWorkPage.tsx dosya başı açıklaması) — widget
-// modu, normal sayfa navigasyonunun tamamen dışında, doğrudan URL'deki `?widget=log-work`
-// parametresine bakılarak tespit edilir.
+// modu, normal sayfa navigasyonunun tamamen dışında, doğrudan URL'deki `?widget=log-work` veya
+// `?widget=plan-work` parametresine bakılarak tespit edilir.
 function isWidgetMode(): boolean {
-  return new URLSearchParams(window.location.search).get('widget') === 'log-work';
+  const widget = new URLSearchParams(window.location.search).get('widget');
+  return widget === 'log-work' || widget === 'plan-work';
 }
 
 function App() {
-  const [activePage, setActivePage] = useState<AppPage>('workLog');
+  const [activePage, setActivePage] = useState<AppPage>('home');
   const session = useAuthSession();
 
   return (
@@ -53,6 +55,7 @@ function App() {
           {activePage === 'planWork' && <PlanWorkPage />}
           {activePage === 'workLog' && <ReportPage />}
           {activePage === 'capacityManagement' && <CapacityManagementPage />}
+          {activePage === 'planningAccuracy' && <PlanningAccuracyPage />}
           {activePage === 'projects' && <ProjectsPage />}
           {activePage === 'employees' && <EmployeesPage />}
           {activePage === 'widgets' && <WidgetsPage />}

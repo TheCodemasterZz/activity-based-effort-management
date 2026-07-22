@@ -106,8 +106,8 @@ function computeSuggestions(
   return { range: { start: contentStart, end: cursor }, items };
 }
 
-/** Jira'nın JQL'i mantığında, work log satırlarını serbest metin sorgusuyla filtrelemek için
- * arama çubuğu — "Mesainâme Query Language" (MQL). Enter'a basılana kadar tabloyu değiştirmez. */
+/** Work log satırlarını serbest metin sorgusuyla filtrelemek için arama çubuğu —
+ * "Mesainâme Query Language" (MQL). Enter'a basılana kadar tabloyu değiştirmez. */
 export function MqlFilterInput({ onApply, fieldValues = {} }: MqlFilterInputProps) {
   const [text, setText] = useState('');
   const [cursorPos, setCursorPos] = useState(0);
@@ -252,7 +252,7 @@ export function MqlFilterInput({ onApply, fieldValues = {} }: MqlFilterInputProp
             <div className="absolute right-0 top-full z-30 mt-2 w-80 rounded-lg border border-slate-200 bg-white p-3 text-xs shadow-lg">
               <div className="mb-2 font-semibold text-slate-700">Mesainâme Query Language (MQL)</div>
               <div className="mb-2 text-slate-500">
-                Jira JQL mantığında alan/operatör/değer koşullarını <code className="rounded bg-slate-100 px-1">AND</code>{' '}
+                Alan/operatör/değer koşullarını <code className="rounded bg-slate-100 px-1">AND</code>{' '}
                 / <code className="rounded bg-slate-100 px-1">OR</code> ile birleştirin, parantezle gruplayın.
               </div>
               <div className="mb-1 font-semibold text-slate-600">Alanlar</div>
@@ -274,6 +274,15 @@ export function MqlFilterInput({ onApply, fieldValues = {} }: MqlFilterInputProp
                 <code className="rounded bg-slate-100 px-1">&gt;=</code>{' '}
                 <code className="rounded bg-slate-100 px-1">&lt;=</code>
               </div>
+              <div className="mb-1 font-semibold text-slate-600">Parantez ile Gruplama</div>
+              <div className="mb-2 text-slate-500">
+                <code className="rounded bg-slate-100 px-1">AND</code>, <code className="rounded bg-slate-100 px-1">OR</code>'dan
+                önce değerlendirilir. Farklı bir öncelik istediğinizde koşulları <code className="rounded bg-slate-100 px-1">( )</code>{' '}
+                ile gruplayın; parantezler iç içe de kullanılabilir.
+              </div>
+              <code className="mb-2 block rounded bg-slate-100 px-1.5 py-1 text-indigo-700">
+                (project = "X" OR customer = "Y") AND hours &gt; 5
+              </code>
               <div className="mb-1 font-semibold text-slate-600">Örnek</div>
               <code className="block rounded bg-slate-100 px-1.5 py-1 text-indigo-700">{EXAMPLE}</code>
             </div>

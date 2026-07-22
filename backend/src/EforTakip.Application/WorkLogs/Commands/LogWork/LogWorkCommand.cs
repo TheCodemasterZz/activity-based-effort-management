@@ -1,3 +1,4 @@
+using EforTakip.Domain.WorkLogs;
 using MediatR;
 
 namespace EforTakip.Application.WorkLogs.Commands.LogWork;
@@ -11,4 +12,5 @@ public sealed record LogWorkCommand(
     DateOnly StartDate,
     DateOnly EndDate,
     decimal Hours,
-    string Description) : IRequest<IReadOnlyCollection<Guid>>;
+    string Description,
+    WorkLogEntryType EntryType = WorkLogEntryType.Actual) : IRequest<IReadOnlyCollection<Guid>>;

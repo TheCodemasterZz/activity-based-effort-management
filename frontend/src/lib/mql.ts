@@ -1,6 +1,6 @@
 /**
- * MQL — Mesainâme Query Language. Jira'nın JQL'i mantığında, work log kayıtlarını
- * serbest metinle filtrelemek için küçük bir sorgu dili: alan/operatör/değer
+ * MQL — Mesainâme Query Language. Work log kayıtlarını serbest metinle filtrelemek
+ * için küçük bir sorgu dili: alan/operatör/değer
  * karşılaştırmaları AND/OR ile birleştirilebilir, parantezle gruplanabilir.
  *
  * Örnek: employee ~ "ayşe" AND hours > 5
