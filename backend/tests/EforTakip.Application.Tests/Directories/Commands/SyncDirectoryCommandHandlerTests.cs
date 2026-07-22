@@ -204,6 +204,36 @@ public class SyncDirectoryCommandHandlerTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task Handle_UserFieldWithDifferentlyFormattedSameDn_StillResolvesReference()
+    {
+        // AD, aynı DN'i bir kullanıcının kendi distinguishedName'inde ve bir başkasının
+        // "manager" alanında farklı boşluklama/Unicode normalizasyonuyla döndürebiliyor —
+        // gerçek bir üretim ortamında bu yüzden eşleşme sessizce başarısız oluyordu.
+        var directory = ValidAd();
+        var mapping = DirectoryAttributeMapping.Create("manager", "Yönetici", "user", isSynced: true, 0);
+        _db.DirectoryAttributeMappings.Add(mapping);
+        await _db.SaveChangesAsync();
+
+        const string managerOwnDn = "CN=Gökhan Yetkin,OU=Yönetim,DC=kizilay,DC=local";
+        const string managerDnAsWrittenOnEmployee = "CN=Gökhan Yetkin, OU=Yönetim, DC=kizilay, DC=local";
+
+        _directoryRepository.GetByIdAsync(directory.Id, Arg.Any<CancellationToken>()).Returns(directory);
+        _ldapService.SearchUsersAsync(directory, Arg.Any<IReadOnlyCollection<string>>(), Arg.Any<IReadOnlyCollection<string>>(), Arg.Any<CancellationToken>())
+            .Returns(new List<LdapUser>
+            {
+                LdapUserOf("gokhan.yetkin", "guid-manager", distinguishedName: managerOwnDn),
+                LdapUserOf("baris.kalaycioglu", "guid-1", manager: managerDnAsWrittenOnEmployee)
+            });
+
+        await CreateHandler().Handle(new SyncDirectoryCommand(directory.Id), CancellationToken.None);
+
+        var employee = _db.DirectoryUsers.Include(u => u.Attributes).Single(u => u.Username == "baris.kalaycioglu");
+        var manager = _db.DirectoryUsers.Single(u => u.Username == "gokhan.yetkin");
+
+        employee.Attributes.Single().ReferencedDirectoryUserId.Should().Be(manager.Id);
+    }
+
+    [Fact]
     public async Task Handle_UserFieldWithNoMatchingUser_FallsBackToPlainNameFromDn()
     {
         var directory = ValidAd();

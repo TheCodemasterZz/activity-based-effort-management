@@ -35,6 +35,32 @@ function countDescendants(node: TreeNode): number {
   return node.children.reduce((sum, child) => sum + 1 + countDescendants(child), 0);
 }
 
+/**
+ * Büyük organizasyonlarda (yüzlerce kişi) tüm ağacı açık göstermek okunaksız bir yığın
+ * oluşturur. Varsayılan olarak yalnızca kök(ler) ve doğrudan bağlı kişiler açık gelir; bir
+ * kademe altındaki her şey daraltılmış başlar, kullanıcı istediği dalı kendisi genişletir.
+ */
+const DEFAULT_EXPANDED_DEPTH = 1;
+
+function getDefaultCollapsedIds(forest: TreeNode[]): Set<string> {
+  const ids = new Set<string>();
+
+  const visit = (nodes: TreeNode[], depth: number) => {
+    for (const node of nodes) {
+      if (depth === DEFAULT_EXPANDED_DEPTH && node.children.length > 0) {
+        ids.add(node.id);
+        continue;
+      }
+      if (depth < DEFAULT_EXPANDED_DEPTH) {
+        visit(node.children, depth + 1);
+      }
+    }
+  };
+
+  visit(forest, 0);
+  return ids;
+}
+
 function Avatar({ node, tone }: { node: OrgChartNodeDto; tone: 'root' | 'default' }) {
   const ring = tone === 'root' ? 'ring-2 ring-white/60' : 'ring-1 ring-slate-200';
   if (node.photoBase64) {
@@ -278,11 +304,13 @@ function ZoomPanCanvas({ children }: { children: React.ReactNode }) {
 export function OrgChart({ directoryId, onSelectUser }: OrgChartProps) {
   const orgChart = useOrgChart(directoryId);
   const forest = useMemo(() => buildForest(orgChart.data?.nodes ?? []), [orgChart.data]);
-  const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
+  const defaultCollapsed = useMemo(() => getDefaultCollapsedIds(forest), [forest]);
+  const [collapsedOverride, setCollapsedOverride] = useState<Set<string> | null>(null);
+  const collapsed = collapsedOverride ?? defaultCollapsed;
 
   const toggleCollapse = (nodeId: string) => {
-    setCollapsed((prev) => {
-      const next = new Set(prev);
+    setCollapsedOverride((prev) => {
+      const next = new Set(prev ?? defaultCollapsed);
       if (next.has(nodeId)) {
         next.delete(nodeId);
       } else {
@@ -330,27 +358,27 @@ export function OrgChart({ directoryId, onSelectUser }: OrgChartProps) {
           position: absolute;
           top: 0;
           right: 50%;
-          border-top: 1.5px solid rgb(203 213 225);
+          border-top: 2px solid rgb(148 163 184);
           width: 50%;
           height: 2rem;
         }
         .org-chart-tree li::after {
           right: auto;
           left: 50%;
-          border-left: 1.5px solid rgb(203 213 225);
+          border-left: 2px solid rgb(148 163 184);
         }
         .org-chart-tree li:only-child::after, .org-chart-tree li:only-child::before { display: none; }
         .org-chart-tree > li { padding-top: 0; }
         .org-chart-tree > li::before, .org-chart-tree > li::after { display: none; }
         .org-chart-tree li:first-child::before, .org-chart-tree li:last-child::after { border: 0 none; }
-        .org-chart-tree li:last-child::before { border-right: 1.5px solid rgb(203 213 225); border-radius: 0 6px 0 0; }
+        .org-chart-tree li:last-child::before { border-right: 2px solid rgb(148 163 184); border-radius: 0 6px 0 0; }
         .org-chart-tree li:first-child::after { border-radius: 6px 0 0 0; }
         .org-chart-tree ul::before {
           content: '';
           position: absolute;
           top: 0;
           left: 50%;
-          border-left: 1.5px solid rgb(203 213 225);
+          border-left: 2px solid rgb(148 163 184);
           width: 0;
           height: 2rem;
         }
@@ -372,7 +400,10 @@ export function OrgChart({ directoryId, onSelectUser }: OrgChartProps) {
       </ZoomPanCanvas>
 
       <div className="mt-3 flex items-center justify-between text-xs text-slate-400">
-        <span>Fare tekerleğiyle yakınlaştır, sürükleyerek kaydır.</span>
+        <span>
+          {orgChart.data.nodes.length} kişi · Fare tekerleğiyle yakınlaştır, sürükleyerek kaydır,
+          daraltma rozetleriyle dalları aç/kapat.
+        </span>
         {forest.length > 1 && (
           <span>
             Birden fazla kök görünüyor — bazı yöneticiler bu dizinin senkronizasyon filtresi

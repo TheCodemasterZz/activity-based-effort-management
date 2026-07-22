@@ -1,3 +1,4 @@
+using System.Text;
 using System.Text.RegularExpressions;
 using EforTakip.Application.Common.Interfaces;
 using EforTakip.Application.Directories.Dtos;
@@ -55,10 +56,13 @@ public sealed partial class SyncDirectoryCommandHandler(
             .ToDictionary(u => u.ObjectGuid!, StringComparer.OrdinalIgnoreCase);
 
         // "Kullanıcı" tipi alanların DN referanslarını (ör. manager) aynı taramadaki bir
-        // kullanıcıyla eşleştirebilmek için: DN -> ObjectGuid haritası.
+        // kullanıcıyla eşleştirebilmek için: DN -> ObjectGuid haritası. AD, aynı DN'i bir
+        // kullanıcının kendi "distinguishedName"inde ve bir başkasının "manager" alanında
+        // virgülden sonra boşluklu/boşluksuz ya da farklı Unicode normalizasyonuyla
+        // döndürebiliyor — bu yüzden anahtar/karşılaştırma normalize edilmiş DN üzerinden yapılır.
         var dnToObjectGuid = ldapUsers
             .Where(u => !string.IsNullOrWhiteSpace(u.DistinguishedName))
-            .ToDictionary(u => u.DistinguishedName!, u => u.ObjectGuid, StringComparer.OrdinalIgnoreCase);
+            .ToDictionary(u => NormalizeDn(u.DistinguishedName!), u => u.ObjectGuid, StringComparer.OrdinalIgnoreCase);
 
         var syncedAtUtc = DateTime.UtcNow;
         var seenObjectGuids = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
@@ -150,7 +154,7 @@ public sealed partial class SyncDirectoryCommandHandler(
 
             if (mapping.FieldType == DirectoryAttributeMapping.UserReferenceFieldType && rawValue is not null)
             {
-                if (dnToObjectGuid.TryGetValue(rawValue, out var referencedObjectGuid)
+                if (dnToObjectGuid.TryGetValue(NormalizeDn(rawValue), out var referencedObjectGuid)
                     && byObjectGuid.TryGetValue(referencedObjectGuid, out var referencedUser))
                 {
                     referencedDirectoryUserId = referencedUser.Id;
@@ -169,6 +173,18 @@ public sealed partial class SyncDirectoryCommandHandler(
                 db.DirectoryUserAttributes.Add(createdAttribute);
         }
     }
+
+    /// <summary>
+    /// Aynı DN, AD'den bir kullanıcının kendi "distinguishedName"inde ve bir başkasının "manager"
+    /// alanında sözdizimsel olarak biraz farklı dönebiliyor (virgülden sonra boşluk olup olmaması,
+    /// Türkçe karakterlerin farklı Unicode normalizasyon formu). Ham string eşitliği bu yüzden
+    /// güvenilir değil — bileşenler arasındaki boşluk kaldırılıp NFC'ye normalize edilir.
+    /// </summary>
+    private static string NormalizeDn(string distinguishedName) =>
+        DnComponentSeparatorPattern().Replace(distinguishedName.Trim(), ",").Normalize(NormalizationForm.FormC);
+
+    [GeneratedRegex(@"\s*,\s*")]
+    private static partial Regex DnComponentSeparatorPattern();
 
     /// <summary>Bir DN'in ilk RDN bileşenindeki değeri döner (ör. "CN=Ada Lovelace,OU=..." -> "Ada Lovelace").</summary>
     private static string ExtractPlainNameFromDn(string distinguishedName)
