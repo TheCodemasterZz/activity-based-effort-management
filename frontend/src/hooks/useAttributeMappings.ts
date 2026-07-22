@@ -7,33 +7,36 @@ import {
   type SaveAttributeMappingPayload,
 } from '../api/directoryAttributeMappings';
 
-const QUERY_KEY = ['directoryAttributeMappings'];
+const queryKey = (directoryId: string) => ['directoryAttributeMappings', directoryId];
 
-export function useAttributeMappings() {
-  return useQuery({ queryKey: QUERY_KEY, queryFn: getAttributeMappings });
-}
-
-export function useCreateAttributeMappingMutation() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: createAttributeMapping,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: QUERY_KEY }),
+export function useAttributeMappings(directoryId: string) {
+  return useQuery({
+    queryKey: queryKey(directoryId),
+    queryFn: () => getAttributeMappings(directoryId),
   });
 }
 
-export function useUpdateAttributeMappingMutation() {
+export function useCreateAttributeMappingMutation(directoryId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: SaveAttributeMappingPayload) => createAttributeMapping(directoryId, payload),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKey(directoryId) }),
+  });
+}
+
+export function useUpdateAttributeMappingMutation(directoryId: string) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ id, payload }: { id: string; payload: SaveAttributeMappingPayload }) =>
-      updateAttributeMapping(id, payload),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: QUERY_KEY }),
+      updateAttributeMapping(directoryId, id, payload),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKey(directoryId) }),
   });
 }
 
-export function useDeleteAttributeMappingMutation() {
+export function useDeleteAttributeMappingMutation(directoryId: string) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: deleteAttributeMapping,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: QUERY_KEY }),
+    mutationFn: (id: string) => deleteAttributeMapping(directoryId, id),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKey(directoryId) }),
   });
 }
