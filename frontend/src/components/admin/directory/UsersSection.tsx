@@ -1,37 +1,42 @@
 import { useState } from 'react';
+import { useDirectories } from '../../../hooks/useDirectories';
 import { useDirectoryUsers } from '../../../hooks/useDirectoryUsers';
-import type { DirectoryDto } from '../../../api/types';
-
-interface DirectoryUserListProps {
-  directory: DirectoryDto;
-  onBack: () => void;
-  onSelectUser: (userId: string) => void;
-}
+import { DirectoryUserCard } from './DirectoryUserCard';
 
 const PAGE_SIZE_OPTIONS = [25, 50, 100];
 
-export function DirectoryUserList({ directory, onBack, onSelectUser }: DirectoryUserListProps) {
+type View = { kind: 'list' } | { kind: 'detail'; userId: string };
+
+export function UsersSection() {
+  const [view, setView] = useState<View>({ kind: 'list' });
+  const directories = useDirectories();
+  const [selectedDirectoryId, setSelectedDirectoryId] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [pageNumber, setPageNumber] = useState(1);
   const [pageSize, setPageSize] = useState(PAGE_SIZE_OPTIONS[0]);
-  const users = useDirectoryUsers({ directoryId: directory.id, searchTerm, pageNumber, pageSize });
+
+  const users = useDirectoryUsers({
+    directoryId: selectedDirectoryId || undefined,
+    searchTerm,
+    pageNumber,
+    pageSize,
+  });
   const items = users.data?.items ?? [];
   const totalCount = users.data?.totalCount ?? 0;
   const totalPages = users.data?.totalPages ?? 1;
 
+  if (view.kind === 'detail') {
+    return (
+      <DirectoryUserCard
+        userId={view.userId}
+        onBack={() => setView({ kind: 'list' })}
+        onSelectUser={(userId) => setView({ kind: 'detail', userId })}
+      />
+    );
+  }
+
   return (
     <div>
-      <div className="mb-4 flex items-center justify-between">
-        <h2 className="text-base font-semibold text-slate-800">{directory.name} — Kullanıcılar</h2>
-        <button
-          type="button"
-          onClick={onBack}
-          className="text-sm text-slate-500 hover:text-slate-700"
-        >
-          ← Listeye dön
-        </button>
-      </div>
-
       <div className="mb-4 flex flex-wrap items-center gap-3">
         <input
           value={searchTerm}
@@ -42,6 +47,25 @@ export function DirectoryUserList({ directory, onBack, onSelectUser }: Directory
           placeholder="Kullanıcı adı, görünen ad veya e-posta ara"
           className="w-full max-w-sm rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
         />
+
+        <label className="flex items-center gap-2 text-sm text-slate-500">
+          Dizin
+          <select
+            value={selectedDirectoryId}
+            onChange={(e) => {
+              setSelectedDirectoryId(e.target.value);
+              setPageNumber(1);
+            }}
+            className="rounded-md border border-slate-300 px-2 py-1.5 text-sm outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+          >
+            <option value="">Tüm Dizinler</option>
+            {(directories.data?.items ?? []).map((directory) => (
+              <option key={directory.id} value={directory.id}>
+                {directory.name}
+              </option>
+            ))}
+          </select>
+        </label>
 
         <label className="flex items-center gap-2 text-sm text-slate-500">
           Sayfa başına
@@ -61,22 +85,21 @@ export function DirectoryUserList({ directory, onBack, onSelectUser }: Directory
           </select>
         </label>
 
-        {totalCount > 0 && (
-          <span className="text-sm text-slate-400">{totalCount} kullanıcı</span>
-        )}
+        {totalCount > 0 && <span className="text-sm text-slate-400">{totalCount} kullanıcı</span>}
       </div>
 
       {users.isLoading ? (
         <div className="py-8 text-center text-sm text-slate-400">Yükleniyor…</div>
       ) : items.length === 0 ? (
         <div className="rounded-xl border border-dashed border-slate-200 py-12 text-center text-sm text-slate-500">
-          {searchTerm ? 'Aramayla eşleşen kullanıcı yok.' : 'Bu dizinde henüz kullanıcı yok.'}
+          {searchTerm ? 'Aramayla eşleşen kullanıcı yok.' : 'Sistemde henüz kullanıcı yok.'}
         </div>
       ) : (
         <table className="w-full text-left text-sm">
           <thead>
             <tr className="border-b border-slate-100 text-xs uppercase tracking-wide text-slate-400">
               <th className="py-2 pr-4 font-medium">Kullanıcı Adı</th>
+              <th className="py-2 pr-4 font-medium">Dizin</th>
               <th className="py-2 pr-4 font-medium">Görünen Ad</th>
               <th className="py-2 pr-4 font-medium">E-posta</th>
               <th className="py-2 font-medium">Durum</th>
@@ -86,10 +109,11 @@ export function DirectoryUserList({ directory, onBack, onSelectUser }: Directory
             {items.map((user) => (
               <tr
                 key={user.id}
-                onClick={() => onSelectUser(user.id)}
+                onClick={() => setView({ kind: 'detail', userId: user.id })}
                 className="cursor-pointer border-b border-slate-50 last:border-0 hover:bg-slate-50"
               >
                 <td className="py-2 pr-4 text-indigo-600">{user.username}</td>
+                <td className="py-2 pr-4 text-slate-500">{user.directoryName}</td>
                 <td className="py-2 pr-4 text-slate-700">{user.displayName ?? '—'}</td>
                 <td className="py-2 pr-4 text-slate-500">{user.email ?? '—'}</td>
                 <td className="py-2">
