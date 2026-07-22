@@ -38,7 +38,7 @@ public sealed class DirectoryAttributeMappingsController(ISender mediator) : Con
     [HttpPut("{id:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> Update(
-        Guid directoryId, Guid id, UpdateAttributeMappingCommand command, CancellationToken cancellationToken)
+        Guid id, UpdateAttributeMappingCommand command, CancellationToken cancellationToken)
     {
         if (id != command.Id)
             return BadRequest("Route ve gövde kimlikleri eşleşmiyor.");
@@ -48,7 +48,7 @@ public sealed class DirectoryAttributeMappingsController(ISender mediator) : Con
 
     [HttpDelete("{id:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
-    public async Task<IActionResult> Delete(Guid directoryId, Guid id, CancellationToken cancellationToken)
+    public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
     {
         await mediator.Send(new DeleteAttributeMappingCommand(id), cancellationToken);
         return NoContent();
