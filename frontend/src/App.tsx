@@ -12,6 +12,8 @@ import { EmployeesPage } from './pages/EmployeesPage';
 import { WidgetsPage } from './pages/WidgetsPage';
 import { WidgetLogWorkPage } from './pages/WidgetLogWorkPage';
 import { AdminPage } from './pages/AdminPage';
+import { LoginPage } from './pages/LoginPage';
+import { useAuthSession } from './hooks/useAuthSession';
 import { pushErrorNotification, toErrorMessage } from './lib/notifications';
 import type { AppPage } from './lib/navigation';
 
@@ -37,11 +39,15 @@ function isWidgetMode(): boolean {
 
 function App() {
   const [activePage, setActivePage] = useState<AppPage>('home');
+  const session = useAuthSession();
 
   return (
     <QueryClientProvider client={queryClient}>
       <NotificationHost />
-      {isWidgetMode() ? (
+      {/* Oturum yoksa widget modu dahil hiçbir şey gösterilmez — widget de API'ye token ile gider. */}
+      {!session ? (
+        <LoginPage />
+      ) : isWidgetMode() ? (
         <WidgetLogWorkPage />
       ) : (
         <RootLayout activePage={activePage} onNavigate={setActivePage}>

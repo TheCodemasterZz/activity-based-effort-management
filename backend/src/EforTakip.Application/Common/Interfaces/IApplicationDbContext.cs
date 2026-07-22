@@ -1,5 +1,6 @@
 using EforTakip.Domain.Activities;
 using EforTakip.Domain.Customers;
+using EforTakip.Domain.Directories;
 using EforTakip.Domain.EmployeeLeaves;
 using EforTakip.Domain.Employees;
 using EforTakip.Domain.Holidays;
@@ -48,4 +49,12 @@ public interface IApplicationDbContext
     DbSet<WorkLogApproval> WorkLogApprovals { get; }
 
     DbSet<EmployeeLeave> EmployeeLeaves { get; }
+
+    DbSet<Domain.Directories.Directory> Directories { get; }
+
+    DbSet<DirectoryUser> DirectoryUsers { get; }
+
+    DbSet<DirectoryAttributeMapping> DirectoryAttributeMappings { get; }
+
+    DbSet<DirectoryUserAttribute> DirectoryUserAttributes { get; }
 }

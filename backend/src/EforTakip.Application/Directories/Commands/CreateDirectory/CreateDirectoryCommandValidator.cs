@@ -1,0 +1,26 @@
+using EforTakip.Domain.Directories;
+using FluentValidation;
+
+namespace EforTakip.Application.Directories.Commands.CreateDirectory;
+
+public sealed class CreateDirectoryCommandValidator : AbstractValidator<CreateDirectoryCommand>
+{
+    public CreateDirectoryCommandValidator()
+    {
+        RuleFor(x => x.Name)
+            .NotEmpty().WithMessage("Dizin adı zorunludur.")
+            .MaximumLength(200).WithMessage("Dizin adı en fazla 200 karakter olabilir.");
+
+        When(x => x.Source == DirectorySource.ActiveDirectory, () =>
+        {
+            RuleFor(x => x.Hostname)
+                .NotEmpty().WithMessage("Sunucu adresi (hostname) zorunludur.");
+            RuleFor(x => x.BaseDn)
+                .NotEmpty().WithMessage("Base DN zorunludur.");
+            RuleFor(x => x.Port)
+                .InclusiveBetween(1, 65535).WithMessage("Port 1-65535 aralığında olmalıdır.");
+            RuleFor(x => x.UsernameAttribute)
+                .NotEmpty().WithMessage("Kullanıcı adı attribute'u zorunludur.");
+        });
+    }
+}

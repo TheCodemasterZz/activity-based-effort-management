@@ -1,3 +1,4 @@
+import { clearSession, getSession } from '../lib/auth';
 import type { ProblemDetails } from './types';
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:5298';
@@ -32,13 +33,29 @@ async function request<T>(
   path: string,
   options?: { query?: Record<string, QueryValue>; body?: unknown },
 ): Promise<T> {
+  const headers: Record<string, string> = {};
+
+  if (options?.body !== undefined) {
+    headers['Content-Type'] = 'application/json';
+  }
+
+  const session = getSession();
+  if (session) {
+    headers.Authorization = `Bearer ${session.token}`;
+  }
+
   const response = await fetch(buildUrl(path, options?.query), {
     method,
-    headers: options?.body !== undefined ? { 'Content-Type': 'application/json' } : undefined,
+    headers: Object.keys(headers).length > 0 ? headers : undefined,
     body: options?.body !== undefined ? JSON.stringify(options.body) : undefined,
   });
 
   if (!response.ok) {
+    // 401: token süresi dolmuş veya geçersiz — oturumu düşür, kullanıcı login ekranına gitsin.
+    if (response.status === 401) {
+      clearSession();
+    }
+
     let problem: ProblemDetails | null = null;
     try {
       problem = await response.json();
