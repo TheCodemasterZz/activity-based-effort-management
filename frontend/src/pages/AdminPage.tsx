@@ -5,7 +5,7 @@ import { useValueStreams } from '../hooks/useValueStreams';
 import { useAllActivities } from '../hooks/useActivities';
 import { useHolidays } from '../hooks/useHolidays';
 import { UserDirectorySection } from '../components/admin/directory/UserDirectorySection';
-import { AttributeMappingsSection } from '../components/admin/directory/AttributeMappingsSection';
+import { UsersSection } from '../components/admin/directory/UsersSection';
 import { OrgChartSection } from '../components/admin/directory/OrgChartSection';
 
 type SectionKind =
@@ -16,7 +16,7 @@ type SectionKind =
   | 'holidays'
   | 'workCalendars'
   | 'userDirectory'
-  | 'attributeMappings'
+  | 'users'
   | 'orgChart'
   | 'placeholder';
 
@@ -59,10 +59,15 @@ const ADMIN_TABS: AdminTab[] = [
         header: 'KULLANICI YÖNETİMİ',
         sections: [
           { key: 'employees', label: 'Çalışanlar', kind: 'employees' },
-          { key: 'userDirectory', label: 'Kullanıcı Klasörü', kind: 'userDirectory' },
-          { key: 'attributeMappings', label: 'Alan Eşlemeleri', kind: 'attributeMappings' },
+          { key: 'users', label: 'Kullanıcılar', kind: 'users' },
           { key: 'orgChart', label: 'Organizasyon Şeması', kind: 'orgChart' },
           { key: 'roles', label: 'Roller ve İzinler', kind: 'placeholder' },
+        ],
+      },
+      {
+        header: 'ACTIVE DIRECTORY',
+        sections: [
+          { key: 'userDirectory', label: 'Kullanıcı Klasörü', kind: 'userDirectory' },
         ],
       },
     ],
@@ -273,8 +278,8 @@ function SectionContent({ section }: { section: AdminSection }) {
       return <WorkCalendarsSection />;
     case 'userDirectory':
       return <UserDirectorySection />;
-    case 'attributeMappings':
-      return <AttributeMappingsSection />;
+    case 'users':
+      return <UsersSection />;
     case 'orgChart':
       return <OrgChartSection />;
     case 'placeholder':
