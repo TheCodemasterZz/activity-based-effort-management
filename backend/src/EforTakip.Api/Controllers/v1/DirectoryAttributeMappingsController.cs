@@ -17,8 +17,8 @@ public sealed class DirectoryAttributeMappingsController(ISender mediator) : Con
     [HttpGet]
     [ProducesResponseType(typeof(IReadOnlyCollection<DirectoryAttributeMappingDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<IReadOnlyCollection<DirectoryAttributeMappingDto>>> GetAll(
-        CancellationToken cancellationToken)
-        => Ok(await mediator.Send(new GetAttributeMappingsQuery(), cancellationToken));
+        [FromQuery] Guid directoryId, CancellationToken cancellationToken)
+        => Ok(await mediator.Send(new GetAttributeMappingsQuery(directoryId), cancellationToken));
 
     [HttpPost]
     [ProducesResponseType(StatusCodes.Status201Created)]

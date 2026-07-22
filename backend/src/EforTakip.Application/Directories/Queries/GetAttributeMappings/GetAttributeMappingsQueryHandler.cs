@@ -14,6 +14,7 @@ public sealed class GetAttributeMappingsQueryHandler(IApplicationDbContext db)
     {
         return await db.DirectoryAttributeMappings
             .AsNoTracking()
+            .Where(m => m.DirectoryId == request.DirectoryId)
             .OrderBy(m => m.SortOrder)
             .ProjectToType<DirectoryAttributeMappingDto>()
             .ToListAsync(cancellationToken);
