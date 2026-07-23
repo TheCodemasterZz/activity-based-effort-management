@@ -195,4 +195,44 @@ public class DirectoryUserTests
 
         user.IsActive.Should().BeTrue();
     }
+
+    [Fact]
+    public void AssignRole_NewRole_AddsAndReturnsAssignment()
+    {
+        var user = DirectoryUser.CreateInternal(
+            Guid.NewGuid(), "kullanici", null, null, null, null, "HASH");
+        var roleId = Guid.NewGuid();
+
+        var created = user.AssignRole(roleId);
+
+        created.Should().NotBeNull();
+        user.Roles.Should().ContainSingle(r => r.RoleId == roleId);
+    }
+
+    [Fact]
+    public void AssignRole_AlreadyAssigned_ReturnsNullAndDoesNotDuplicate()
+    {
+        var user = DirectoryUser.CreateInternal(
+            Guid.NewGuid(), "kullanici", null, null, null, null, "HASH");
+        var roleId = Guid.NewGuid();
+        user.AssignRole(roleId);
+
+        var second = user.AssignRole(roleId);
+
+        second.Should().BeNull();
+        user.Roles.Should().HaveCount(1);
+    }
+
+    [Fact]
+    public void RemoveRole_RemovesAssignedRole()
+    {
+        var user = DirectoryUser.CreateInternal(
+            Guid.NewGuid(), "kullanici", null, null, null, null, "HASH");
+        var roleId = Guid.NewGuid();
+        user.AssignRole(roleId);
+
+        user.RemoveRole(roleId);
+
+        user.Roles.Should().BeEmpty();
+    }
 }
