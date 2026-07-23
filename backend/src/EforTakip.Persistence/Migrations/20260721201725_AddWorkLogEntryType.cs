@@ -15,13 +15,6 @@ namespace EforTakip.Persistence.Migrations
                 name: "IX_EmployeeWorkLogs_EmployeeId_WorkDate",
                 table: "EmployeeWorkLogs");
 
-            migrationBuilder.AddColumn<bool>(
-                name: "IsActive",
-                table: "Projects",
-                type: "boolean",
-                nullable: false,
-                defaultValue: false);
-
             migrationBuilder.AddColumn<Guid>(
                 name: "ApprovalId",
                 table: "EmployeeWorkLogs",
@@ -127,10 +120,6 @@ namespace EforTakip.Persistence.Migrations
             migrationBuilder.DropIndex(
                 name: "IX_EmployeeWorkLogs_EmployeeId_EntryType_WorkDate",
                 table: "EmployeeWorkLogs");
-
-            migrationBuilder.DropColumn(
-                name: "IsActive",
-                table: "Projects");
 
             migrationBuilder.DropColumn(
                 name: "ApprovalId",
