@@ -8,6 +8,7 @@ using EforTakip.Domain.Employees;
 using EforTakip.Domain.Holidays;
 using EforTakip.Domain.Notifications;
 using EforTakip.Domain.Projects;
+using EforTakip.Domain.Roles;
 using EforTakip.Domain.ValueStreams;
 using EforTakip.Domain.WorkLogs;
 using EforTakip.Persistence.Repositories;
@@ -58,6 +59,7 @@ public static class DependencyInjection
         services.AddScoped<IRepository<DirectoryEntity>, RepositoryBase<DirectoryEntity>>();
         services.AddScoped<IRepository<DirectoryUser>, RepositoryBase<DirectoryUser>>();
         services.AddScoped<IRepository<DirectoryAttributeMapping>, RepositoryBase<DirectoryAttributeMapping>>();
+        services.AddScoped<IRepository<Role>, RepositoryBase<Role>>();
 
         services.AddScoped<IUnitOfWork, UnitOfWork>();
 

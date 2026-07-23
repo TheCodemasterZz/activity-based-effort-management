@@ -36,5 +36,14 @@ public sealed class DirectoryUserConfiguration : IEntityTypeConfiguration<Direct
             .WithMany()
             .HasForeignKey(u => u.DirectoryId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasMany(u => u.Roles)
+            .WithOne()
+            .HasForeignKey(r => r.DirectoryUserId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.Metadata
+            .FindNavigation(nameof(DirectoryUser.Roles))!
+            .SetPropertyAccessMode(PropertyAccessMode.Field);
     }
 }

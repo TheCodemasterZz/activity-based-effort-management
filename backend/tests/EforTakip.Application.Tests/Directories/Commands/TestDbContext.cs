@@ -7,6 +7,7 @@ using EforTakip.Domain.Employees;
 using EforTakip.Domain.Holidays;
 using EforTakip.Domain.Notifications;
 using EforTakip.Domain.Projects;
+using EforTakip.Domain.Roles;
 using EforTakip.Domain.ValueStreams;
 using EforTakip.Domain.WorkCalendars;
 using EforTakip.Domain.WorkLogApprovals;
@@ -43,6 +44,9 @@ public sealed class TestDbContext(DbContextOptions<TestDbContext> options)
     public DbSet<DirectoryUser> DirectoryUsers => Set<DirectoryUser>();
     public DbSet<DirectoryAttributeMapping> DirectoryAttributeMappings => Set<DirectoryAttributeMapping>();
     public DbSet<DirectoryUserAttribute> DirectoryUserAttributes => Set<DirectoryUserAttribute>();
+    public DbSet<Role> Roles => Set<Role>();
+    public DbSet<RolePermission> RolePermissions => Set<RolePermission>();
+    public DbSet<DirectoryUserRole> DirectoryUserRoles => Set<DirectoryUserRole>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -54,6 +58,26 @@ public sealed class TestDbContext(DbContextOptions<TestDbContext> options)
         modelBuilder.Entity<DirectoryUser>()
             .Metadata
             .FindNavigation(nameof(DirectoryUser.Attributes))!
+            .SetPropertyAccessMode(PropertyAccessMode.Field);
+
+        modelBuilder.Entity<DirectoryUser>()
+            .HasMany(u => u.Roles)
+            .WithOne()
+            .HasForeignKey(r => r.DirectoryUserId);
+
+        modelBuilder.Entity<DirectoryUser>()
+            .Metadata
+            .FindNavigation(nameof(DirectoryUser.Roles))!
+            .SetPropertyAccessMode(PropertyAccessMode.Field);
+
+        modelBuilder.Entity<Role>()
+            .HasMany(r => r.Permissions)
+            .WithOne()
+            .HasForeignKey(p => p.RoleId);
+
+        modelBuilder.Entity<Role>()
+            .Metadata
+            .FindNavigation(nameof(Role.Permissions))!
             .SetPropertyAccessMode(PropertyAccessMode.Field);
 
         base.OnModelCreating(modelBuilder);
