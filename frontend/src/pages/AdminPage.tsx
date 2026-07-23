@@ -7,6 +7,7 @@ import { useHolidays } from '../hooks/useHolidays';
 import { UserDirectorySection } from '../components/admin/directory/UserDirectorySection';
 import { UsersSection } from '../components/admin/directory/UsersSection';
 import { OrgChartSection } from '../components/admin/directory/OrgChartSection';
+import { RolesSection } from '../components/admin/roles/RolesSection';
 
 type SectionKind =
   | 'employees'
@@ -18,6 +19,7 @@ type SectionKind =
   | 'userDirectory'
   | 'users'
   | 'orgChart'
+  | 'roles'
   | 'placeholder';
 
 interface AdminSection {
@@ -61,7 +63,7 @@ const ADMIN_TABS: AdminTab[] = [
           { key: 'employees', label: 'Çalışanlar', kind: 'employees' },
           { key: 'users', label: 'Kullanıcılar', kind: 'users' },
           { key: 'orgChart', label: 'Organizasyon Şeması', kind: 'orgChart' },
-          { key: 'roles', label: 'Roller ve İzinler', kind: 'placeholder' },
+          { key: 'roles', label: 'Roller ve İzinler', kind: 'roles' },
         ],
       },
       {
@@ -282,6 +284,8 @@ function SectionContent({ section }: { section: AdminSection }) {
       return <UsersSection />;
     case 'orgChart':
       return <OrgChartSection />;
+    case 'roles':
+      return <RolesSection />;
     case 'placeholder':
       return <Placeholder label={section.label} />;
   }
