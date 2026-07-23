@@ -239,3 +239,26 @@ export interface OrgChartResultDto {
   hasManagerMapping: boolean;
   nodes: OrgChartNodeDto[];
 }
+
+export interface RoleDto {
+  id: string;
+  name: string;
+  description: string | null;
+  isSystemAdmin: boolean;
+  permissionCount: number;
+}
+
+export interface RoleAssignedUserDto {
+  id: string;
+  username: string;
+  displayName: string | null;
+}
+
+export interface RoleDetailDto {
+  id: string;
+  name: string;
+  description: string | null;
+  isSystemAdmin: boolean;
+  permissions: string[];
+  assignedUsers: RoleAssignedUserDto[];
+}
