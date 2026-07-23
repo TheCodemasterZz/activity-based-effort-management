@@ -9,6 +9,11 @@ using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// User secrets normalde sadece "Development" ortamında otomatik yüklenir; gerçek DB ile
+// test için ayrı bir ortam (RealDb) kullanıldığında da yüklenmesi gerekir.
+if (!builder.Environment.IsDevelopment())
+    builder.Configuration.AddUserSecrets<Program>();
+
 builder.Host.UseSerilog((context, services, configuration) => configuration
     .ReadFrom.Configuration(context.Configuration)
     .ReadFrom.Services(services)
