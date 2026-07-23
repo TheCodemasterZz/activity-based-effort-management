@@ -35,8 +35,8 @@ public sealed class RolesController(ISender mediator) : ControllerBase
 
     [RequirePermission(Permissions.Role.Read)]
     [HttpGet("permission-catalog")]
-    [ProducesResponseType(typeof(IReadOnlyCollection<string>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<IReadOnlyCollection<string>>> GetPermissionCatalog(CancellationToken cancellationToken)
+    [ProducesResponseType(typeof(IReadOnlyCollection<PermissionDescriptor>), StatusCodes.Status200OK)]
+    public async Task<ActionResult<IReadOnlyCollection<PermissionDescriptor>>> GetPermissionCatalog(CancellationToken cancellationToken)
         => Ok(await mediator.Send(new GetPermissionCatalogQuery(), cancellationToken));
 
     [RequirePermission(Permissions.Role.Read)]

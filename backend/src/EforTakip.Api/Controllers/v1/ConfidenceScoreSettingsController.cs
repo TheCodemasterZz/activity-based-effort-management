@@ -1,8 +1,10 @@
 using Asp.Versioning;
+using EforTakip.Api.Authorization;
 using EforTakip.Api.Contracts.Settings;
 using EforTakip.Application.Settings.Commands.UpdateConfidenceScoreSettings;
 using EforTakip.Application.Settings.Dtos;
 using EforTakip.Application.Settings.Queries.GetConfidenceScoreSettings;
+using EforTakip.Domain.Authorization;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
@@ -15,11 +17,13 @@ namespace EforTakip.Api.Controllers.v1;
 [Route("api/v{version:apiVersion}/[controller]")]
 public sealed class ConfidenceScoreSettingsController(ISender mediator) : ControllerBase
 {
+    [RequirePermission(Permissions.Settings.Manage)]
     [HttpGet]
     [ProducesResponseType(typeof(ConfidenceScoreSettingsDto), StatusCodes.Status200OK)]
     public async Task<ActionResult<ConfidenceScoreSettingsDto>> Get(CancellationToken cancellationToken)
         => Ok(await mediator.Send(new GetConfidenceScoreSettingsQuery(), cancellationToken));
 
+    [RequirePermission(Permissions.Settings.Manage)]
     [HttpPut]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> Update(UpdateConfidenceScoreSettingsRequestBody body, CancellationToken cancellationToken)

@@ -4,9 +4,9 @@ using MediatR;
 namespace EforTakip.Application.Roles.Queries.GetPermissionCatalog;
 
 public sealed class GetPermissionCatalogQueryHandler
-    : IRequestHandler<GetPermissionCatalogQuery, IReadOnlyCollection<string>>
+    : IRequestHandler<GetPermissionCatalogQuery, IReadOnlyCollection<PermissionDescriptor>>
 {
-    public Task<IReadOnlyCollection<string>> Handle(
+    public Task<IReadOnlyCollection<PermissionDescriptor>> Handle(
         GetPermissionCatalogQuery request, CancellationToken cancellationToken)
-        => Task.FromResult(Permissions.All);
+        => Task.FromResult(Permissions.AllDescriptors);
 }

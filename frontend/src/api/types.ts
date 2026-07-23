@@ -328,6 +328,12 @@ export interface RoleAssignedUserDto {
   displayName: string | null;
 }
 
+export interface PermissionDescriptorDto {
+  key: string;
+  moduleLabel: string;
+  label: string;
+}
+
 export interface RoleDetailDto {
   id: string;
   name: string;

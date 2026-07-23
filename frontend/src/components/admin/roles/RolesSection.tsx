@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { ApiError } from '../../../api/client';
+import type { PermissionDescriptorDto } from '../../../api/types';
 import { useDirectoryUsers } from '../../../hooks/useDirectoryUsers';
 import {
   useAssignUserToRoleMutation,
@@ -16,11 +17,10 @@ import {
 const inputClass =
   'w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500';
 
-function groupByModule(permissionKeys: string[]): Record<string, string[]> {
-  const groups: Record<string, string[]> = {};
-  for (const key of permissionKeys) {
-    const module = key.split(':')[0];
-    (groups[module] ??= []).push(key);
+function groupByModule(descriptors: PermissionDescriptorDto[]): Record<string, PermissionDescriptorDto[]> {
+  const groups: Record<string, PermissionDescriptorDto[]> = {};
+  for (const descriptor of descriptors) {
+    (groups[descriptor.moduleLabel] ??= []).push(descriptor);
   }
   return groups;
 }
@@ -162,19 +162,19 @@ function RoleDetail({ roleId, onBack }: { roleId: string; onBack: () => void }) 
         <div className="mb-6">
           <h3 className="mb-2 text-sm font-semibold text-slate-700">İzinler</h3>
           <div className="space-y-3">
-            {Object.entries(modules).map(([module, keys]) => (
-              <div key={module}>
-                <p className="mb-1 text-xs font-medium uppercase tracking-wide text-slate-400">{module}</p>
+            {Object.entries(modules).map(([moduleLabel, descriptors]) => (
+              <div key={moduleLabel}>
+                <p className="mb-1 text-xs font-medium uppercase tracking-wide text-slate-400">{moduleLabel}</p>
                 <div className="flex flex-wrap gap-3">
-                  {keys.map((key) => (
-                    <label key={key} className="flex items-center gap-1.5 text-sm text-slate-700">
+                  {descriptors.map((descriptor) => (
+                    <label key={descriptor.key} className="flex items-center gap-1.5 text-sm text-slate-700">
                       <input
                         type="checkbox"
-                        checked={grantedSet.has(key)}
-                        onChange={() => togglePermission(key)}
+                        checked={grantedSet.has(descriptor.key)}
+                        onChange={() => togglePermission(descriptor.key)}
                         className="h-4 w-4"
                       />
-                      {key}
+                      {descriptor.label}
                     </label>
                   ))}
                 </div>

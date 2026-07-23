@@ -1,5 +1,5 @@
 import { apiClient } from './client';
-import type { RoleDetailDto, RoleDto } from './types';
+import type { PermissionDescriptorDto, RoleDetailDto, RoleDto } from './types';
 
 export interface SaveRolePayload {
   name: string;
@@ -15,7 +15,7 @@ export function getRoleById(id: string) {
 }
 
 export function getPermissionCatalog() {
-  return apiClient.get<string[]>('/api/v1/roles/permission-catalog');
+  return apiClient.get<PermissionDescriptorDto[]>('/api/v1/roles/permission-catalog');
 }
 
 export function createRole(payload: SaveRolePayload) {

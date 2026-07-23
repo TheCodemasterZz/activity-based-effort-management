@@ -1,9 +1,11 @@
 using Asp.Versioning;
+using EforTakip.Api.Authorization;
 using EforTakip.Application.Common.Models;
 using EforTakip.Application.Customers.Commands.CreateCustomer;
 using EforTakip.Application.Customers.Dtos;
 using EforTakip.Application.Customers.Queries.GetCustomerById;
 using EforTakip.Application.Customers.Queries.GetCustomers;
+using EforTakip.Domain.Authorization;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
@@ -14,6 +16,7 @@ namespace EforTakip.Api.Controllers.v1;
 [Route("api/v{version:apiVersion}/[controller]")]
 public sealed class CustomersController(ISender mediator) : ControllerBase
 {
+    [RequirePermission(Permissions.Customer.Manage)]
     [HttpPost]
     [ProducesResponseType(StatusCodes.Status201Created)]
     public async Task<IActionResult> Create(CreateCustomerCommand command, CancellationToken cancellationToken)
@@ -22,11 +25,13 @@ public sealed class CustomersController(ISender mediator) : ControllerBase
         return CreatedAtAction(nameof(GetById), new { id, version = "1.0" }, null);
     }
 
+    [RequirePermission(Permissions.Customer.Read)]
     [HttpGet("{id:guid}")]
     [ProducesResponseType(typeof(CustomerDto), StatusCodes.Status200OK)]
     public async Task<ActionResult<CustomerDto>> GetById(Guid id, CancellationToken cancellationToken)
         => Ok(await mediator.Send(new GetCustomerByIdQuery(id), cancellationToken));
 
+    [RequirePermission(Permissions.Customer.Read)]
     [HttpGet]
     [ProducesResponseType(typeof(PagedResult<CustomerDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<PagedResult<CustomerDto>>> GetAll(
