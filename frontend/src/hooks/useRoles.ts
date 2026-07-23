@@ -60,7 +60,10 @@ export function useGrantPermissionMutation(roleId: string) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (permissionKey: string) => grantPermission(roleId, permissionKey),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['roles', roleId] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['roles'] });
+      queryClient.invalidateQueries({ queryKey: ['roles', roleId] });
+    },
   });
 }
 
@@ -68,7 +71,10 @@ export function useRevokePermissionMutation(roleId: string) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (permissionKey: string) => revokePermission(roleId, permissionKey),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['roles', roleId] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['roles'] });
+      queryClient.invalidateQueries({ queryKey: ['roles', roleId] });
+    },
   });
 }
 
