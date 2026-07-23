@@ -1,5 +1,6 @@
 using System.Text;
 using Asp.Versioning;
+using EforTakip.Api.Authorization;
 using EforTakip.Api.Middleware;
 using EforTakip.Infrastructure.Security;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -73,6 +74,9 @@ public static class ApiServiceCollectionExtensions
                 .RequireAuthenticatedUser()
                 .Build();
         });
+
+        services.AddSingleton<IAuthorizationPolicyProvider, PermissionPolicyProvider>();
+        services.AddSingleton<IAuthorizationHandler, PermissionAuthorizationHandler>();
 
         services.AddSwaggerGen(options =>
         {
