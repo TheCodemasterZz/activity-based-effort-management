@@ -11,6 +11,7 @@ import { useConfidenceScoreSettings, useUpdateConfidenceScoreSettingsMutation } 
 import { WidgetsPage } from './WidgetsPage';
 import { ApiError } from '../api/client';
 import type { ConfidenceScoreSettingsDto } from '../api/types';
+import { RolesSection } from '../components/admin/roles/RolesSection';
 
 type SectionKind =
   | 'employees'
@@ -23,6 +24,7 @@ type SectionKind =
   | 'users'
   | 'orgChart'
   | 'confidenceScore'
+  | 'roles'
   | 'placeholder';
 
 interface AdminSection {
@@ -69,7 +71,7 @@ const ADMIN_TABS: AdminTab[] = [
           { key: 'employees', label: 'Çalışanlar', kind: 'employees' },
           { key: 'users', label: 'Kullanıcılar', kind: 'users' },
           { key: 'orgChart', label: 'Organizasyon Şeması', kind: 'orgChart' },
-          { key: 'roles', label: 'Roller ve İzinler', kind: 'placeholder' },
+          { key: 'roles', label: 'Roller ve İzinler', kind: 'roles' },
         ],
       },
       {
@@ -593,6 +595,8 @@ function SectionContent({ section }: { section: AdminSection }) {
       return <OrgChartSection />;
     case 'confidenceScore':
       return <ConfidenceScoreSettingsSection />;
+    case 'roles':
+      return <RolesSection />;
     case 'placeholder':
       return <Placeholder label={section.label} />;
   }

@@ -7,4 +7,6 @@ public sealed record AuthenticatedUser(
     string Username,
     string? DisplayName,
     Guid DirectoryId,
-    DirectorySource Source);
+    DirectorySource Source,
+    bool IsSystemAdmin,
+    IReadOnlyCollection<string> PermissionKeys);

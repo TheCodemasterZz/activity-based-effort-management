@@ -26,6 +26,7 @@ public sealed class LoginCommandHandler(
 
         var user = await db.DirectoryUsers
             .AsNoTracking()
+            .Include(u => u.Roles)
             .FirstOrDefaultAsync(u => u.Username == username, cancellationToken);
 
         // Kullanıcının bulunamaması, pasif olması ve şifrenin yanlış olması aynı hatayı verir;
@@ -45,8 +46,22 @@ public sealed class LoginCommandHandler(
         if (!authenticated)
             throw new AuthenticationFailedException();
 
+        var roleIds = user.Roles.Select(r => r.RoleId).ToList();
+        var roles = await db.Roles
+            .AsNoTracking()
+            .Include(r => r.Permissions)
+            .Where(r => roleIds.Contains(r.Id))
+            .ToListAsync(cancellationToken);
+
+        var isSystemAdmin = roles.Any(r => r.IsSystemAdmin);
+        var permissionKeys = roles
+            .SelectMany(r => r.Permissions.Select(p => p.PermissionKey))
+            .Distinct()
+            .ToList();
+
         var (token, expiresAtUtc) = tokenService.CreateToken(new AuthenticatedUser(
-            user.Id, user.Username, user.DisplayName, user.DirectoryId, user.Source));
+            user.Id, user.Username, user.DisplayName, user.DirectoryId, user.Source,
+            isSystemAdmin, permissionKeys));
 
         return new LoginResultDto
         {

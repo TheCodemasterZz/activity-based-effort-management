@@ -1149,6 +1149,31 @@ namespace EforTakip.Persistence.Migrations
                     b.ToTable("DirectoryUserAttributes", (string)null);
                 });
 
+            modelBuilder.Entity("EforTakip.Domain.Directories.DirectoryUserRole", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("AssignedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("DirectoryUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("RoleId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RoleId");
+
+                    b.HasIndex("DirectoryUserId", "RoleId")
+                        .IsUnique();
+
+                    b.ToTable("DirectoryUserRoles", (string)null);
+                });
+
             modelBuilder.Entity("EforTakip.Domain.EmployeeLeaves.EmployeeLeave", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1589,6 +1614,54 @@ namespace EforTakip.Persistence.Migrations
                     b.HasIndex("ProjectId");
 
                     b.ToTable("ProjectTasks", (string)null);
+                });
+
+            modelBuilder.Entity("EforTakip.Domain.Roles.Role", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<bool>("IsSystemAdmin")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Name")
+                        .IsUnique();
+
+                    b.ToTable("Roles", (string)null);
+                });
+
+            modelBuilder.Entity("EforTakip.Domain.Roles.RolePermission", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("PermissionKey")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<Guid>("RoleId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RoleId", "PermissionKey")
+                        .IsUnique();
+
+                    b.ToTable("RolePermissions", (string)null);
                 });
 
             modelBuilder.Entity("EforTakip.Domain.Settings.ConfidenceScoreSettings", b =>
@@ -2529,6 +2602,21 @@ namespace EforTakip.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Restrict);
                 });
 
+            modelBuilder.Entity("EforTakip.Domain.Directories.DirectoryUserRole", b =>
+                {
+                    b.HasOne("EforTakip.Domain.Directories.DirectoryUser", null)
+                        .WithMany("Roles")
+                        .HasForeignKey("DirectoryUserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("EforTakip.Domain.Roles.Role", null)
+                        .WithMany()
+                        .HasForeignKey("RoleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("EforTakip.Domain.EmployeeLeaves.EmployeeLeave", b =>
                 {
                     b.HasOne("EforTakip.Domain.Employees.Employee", null)
@@ -2619,6 +2707,15 @@ namespace EforTakip.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Restrict);
                 });
 
+            modelBuilder.Entity("EforTakip.Domain.Roles.RolePermission", b =>
+                {
+                    b.HasOne("EforTakip.Domain.Roles.Role", null)
+                        .WithMany("Permissions")
+                        .HasForeignKey("RoleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("EforTakip.Domain.ValueStreams.StageActivityAssignment", b =>
                 {
                     b.HasOne("EforTakip.Domain.Activities.Activity", null)
@@ -2687,6 +2784,8 @@ namespace EforTakip.Persistence.Migrations
             modelBuilder.Entity("EforTakip.Domain.Directories.DirectoryUser", b =>
                 {
                     b.Navigation("Attributes");
+
+                    b.Navigation("Roles");
                 });
 
             modelBuilder.Entity("EforTakip.Domain.Projects.Project", b =>
@@ -2694,6 +2793,11 @@ namespace EforTakip.Persistence.Migrations
                     b.Navigation("CustomerAssignments");
 
                     b.Navigation("EmployeeAssignments");
+                });
+
+            modelBuilder.Entity("EforTakip.Domain.Roles.Role", b =>
+                {
+                    b.Navigation("Permissions");
                 });
 
             modelBuilder.Entity("EforTakip.Domain.ValueStreams.ValueStream", b =>

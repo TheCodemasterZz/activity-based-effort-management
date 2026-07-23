@@ -47,6 +47,12 @@ public sealed class JwtTokenService : ITokenService
         if (!string.IsNullOrWhiteSpace(user.DisplayName))
             claims.Add(new Claim("display_name", user.DisplayName));
 
+        if (user.IsSystemAdmin)
+            claims.Add(new Claim("is_system_admin", "true"));
+
+        foreach (var permissionKey in user.PermissionKeys)
+            claims.Add(new Claim("permission", permissionKey));
+
         var token = new JwtSecurityToken(
             issuer: _options.Issuer,
             audience: _options.Audience,

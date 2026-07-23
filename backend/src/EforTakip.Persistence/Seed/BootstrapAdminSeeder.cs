@@ -1,5 +1,6 @@
 using EforTakip.Application.Common.Interfaces;
 using EforTakip.Domain.Directories;
+using EforTakip.Domain.Roles;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Directory = EforTakip.Domain.Directories.Directory;
@@ -13,6 +14,7 @@ namespace EforTakip.Persistence.Seed;
 public static class BootstrapAdminSeeder
 {
     public const string InternalDirectoryName = "Internal Users";
+    public const string SystemAdminRoleName = "Sistem Yöneticisi";
 
     public static async Task SeedAsync(
         EforTakipDbContext db,
@@ -42,10 +44,24 @@ public static class BootstrapAdminSeeder
             db.Directories.Add(directory);
         }
 
+        var adminRole = await db.Roles
+            .FirstOrDefaultAsync(r => r.Name == SystemAdminRoleName, cancellationToken);
+
+        if (adminRole is null)
+        {
+            adminRole = Role.Create(SystemAdminRoleName, "Sistemdeki tüm işlemlere erişebilir.", isSystemAdmin: true);
+            db.Roles.Add(adminRole);
+        }
+
         var admin = DirectoryUser.CreateInternal(
             directory.Id, username, null, null, username, null, passwordHasher.Hash(password));
 
+        var assignment = admin.AssignRole(adminRole.Id);
+
         db.DirectoryUsers.Add(admin);
+        if (assignment is not null)
+            db.DirectoryUserRoles.Add(assignment);
+
         await db.SaveChangesAsync(cancellationToken);
 
         // Şifre bilinçli olarak loglanmaz.

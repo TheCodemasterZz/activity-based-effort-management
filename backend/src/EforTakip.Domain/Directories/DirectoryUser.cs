@@ -20,6 +20,9 @@ public sealed class DirectoryUser : Entity, IAggregateRoot
     private readonly List<DirectoryUserAttribute> _attributes = [];
     public IReadOnlyCollection<DirectoryUserAttribute> Attributes => _attributes.AsReadOnly();
 
+    private readonly List<DirectoryUserRole> _roles = [];
+    public IReadOnlyCollection<DirectoryUserRole> Roles => _roles.AsReadOnly();
+
     private DirectoryUser()
     {
         // EF Core
@@ -127,6 +130,28 @@ public sealed class DirectoryUser : Entity, IAggregateRoot
     }
 
     public void ClearAttributes() => _attributes.Clear();
+
+    /// <summary>
+    /// Zaten çağıranın _roles'ü önceden (Include ile) yüklemiş olması gerekir — aksi halde
+    /// yinelenen kontrol her zaman "yok" der (bkz. Role.GrantPermission ile aynı desen). Yeni
+    /// oluşturulan varlığı geri döner; çağıran taraf context'e açıkça eklemelidir.
+    /// </summary>
+    public DirectoryUserRole? AssignRole(Guid roleId)
+    {
+        if (_roles.Any(r => r.RoleId == roleId))
+            return null;
+
+        var created = DirectoryUserRole.Create(Id, roleId);
+        _roles.Add(created);
+        return created;
+    }
+
+    public void RemoveRole(Guid roleId)
+    {
+        var existing = _roles.FirstOrDefault(r => r.RoleId == roleId);
+        if (existing is not null)
+            _roles.Remove(existing);
+    }
 
     private static void ValidateDirectoryId(Guid directoryId)
     {

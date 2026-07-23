@@ -6,6 +6,7 @@ using EforTakip.Domain.Employees;
 using EforTakip.Domain.Holidays;
 using EforTakip.Domain.Notifications;
 using EforTakip.Domain.Projects;
+using EforTakip.Domain.Roles;
 using EforTakip.Domain.Settings;
 using EforTakip.Domain.ValueStreams;
 using EforTakip.Domain.WorkCalendars;
@@ -64,4 +65,10 @@ public interface IApplicationDbContext
     DbSet<DirectoryUserAttribute> DirectoryUserAttributes { get; }
 
     DbSet<ConfidenceScoreSettings> ConfidenceScoreSettings { get; }
+
+    DbSet<Role> Roles { get; }
+
+    DbSet<RolePermission> RolePermissions { get; }
+
+    DbSet<DirectoryUserRole> DirectoryUserRoles { get; }
 }

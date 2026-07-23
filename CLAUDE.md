@@ -114,3 +114,16 @@ CI/CD (GitHub Actions) desteği — gerçek ihtiyaç doğduğunda eklenir.
 6. Production seviyesinde kod üret.
 7. Mevcut mimariyi bozma.
 8. Gerekiyorsa alternatif çözüm önerilerini belirt.
+
+## Yeni Feature Eklerken İzin Kuralı
+
+Yeni bir API endpoint'i veya işlem eklerken şu iki adım zorunludur:
+
+1. `backend/src/EforTakip.Domain/Authorization/Permissions.cs` içinde ilgili modül sınıfına
+   (yoksa yeni bir modül sınıfı açarak) bir izin sabiti ekle: `public const string X = "modul:x";`
+2. Controller action'ına `[RequirePermission(Permissions.Modül.X)]` ekle.
+
+Bunun dışında hiçbir adım (migration, seed, DB kaydı) gerekmez — izin kataloğu kodda yaşar.
+`Permissions.All` reflection ile otomatik günceldir. Bir role `"modul:*"` (wildcard) izni
+verilmişse o moduldeki her mevcut ve gelecekteki izin otomatik kapsanır; `IsSystemAdmin` rolü
+her izni otomatik geçer.
