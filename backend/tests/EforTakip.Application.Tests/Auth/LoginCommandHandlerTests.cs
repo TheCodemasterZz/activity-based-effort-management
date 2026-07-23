@@ -5,6 +5,7 @@ using EforTakip.Application.Common.Models;
 using EforTakip.Application.Directories.Ldap;
 using EforTakip.Application.Tests.Directories.Commands;
 using EforTakip.Domain.Directories;
+using EforTakip.Domain.Roles;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using NSubstitute;
@@ -186,5 +187,24 @@ public class LoginCommandHandlerTests : IAsyncDisposable
             new LoginCommand(typedUsername, "dogru-sifre"), CancellationToken.None);
 
         result.Username.Should().Be("sanal.kullanici");
+    }
+
+    [Fact]
+    public async Task Handle_UserWithRole_PassesGrantedPermissionsToTokenService()
+    {
+        var directory = InternalDirectory();
+        var user = await AddInternalUserAsync(directory);
+        var role = Role.Create("Proje Yöneticisi", null, false);
+        role.GrantPermission("project:read");
+        var assignment = user.AssignRole(role.Id);
+        _db.Roles.Add(role);
+        _db.DirectoryUserRoles.Add(assignment!);
+        await _db.SaveChangesAsync();
+        _passwordHasher.Verify(Arg.Any<string>(), Arg.Any<string>()).Returns(true);
+
+        await CreateHandler().Handle(new LoginCommand("sanal.kullanici", "dogru-sifre"), CancellationToken.None);
+
+        _tokenService.Received(1).CreateToken(Arg.Is<AuthenticatedUser>(u =>
+            !u.IsSystemAdmin && u.PermissionKeys.Contains("project:read")));
     }
 }
