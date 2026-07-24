@@ -27,5 +27,7 @@ public sealed class UserDetailDto
     public string? Email { get; init; }
     public bool IsActive { get; init; }
     public DateTime? LastSyncedUtc { get; init; }
+    public Guid? WorkCalendarId { get; init; }
+    public string? WorkCalendarName { get; init; }
     public IReadOnlyCollection<UserAttributeValueDto> Attributes { get; init; } = [];
 }

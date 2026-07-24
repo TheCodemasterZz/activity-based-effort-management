@@ -9,4 +9,5 @@ public sealed class GetUsersQuery : PaginationParams, IRequest<PagedResult<UserD
     public Guid? DirectoryId { get; set; }
     public string? SearchTerm { get; set; }
     public bool? OnlyActive { get; set; }
+    public bool? OnlyMissingWorkCalendar { get; set; }
 }
