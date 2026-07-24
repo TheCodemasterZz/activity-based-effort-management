@@ -11,13 +11,6 @@ export interface CustomerDto {
   name: string;
 }
 
-export interface EmployeeDto {
-  id: string;
-  name: string;
-  email: string | null;
-  workCalendarId: string;
-}
-
 export interface ProjectDto {
   id: string;
   name: string;

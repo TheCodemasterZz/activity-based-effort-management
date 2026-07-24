@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import { useEmployees } from '../hooks/useEmployees';
 import { useNotifications } from '../hooks/useNotifications';
 import { useValueStreams } from '../hooks/useValueStreams';
 import { useAllActivities } from '../hooks/useActivities';
@@ -14,7 +13,6 @@ import type { ConfidenceScoreSettingsDto } from '../api/types';
 import { RolesSection } from '../components/admin/roles/RolesSection';
 
 type SectionKind =
-  | 'employees'
   | 'notifications'
   | 'valueStreams'
   | 'activities'
@@ -68,7 +66,6 @@ const ADMIN_TABS: AdminTab[] = [
       {
         header: 'KULLANICI YÖNETİMİ',
         sections: [
-          { key: 'employees', label: 'Çalışanlar', kind: 'employees' },
           { key: 'users', label: 'Kullanıcılar', kind: 'users' },
           { key: 'orgChart', label: 'Organizasyon Şeması', kind: 'orgChart' },
           { key: 'roles', label: 'Roller ve İzinler', kind: 'roles' },
@@ -121,28 +118,6 @@ function Placeholder({ label }: { label: string }) {
       <div className="mb-2 text-3xl">🚧</div>
       <p className="text-sm font-medium text-slate-500">{label} bölümü yakında eklenecek.</p>
     </div>
-  );
-}
-
-function EmployeesSection() {
-  const employees = useEmployees();
-  return (
-    <table className="w-full text-left text-sm">
-      <thead>
-        <tr className="border-b border-slate-100 text-xs uppercase tracking-wide text-slate-400">
-          <th className="py-2 pr-4 font-medium">Ad Soyad</th>
-          <th className="py-2 pr-4 font-medium">E-posta</th>
-        </tr>
-      </thead>
-      <tbody>
-        {employees.data?.items.map((e) => (
-          <tr key={e.id} className="border-b border-slate-50 last:border-0">
-            <td className="py-2 pr-4 text-slate-700">{e.name}</td>
-            <td className="py-2 pr-4 text-slate-500">{e.email ?? '—'}</td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
   );
 }
 
@@ -575,8 +550,6 @@ function ConfidenceScoreSettingsSection() {
 
 function SectionContent({ section }: { section: AdminSection }) {
   switch (section.kind) {
-    case 'employees':
-      return <EmployeesSection />;
     case 'notifications':
       return <NotificationsSection />;
     case 'valueStreams':

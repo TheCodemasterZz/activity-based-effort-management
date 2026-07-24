@@ -1,19 +1,19 @@
 import { useMemo, useState } from 'react';
-import { useEmployees } from '../hooks/useEmployees';
+import { useUserRoster } from '../hooks/useUserRoster';
 import { LeaveScheduleModal } from '../components/leaves/LeaveScheduleModal';
 import { ErrorState } from '../components/common/ErrorState';
 
 export function EmployeesPage() {
-  const employees = useEmployees();
+  const users = useUserRoster();
   const [search, setSearch] = useState('');
-  const [selectedEmployee, setSelectedEmployee] = useState<{ id: string; name: string } | null>(null);
+  const [selectedUser, setSelectedUser] = useState<{ id: string; name: string } | null>(null);
 
   const filteredItems = useMemo(() => {
-    const items = employees.data?.items ?? [];
+    const items = users.data?.items ?? [];
     const query = search.trim().toLocaleLowerCase('tr');
     if (!query) return items;
     return items.filter((e) => e.name.toLocaleLowerCase('tr').includes(query));
-  }, [employees.data, search]);
+  }, [users.data, search]);
 
   return (
     <div className="flex flex-1 flex-col overflow-y-auto bg-slate-50 p-6">
@@ -28,11 +28,11 @@ export function EmployeesPage() {
         />
       </div>
 
-      {employees.isError ? (
+      {users.isError ? (
         <ErrorState />
       ) : (
         <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
-          {employees.isLoading ? (
+          {users.isLoading ? (
             <div className="p-8 text-center text-slate-400">Yükleniyor…</div>
           ) : filteredItems.length === 0 ? (
             <div className="p-8 text-center text-slate-400">Çalışan bulunamadı.</div>
@@ -46,14 +46,14 @@ export function EmployeesPage() {
                 </tr>
               </thead>
               <tbody>
-                {filteredItems.map((employee) => (
-                  <tr key={employee.id} className="border-b border-slate-100 last:border-0 hover:bg-slate-50">
-                    <td className="px-4 py-3 font-medium text-slate-800">{employee.name}</td>
-                    <td className="px-4 py-3 text-slate-500">{employee.email ?? '—'}</td>
+                {filteredItems.map((user) => (
+                  <tr key={user.id} className="border-b border-slate-100 last:border-0 hover:bg-slate-50">
+                    <td className="px-4 py-3 font-medium text-slate-800">{user.name}</td>
+                    <td className="px-4 py-3 text-slate-500">{user.email ?? '—'}</td>
                     <td className="px-4 py-3 text-right">
                       <button
                         type="button"
-                        onClick={() => setSelectedEmployee({ id: employee.id, name: employee.name })}
+                        onClick={() => setSelectedUser({ id: user.id, name: user.name })}
                         className="rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-100"
                       >
                         İzin Programı
@@ -67,11 +67,11 @@ export function EmployeesPage() {
         </div>
       )}
 
-      {selectedEmployee && (
+      {selectedUser && (
         <LeaveScheduleModal
-          userId={selectedEmployee.id}
-          userName={selectedEmployee.name}
-          onClose={() => setSelectedEmployee(null)}
+          userId={selectedUser.id}
+          userName={selectedUser.name}
+          onClose={() => setSelectedUser(null)}
         />
       )}
     </div>
