@@ -8,6 +8,7 @@ using EforTakip.Domain.Notifications;
 using EforTakip.Domain.Projects;
 using EforTakip.Domain.Roles;
 using EforTakip.Domain.Settings;
+using EforTakip.Domain.Users;
 using EforTakip.Domain.ValueStreams;
 using EforTakip.Domain.WorkCalendars;
 using EforTakip.Domain.WorkLogApprovals;
@@ -60,11 +61,11 @@ public sealed class EforTakipDbContext(DbContextOptions<EforTakipDbContext> opti
 
     public DbSet<Domain.Directories.Directory> Directories => Set<Domain.Directories.Directory>();
 
-    public DbSet<DirectoryUser> DirectoryUsers => Set<DirectoryUser>();
+    public DbSet<User> Users => Set<User>();
 
     public DbSet<DirectoryAttributeMapping> DirectoryAttributeMappings => Set<DirectoryAttributeMapping>();
 
-    public DbSet<DirectoryUserAttribute> DirectoryUserAttributes => Set<DirectoryUserAttribute>();
+    public DbSet<UserAttribute> UserAttributes => Set<UserAttribute>();
 
     public DbSet<ConfidenceScoreSettings> ConfidenceScoreSettings => Set<ConfidenceScoreSettings>();
 
@@ -72,7 +73,7 @@ public sealed class EforTakipDbContext(DbContextOptions<EforTakipDbContext> opti
 
     public DbSet<RolePermission> RolePermissions => Set<RolePermission>();
 
-    public DbSet<DirectoryUserRole> DirectoryUserRoles => Set<DirectoryUserRole>();
+    public DbSet<UserRole> UserRoles => Set<UserRole>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

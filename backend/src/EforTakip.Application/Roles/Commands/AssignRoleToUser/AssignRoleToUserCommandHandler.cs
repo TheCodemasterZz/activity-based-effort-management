@@ -1,5 +1,6 @@
 using EforTakip.Application.Common.Interfaces;
 using EforTakip.Domain.Directories;
+using EforTakip.Domain.Users;
 using EforTakip.Domain.Exceptions;
 using EforTakip.Domain.Roles;
 using MediatR;
@@ -12,10 +13,10 @@ public sealed class AssignRoleToUserCommandHandler(IApplicationDbContext db, IUn
 {
     public async Task Handle(AssignRoleToUserCommand request, CancellationToken cancellationToken)
     {
-        var user = await db.DirectoryUsers
+        var user = await db.Users
             .Include(u => u.Roles)
             .FirstOrDefaultAsync(u => u.Id == request.UserId, cancellationToken)
-            ?? throw new NotFoundException(nameof(DirectoryUser), request.UserId);
+            ?? throw new NotFoundException(nameof(User), request.UserId);
 
         var roleExists = await db.Roles.AnyAsync(r => r.Id == request.RoleId, cancellationToken);
         if (!roleExists)
@@ -23,7 +24,7 @@ public sealed class AssignRoleToUserCommandHandler(IApplicationDbContext db, IUn
 
         var created = user.AssignRole(request.RoleId);
         if (created is not null)
-            db.DirectoryUserRoles.Add(created);
+            db.UserRoles.Add(created);
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
     }

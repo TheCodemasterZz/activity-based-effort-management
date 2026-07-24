@@ -4,6 +4,7 @@ using EforTakip.Application.Common.Interfaces;
 using EforTakip.Application.Common.Models;
 using EforTakip.Application.Directories.Ldap;
 using EforTakip.Domain.Directories;
+using EforTakip.Domain.Users;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Directory = EforTakip.Domain.Directories.Directory;
@@ -24,7 +25,7 @@ public sealed class LoginCommandHandler(
         // girdi de aynı şekilde normalize edilerek doğrudan karşılaştırılır.
         var username = request.Username.Trim().ToLowerInvariant();
 
-        var user = await db.DirectoryUsers
+        var user = await db.Users
             .AsNoTracking()
             .Include(u => u.Roles)
             .FirstOrDefaultAsync(u => u.Username == username, cancellationToken);
@@ -75,6 +76,6 @@ public sealed class LoginCommandHandler(
     }
 
     /// <summary>AD kullanıcısının şifresi bizde saklanmaz; her girişte dizine sorulur.</summary>
-    private bool VerifyInternalPassword(DirectoryUser user, string password)
+    private bool VerifyInternalPassword(User user, string password)
         => !string.IsNullOrEmpty(user.PasswordHash) && passwordHasher.Verify(password, user.PasswordHash);
 }

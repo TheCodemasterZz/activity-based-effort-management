@@ -10,6 +10,7 @@ using EforTakip.Domain.Roles;
 using EforTakip.Domain.Settings;
 using EforTakip.Domain.ValueStreams;
 using EforTakip.Domain.WorkCalendars;
+using EforTakip.Domain.Users;
 using EforTakip.Domain.WorkLogApprovals;
 using EforTakip.Domain.WorkLogs;
 using Microsoft.EntityFrameworkCore;
@@ -58,11 +59,11 @@ public interface IApplicationDbContext
 
     DbSet<Domain.Directories.Directory> Directories { get; }
 
-    DbSet<DirectoryUser> DirectoryUsers { get; }
+    DbSet<User> Users { get; }
 
     DbSet<DirectoryAttributeMapping> DirectoryAttributeMappings { get; }
 
-    DbSet<DirectoryUserAttribute> DirectoryUserAttributes { get; }
+    DbSet<UserAttribute> UserAttributes { get; }
 
     DbSet<ConfidenceScoreSettings> ConfidenceScoreSettings { get; }
 
@@ -70,5 +71,5 @@ public interface IApplicationDbContext
 
     DbSet<RolePermission> RolePermissions { get; }
 
-    DbSet<DirectoryUserRole> DirectoryUserRoles { get; }
+    DbSet<UserRole> UserRoles { get; }
 }

@@ -1,5 +1,6 @@
 using EforTakip.Application.Common.Interfaces;
 using EforTakip.Domain.Directories;
+using EforTakip.Domain.Users;
 using EforTakip.Domain.Exceptions;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -11,10 +12,10 @@ public sealed class RemoveRoleFromUserCommandHandler(IApplicationDbContext db, I
 {
     public async Task Handle(RemoveRoleFromUserCommand request, CancellationToken cancellationToken)
     {
-        var user = await db.DirectoryUsers
+        var user = await db.Users
             .Include(u => u.Roles)
             .FirstOrDefaultAsync(u => u.Id == request.UserId, cancellationToken)
-            ?? throw new NotFoundException(nameof(DirectoryUser), request.UserId);
+            ?? throw new NotFoundException(nameof(User), request.UserId);
 
         user.RemoveRole(request.RoleId);
 

@@ -1,6 +1,7 @@
 using EforTakip.Application.Common.Interfaces;
 using EforTakip.Domain.Directories;
 using EforTakip.Domain.Roles;
+using EforTakip.Domain.Users;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Directory = EforTakip.Domain.Directories.Directory;
@@ -24,7 +25,7 @@ public static class BootstrapAdminSeeder
         ILogger logger,
         CancellationToken cancellationToken)
     {
-        if (await db.DirectoryUsers.AnyAsync(cancellationToken))
+        if (await db.Users.AnyAsync(cancellationToken))
             return;
 
         if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
@@ -53,14 +54,14 @@ public static class BootstrapAdminSeeder
             db.Roles.Add(adminRole);
         }
 
-        var admin = DirectoryUser.CreateInternal(
+        var admin = User.CreateInternal(
             directory.Id, username, null, null, username, null, passwordHasher.Hash(password));
 
         var assignment = admin.AssignRole(adminRole.Id);
 
-        db.DirectoryUsers.Add(admin);
+        db.Users.Add(admin);
         if (assignment is not null)
-            db.DirectoryUserRoles.Add(assignment);
+            db.UserRoles.Add(assignment);
 
         await db.SaveChangesAsync(cancellationToken);
 

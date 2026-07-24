@@ -18,6 +18,7 @@ using Microsoft.Extensions.DependencyInjection;
 using DomainActivity = EforTakip.Domain.Activities.Activity;
 using DirectoryEntity = EforTakip.Domain.Directories.Directory;
 using EforTakip.Domain.Directories;
+using EforTakip.Domain.Users;
 
 namespace EforTakip.Persistence;
 
@@ -59,7 +60,7 @@ public static class DependencyInjection
         services.AddScoped<IWorkCalendarRepository, WorkCalendarRepository>();
         services.AddScoped<IRepository<EmployeeLeave>, RepositoryBase<EmployeeLeave>>();
         services.AddScoped<IRepository<DirectoryEntity>, RepositoryBase<DirectoryEntity>>();
-        services.AddScoped<IRepository<DirectoryUser>, RepositoryBase<DirectoryUser>>();
+        services.AddScoped<IRepository<User>, RepositoryBase<User>>();
         services.AddScoped<IRepository<DirectoryAttributeMapping>, RepositoryBase<DirectoryAttributeMapping>>();
         services.AddScoped<IRepository<Role>, RepositoryBase<Role>>();
 
