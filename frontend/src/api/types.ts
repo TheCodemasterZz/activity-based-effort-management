@@ -179,6 +179,11 @@ export interface WorkCalendarDetailDto {
   days: WorkCalendarDayDto[];
 }
 
+export interface WorkCalendarDto {
+  id: string;
+  name: string;
+}
+
 export interface ProblemDetails {
   title?: string;
   status?: number;
@@ -235,6 +240,8 @@ export interface UserDto {
   email: string | null;
   isActive: boolean;
   lastSyncedUtc: string | null;
+  workCalendarId: string | null;
+  workCalendarName: string | null;
 }
 
 export interface UserAttributeValueDto {
