@@ -17,7 +17,7 @@ namespace EforTakip.Api.Controllers.v1;
 [Route("api/v{version:apiVersion}/[controller]")]
 public sealed class LeavesController(ISender mediator) : ControllerBase
 {
-    [RequirePermission(Permissions.Employee.Manage)]
+    [RequirePermission(Permissions.Leave.Manage)]
     [HttpPost]
     [ProducesResponseType(StatusCodes.Status201Created)]
     public async Task<IActionResult> Create(CreateLeaveRequestBody body, CancellationToken cancellationToken)
@@ -28,14 +28,14 @@ public sealed class LeavesController(ISender mediator) : ControllerBase
         return StatusCode(StatusCodes.Status201Created, new { id });
     }
 
-    [RequirePermission(Permissions.Employee.Read)]
+    [RequirePermission(Permissions.Leave.Read)]
     [HttpGet]
     [ProducesResponseType(typeof(PagedResult<LeaveDto>), StatusCodes.Status200OK)]
     public async Task<ActionResult<PagedResult<LeaveDto>>> GetAll(
         [FromQuery] GetLeavesQuery query, CancellationToken cancellationToken)
         => Ok(await mediator.Send(query, cancellationToken));
 
-    [RequirePermission(Permissions.Employee.Manage)]
+    [RequirePermission(Permissions.Leave.Manage)]
     [HttpDelete("{id:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)

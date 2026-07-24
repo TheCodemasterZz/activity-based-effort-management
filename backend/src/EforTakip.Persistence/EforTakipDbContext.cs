@@ -2,7 +2,6 @@ using EforTakip.Application.Common.Interfaces;
 using EforTakip.Domain.Customers;
 using EforTakip.Domain.Directories;
 using EforTakip.Domain.Leaves;
-using EforTakip.Domain.Employees;
 using EforTakip.Domain.Holidays;
 using EforTakip.Domain.Notifications;
 using EforTakip.Domain.Projects;
@@ -23,7 +22,6 @@ public sealed class EforTakipDbContext(DbContextOptions<EforTakipDbContext> opti
 {
     public DbSet<Customer> Customers => Set<Customer>();
 
-    public DbSet<Employee> Employees => Set<Employee>();
 
     public DbSet<Project> Projects => Set<Project>();
 

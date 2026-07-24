@@ -42,14 +42,14 @@ public static class Permissions
         public const string Manage = "directory:manage";
     }
 
-    [PermissionLabel("Çalışanlar")]
-    public static class Employee
+    [PermissionLabel("İzinler")]
+    public static class Leave
     {
-        [PermissionLabel("Çalışan Kayıtlarını Görüntüle")]
-        public const string Read = "employee:read";
+        [PermissionLabel("İzin Kayıtlarını Görüntüle")]
+        public const string Read = "leave:read";
 
-        [PermissionLabel("Çalışan Kaydı Ekle / Düzenle")]
-        public const string Manage = "employee:manage";
+        [PermissionLabel("İzin Kaydı Ekle / Sil")]
+        public const string Manage = "leave:manage";
     }
 
     [PermissionLabel("Müşteriler")]

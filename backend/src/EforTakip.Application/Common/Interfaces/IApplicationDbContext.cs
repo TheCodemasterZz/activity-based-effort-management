@@ -2,7 +2,6 @@ using EforTakip.Domain.Activities;
 using EforTakip.Domain.Customers;
 using EforTakip.Domain.Directories;
 using EforTakip.Domain.Leaves;
-using EforTakip.Domain.Employees;
 using EforTakip.Domain.Holidays;
 using EforTakip.Domain.Notifications;
 using EforTakip.Domain.Projects;
@@ -21,7 +20,6 @@ public interface IApplicationDbContext
 {
     DbSet<Customer> Customers { get; }
 
-    DbSet<Employee> Employees { get; }
 
     DbSet<Project> Projects { get; }
 

@@ -4,7 +4,6 @@ using EforTakip.Application.ValueStreams;
 using EforTakip.Application.WorkCalendars;
 using EforTakip.Domain.Customers;
 using EforTakip.Domain.Leaves;
-using EforTakip.Domain.Employees;
 using EforTakip.Domain.Holidays;
 using EforTakip.Domain.Notifications;
 using EforTakip.Domain.Projects;
@@ -47,7 +46,6 @@ public static class DependencyInjection
         services.AddScoped<IApplicationDbContext>(sp => sp.GetRequiredService<EforTakipDbContext>());
 
         services.AddScoped<IRepository<Customer>, RepositoryBase<Customer>>();
-        services.AddScoped<IRepository<Employee>, RepositoryBase<Employee>>();
         services.AddScoped<IProjectRepository, ProjectRepository>();
         services.AddScoped<IRepository<ProjectTask>, RepositoryBase<ProjectTask>>();
         services.AddScoped<IRepository<ProjectRisk>, RepositoryBase<ProjectRisk>>();

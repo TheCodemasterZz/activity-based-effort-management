@@ -4,7 +4,6 @@ using EforTakip.Domain.Customers;
 using EforTakip.Domain.Directories;
 using EforTakip.Domain.Users;
 using EforTakip.Domain.Leaves;
-using EforTakip.Domain.Employees;
 using EforTakip.Domain.Holidays;
 using EforTakip.Domain.Notifications;
 using EforTakip.Domain.Projects;
@@ -26,7 +25,6 @@ public sealed class TestDbContext(DbContextOptions<TestDbContext> options)
     : DbContext(options), IApplicationDbContext
 {
     public DbSet<Customer> Customers => Set<Customer>();
-    public DbSet<Employee> Employees => Set<Employee>();
     public DbSet<Project> Projects => Set<Project>();
     public DbSet<ProjectCustomerAssignment> ProjectCustomerAssignments => Set<ProjectCustomerAssignment>();
     public DbSet<ProjectUserAssignment> ProjectUserAssignments => Set<ProjectUserAssignment>();
