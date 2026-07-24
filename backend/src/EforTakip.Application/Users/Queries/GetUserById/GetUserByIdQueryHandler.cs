@@ -26,6 +26,14 @@ public sealed class GetUserByIdQueryHandler(IApplicationDbContext db)
             .Select(d => d.Name)
             .FirstOrDefaultAsync(cancellationToken) ?? string.Empty;
 
+        var workCalendarName = user.WorkCalendarId is { } workCalendarId
+            ? await db.WorkCalendars
+                .AsNoTracking()
+                .Where(wc => wc.Id == workCalendarId)
+                .Select(wc => wc.Name)
+                .FirstOrDefaultAsync(cancellationToken)
+            : null;
+
         var mappings = await db.DirectoryAttributeMappings
             .AsNoTracking()
             .OrderBy(m => m.SortOrder)
@@ -58,6 +66,8 @@ public sealed class GetUserByIdQueryHandler(IApplicationDbContext db)
             Email = user.Email,
             IsActive = user.IsActive,
             LastSyncedUtc = user.LastSyncedUtc,
+            WorkCalendarId = user.WorkCalendarId,
+            WorkCalendarName = workCalendarName,
             Attributes = attributes
         };
     }

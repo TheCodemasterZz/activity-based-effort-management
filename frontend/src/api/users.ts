@@ -5,6 +5,7 @@ export function getUsers(options?: {
   directoryId?: string;
   searchTerm?: string;
   onlyActive?: boolean;
+  onlyMissingWorkCalendar?: boolean;
   pageNumber?: number;
   pageSize?: number;
 }) {
@@ -12,6 +13,7 @@ export function getUsers(options?: {
     directoryId: options?.directoryId,
     searchTerm: options?.searchTerm,
     onlyActive: options?.onlyActive,
+    onlyMissingWorkCalendar: options?.onlyMissingWorkCalendar,
     pageNumber: options?.pageNumber ?? 1,
     pageSize: options?.pageSize ?? 25,
   });
@@ -39,5 +41,19 @@ export function resetInternalUserPassword(userId: string, newPassword: string) {
   return apiClient.post<void>(`/api/v1/users/${userId}/reset-password`, {
     userId,
     newPassword,
+  });
+}
+
+export function assignWorkCalendar(userId: string, workCalendarId: string) {
+  return apiClient.post<void>(`/api/v1/users/${userId}/work-calendar`, {
+    userId,
+    workCalendarId,
+  });
+}
+
+export function bulkAssignWorkCalendar(userIds: string[], workCalendarId: string) {
+  return apiClient.post<void>('/api/v1/users/work-calendar/bulk', {
+    userIds,
+    workCalendarId,
   });
 }

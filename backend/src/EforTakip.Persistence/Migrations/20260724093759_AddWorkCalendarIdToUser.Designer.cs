@@ -3,6 +3,7 @@ using System;
 using EforTakip.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace EforTakip.Persistence.Migrations
 {
     [DbContext(typeof(EforTakipDbContext))]
-    partial class EforTakipDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260724093759_AddWorkCalendarIdToUser")]
+    partial class AddWorkCalendarIdToUser
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

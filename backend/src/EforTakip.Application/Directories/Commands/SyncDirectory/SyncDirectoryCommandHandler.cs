@@ -5,6 +5,7 @@ using EforTakip.Application.Directories.Dtos;
 using EforTakip.Application.Directories.Ldap;
 using EforTakip.Domain.Directories;
 using EforTakip.Domain.Exceptions;
+using EforTakip.Domain.Notifications;
 using EforTakip.Domain.Users;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -116,6 +117,17 @@ public sealed partial class SyncDirectoryCommandHandler(
 
             user.Deactivate();
             deactivated++;
+        }
+
+        // byObjectGuid, senkron kapsamındaki hem yeni hem mevcut tüm kullanıcıları tutar — yeni
+        // eklenenler bu noktada henüz kaydedilmediği (SaveChangesAsync aşağıda) için db.Users
+        // sorgusu onları görmez; bellek içindeki bu koleksiyon üzerinden sayılır.
+        var missingCalendarCount = byObjectGuid.Values.Count(u => u.IsActive && u.WorkCalendarId == null);
+
+        if (missingCalendarCount > 0)
+        {
+            db.Notifications.Add(Notification.Create(
+                $"'{directory.Name}' dizininde {missingCalendarCount} kullanıcının mesai takvimi atanmamış."));
         }
 
         directory.MarkSynced(syncedAtUtc);

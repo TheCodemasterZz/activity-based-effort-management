@@ -24,6 +24,41 @@ public class UserTests
         user.IsActive.Should().BeTrue();
     }
 
+    [Fact]
+    public void CreateFromActiveDirectory_NeverSetsWorkCalendarId()
+    {
+        var user = User.CreateFromActiveDirectory(
+            Guid.NewGuid(), "serkan.gultepe", "Serkan", "Gültepe",
+            "Serkan Gültepe", "serkan@kizilay.org.tr", "guid-123");
+
+        user.WorkCalendarId.Should().BeNull();
+    }
+
+    [Fact]
+    public void AssignWorkCalendar_WithValidId_SetsWorkCalendarId()
+    {
+        var user = User.CreateFromActiveDirectory(
+            Guid.NewGuid(), "serkan.gultepe", "Serkan", "Gültepe",
+            "Serkan Gültepe", "serkan@kizilay.org.tr", "guid-123");
+        var workCalendarId = Guid.NewGuid();
+
+        user.AssignWorkCalendar(workCalendarId);
+
+        user.WorkCalendarId.Should().Be(workCalendarId);
+    }
+
+    [Fact]
+    public void AssignWorkCalendar_WithEmptyId_Throws()
+    {
+        var user = User.CreateFromActiveDirectory(
+            Guid.NewGuid(), "serkan.gultepe", "Serkan", "Gültepe",
+            "Serkan Gültepe", "serkan@kizilay.org.tr", "guid-123");
+
+        var act = () => user.AssignWorkCalendar(Guid.Empty);
+
+        act.Should().Throw<BusinessRuleValidationException>();
+    }
+
     [Theory]
     [InlineData("")]
     [InlineData("   ")]

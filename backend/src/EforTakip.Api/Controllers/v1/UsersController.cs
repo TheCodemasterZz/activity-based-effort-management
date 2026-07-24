@@ -1,6 +1,8 @@
 using Asp.Versioning;
 using EforTakip.Api.Authorization;
 using EforTakip.Application.Common.Models;
+using EforTakip.Application.Users.Commands.AssignWorkCalendar;
+using EforTakip.Application.Users.Commands.BulkAssignWorkCalendar;
 using EforTakip.Application.Users.Commands.CreateInternalUser;
 using EforTakip.Application.Users.Commands.ResetInternalUserPassword;
 using EforTakip.Application.Users.Dtos;
@@ -48,6 +50,28 @@ public sealed class UsersController(ISender mediator) : ControllerBase
     {
         if (id != command.UserId)
             return BadRequest("Route ve gövde kimlikleri eşleşmiyor.");
+        await mediator.Send(command, cancellationToken);
+        return NoContent();
+    }
+
+    [RequirePermission(Permissions.User.Manage)]
+    [HttpPost("{id:guid}/work-calendar")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> AssignWorkCalendar(
+        Guid id, AssignWorkCalendarCommand command, CancellationToken cancellationToken)
+    {
+        if (id != command.UserId)
+            return BadRequest("Route ve gövde kimlikleri eşleşmiyor.");
+        await mediator.Send(command, cancellationToken);
+        return NoContent();
+    }
+
+    [RequirePermission(Permissions.User.Manage)]
+    [HttpPost("work-calendar/bulk")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> BulkAssignWorkCalendar(
+        BulkAssignWorkCalendarCommand command, CancellationToken cancellationToken)
+    {
         await mediator.Send(command, cancellationToken);
         return NoContent();
     }

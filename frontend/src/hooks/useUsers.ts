@@ -1,5 +1,7 @@
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
+  assignWorkCalendar,
+  bulkAssignWorkCalendar,
   getUserById,
   getUsers,
   resetInternalUserPassword,
@@ -8,6 +10,7 @@ import {
 export function useUsers(options: {
   directoryId?: string;
   searchTerm?: string;
+  onlyMissingWorkCalendar?: boolean;
   pageNumber?: number;
   pageSize?: number;
 }) {
@@ -16,6 +19,7 @@ export function useUsers(options: {
       'users',
       options.directoryId ?? null,
       options.searchTerm ?? '',
+      options.onlyMissingWorkCalendar ?? false,
       options.pageNumber ?? 1,
       options.pageSize ?? 25,
     ],
@@ -35,5 +39,27 @@ export function useResetInternalUserPasswordMutation() {
   return useMutation({
     mutationFn: ({ userId, newPassword }: { userId: string; newPassword: string }) =>
       resetInternalUserPassword(userId, newPassword),
+  });
+}
+
+export function useAssignWorkCalendarMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ userId, workCalendarId }: { userId: string; workCalendarId: string }) =>
+      assignWorkCalendar(userId, workCalendarId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+    },
+  });
+}
+
+export function useBulkAssignWorkCalendarMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ userIds, workCalendarId }: { userIds: string[]; workCalendarId: string }) =>
+      bulkAssignWorkCalendar(userIds, workCalendarId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+    },
   });
 }

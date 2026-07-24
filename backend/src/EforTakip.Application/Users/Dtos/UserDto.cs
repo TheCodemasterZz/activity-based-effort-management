@@ -16,4 +16,6 @@ public sealed class UserDto
     public string? Email { get; init; }
     public bool IsActive { get; init; }
     public DateTime? LastSyncedUtc { get; init; }
+    public Guid? WorkCalendarId { get; init; }
+    public string? WorkCalendarName { get; init; }
 }

@@ -1,6 +1,11 @@
 import { useState } from 'react';
 import { useDirectories } from '../../../hooks/useDirectories';
-import { useUsers } from '../../../hooks/useUsers';
+import {
+  useAssignWorkCalendarMutation,
+  useBulkAssignWorkCalendarMutation,
+  useUsers,
+} from '../../../hooks/useUsers';
+import { useWorkCalendars } from '../../../hooks/useWorkCalendar';
 import { UserCard } from './UserCard';
 
 const PAGE_SIZE_OPTIONS = [25, 50, 100];
@@ -14,10 +19,17 @@ export function UsersSection() {
   const [searchTerm, setSearchTerm] = useState('');
   const [pageNumber, setPageNumber] = useState(1);
   const [pageSize, setPageSize] = useState(PAGE_SIZE_OPTIONS[0]);
+  const [onlyMissingWorkCalendar, setOnlyMissingWorkCalendar] = useState(false);
+  const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
+  const [bulkWorkCalendarId, setBulkWorkCalendarId] = useState('');
+  const workCalendars = useWorkCalendars();
+  const assignWorkCalendarMutation = useAssignWorkCalendarMutation();
+  const bulkAssignMutation = useBulkAssignWorkCalendarMutation();
 
   const users = useUsers({
     directoryId: selectedDirectoryId || undefined,
     searchTerm,
+    onlyMissingWorkCalendar: onlyMissingWorkCalendar || undefined,
     pageNumber,
     pageSize,
   });
@@ -68,6 +80,18 @@ export function UsersSection() {
         </label>
 
         <label className="flex items-center gap-2 text-sm text-slate-500">
+          <input
+            type="checkbox"
+            checked={onlyMissingWorkCalendar}
+            onChange={(e) => {
+              setOnlyMissingWorkCalendar(e.target.checked);
+              setPageNumber(1);
+            }}
+          />
+          Takvimsiz
+        </label>
+
+        <label className="flex items-center gap-2 text-sm text-slate-500">
           Sayfa başına
           <select
             value={pageSize}
@@ -88,6 +112,37 @@ export function UsersSection() {
         {totalCount > 0 && <span className="text-sm text-slate-400">{totalCount} kullanıcı</span>}
       </div>
 
+      {selectedUserIds.length > 0 && (
+        <div className="mb-3 flex items-center gap-2 rounded-md bg-indigo-50 px-3 py-2 text-sm">
+          <span className="text-indigo-700">{selectedUserIds.length} kullanıcı seçildi</span>
+          <select
+            value={bulkWorkCalendarId}
+            onChange={(e) => setBulkWorkCalendarId(e.target.value)}
+            className="rounded-md border border-slate-300 px-2 py-1 text-sm"
+          >
+            <option value="">Takvim seç…</option>
+            {(workCalendars.data?.items ?? []).map((wc) => (
+              <option key={wc.id} value={wc.id}>
+                {wc.name}
+              </option>
+            ))}
+          </select>
+          <button
+            type="button"
+            disabled={!bulkWorkCalendarId || bulkAssignMutation.isPending}
+            onClick={() =>
+              bulkAssignMutation.mutate(
+                { userIds: selectedUserIds, workCalendarId: bulkWorkCalendarId },
+                { onSuccess: () => setSelectedUserIds([]) },
+              )
+            }
+            className="rounded-md bg-indigo-600 px-3 py-1 text-sm text-white disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            Seçilenlere Takvim Ata
+          </button>
+        </div>
+      )}
+
       {users.isLoading ? (
         <div className="py-8 text-center text-sm text-slate-400">Yükleniyor…</div>
       ) : items.length === 0 ? (
@@ -98,10 +153,20 @@ export function UsersSection() {
         <table className="w-full text-left text-sm">
           <thead>
             <tr className="border-b border-slate-100 text-xs uppercase tracking-wide text-slate-400">
+              <th className="py-2 pr-2 font-medium">
+                <input
+                  type="checkbox"
+                  checked={items.length > 0 && selectedUserIds.length === items.length}
+                  onChange={(e) =>
+                    setSelectedUserIds(e.target.checked ? items.map((u) => u.id) : [])
+                  }
+                />
+              </th>
               <th className="py-2 pr-4 font-medium">Kullanıcı Adı</th>
               <th className="py-2 pr-4 font-medium">Dizin</th>
               <th className="py-2 pr-4 font-medium">Görünen Ad</th>
               <th className="py-2 pr-4 font-medium">E-posta</th>
+              <th className="py-2 pr-4 font-medium">Mesai Takvimi</th>
               <th className="py-2 font-medium">Durum</th>
             </tr>
           </thead>
@@ -112,10 +177,43 @@ export function UsersSection() {
                 onClick={() => setView({ kind: 'detail', userId: user.id })}
                 className="cursor-pointer border-b border-slate-50 last:border-0 hover:bg-slate-50"
               >
+                <td className="py-2 pr-2" onClick={(e) => e.stopPropagation()}>
+                  <input
+                    type="checkbox"
+                    checked={selectedUserIds.includes(user.id)}
+                    onChange={(e) =>
+                      setSelectedUserIds((prev) =>
+                        e.target.checked ? [...prev, user.id] : prev.filter((id) => id !== user.id),
+                      )
+                    }
+                  />
+                </td>
                 <td className="py-2 pr-4 text-indigo-600">{user.username}</td>
                 <td className="py-2 pr-4 text-slate-500">{user.directoryName}</td>
                 <td className="py-2 pr-4 text-slate-700">{user.displayName ?? '—'}</td>
                 <td className="py-2 pr-4 text-slate-500">{user.email ?? '—'}</td>
+                <td className="py-2 pr-4" onClick={(e) => e.stopPropagation()}>
+                  {user.workCalendarName ? (
+                    user.workCalendarName
+                  ) : (
+                    <select
+                      defaultValue=""
+                      onChange={(e) => {
+                        if (e.target.value) {
+                          assignWorkCalendarMutation.mutate({ userId: user.id, workCalendarId: e.target.value });
+                        }
+                      }}
+                      className="rounded-md border border-amber-300 bg-amber-50 px-1.5 py-0.5 text-xs text-amber-700"
+                    >
+                      <option value="">Atanmamış</option>
+                      {(workCalendars.data?.items ?? []).map((wc) => (
+                        <option key={wc.id} value={wc.id}>
+                          {wc.name}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                </td>
                 <td className="py-2">
                   <span
                     className={

@@ -20,6 +20,9 @@ public sealed class GetUsersQueryHandler(IApplicationDbContext db)
         if (request.OnlyActive == true)
             query = query.Where(u => u.IsActive);
 
+        if (request.OnlyMissingWorkCalendar == true)
+            query = query.Where(u => u.WorkCalendarId == null);
+
         if (!string.IsNullOrWhiteSpace(request.SearchTerm))
         {
             var term = request.SearchTerm.ToLower();
@@ -37,19 +40,23 @@ public sealed class GetUsersQueryHandler(IApplicationDbContext db)
         var items = await query
             .Skip((request.PageNumber - 1) * request.PageSize)
             .Take(request.PageSize)
-            .Join(db.Directories, u => u.DirectoryId, d => d.Id, (u, d) => new UserDto
+            .Join(db.Directories, u => u.DirectoryId, d => d.Id, (u, d) => new { u, DirectoryName = d.Name })
+            .GroupJoin(db.WorkCalendars, x => x.u.WorkCalendarId, wc => wc.Id, (x, wcs) => new { x.u, x.DirectoryName, WorkCalendars = wcs })
+            .SelectMany(x => x.WorkCalendars.DefaultIfEmpty(), (x, wc) => new UserDto
             {
-                Id = u.Id,
-                DirectoryId = u.DirectoryId,
-                DirectoryName = d.Name,
-                Source = u.Source,
-                Username = u.Username,
-                FirstName = u.FirstName,
-                LastName = u.LastName,
-                DisplayName = u.DisplayName,
-                Email = u.Email,
-                IsActive = u.IsActive,
-                LastSyncedUtc = u.LastSyncedUtc
+                Id = x.u.Id,
+                DirectoryId = x.u.DirectoryId,
+                DirectoryName = x.DirectoryName,
+                Source = x.u.Source,
+                Username = x.u.Username,
+                FirstName = x.u.FirstName,
+                LastName = x.u.LastName,
+                DisplayName = x.u.DisplayName,
+                Email = x.u.Email,
+                IsActive = x.u.IsActive,
+                LastSyncedUtc = x.u.LastSyncedUtc,
+                WorkCalendarId = x.u.WorkCalendarId,
+                WorkCalendarName = wc != null ? wc.Name : null
             })
             .ToListAsync(cancellationToken);
 
