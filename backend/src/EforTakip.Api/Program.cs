@@ -32,7 +32,9 @@ if (builder.Configuration.GetValue<bool>("UseTestMode"))
     using var scope = app.Services.CreateScope();
     var db = scope.ServiceProvider.GetRequiredService<EforTakipDbContext>();
     await db.Database.EnsureCreatedAsync();
-    await TestDataSeeder.SeedAsync(db);
+    // TestDataSeeder buradan ÇAĞRILMAZ: artık sahte User kayıtları ürettiği için
+    // BootstrapAdminSeeder'ın "hiç kullanıcı yoksa" koşulunu bozar (admin hiç oluşmazdı).
+    // Sahte veri, admin oluştuktan sonra aşağıda seed edilir.
 }
 
 // Endpoint'ler kimlik doğrulama istediğinden, sistemde hiç kullanıcı yoksa kimse giriş
@@ -51,6 +53,9 @@ using (var bootstrapScope = app.Services.CreateScope())
         builder.Configuration["Bootstrap:AdminPassword"],
         logger,
         CancellationToken.None);
+
+    if (builder.Configuration.GetValue<bool>("UseTestMode"))
+        await TestDataSeeder.SeedAsync(db);
 }
 
 if (app.Environment.IsDevelopment())
