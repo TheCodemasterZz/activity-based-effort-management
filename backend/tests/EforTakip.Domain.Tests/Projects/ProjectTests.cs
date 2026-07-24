@@ -14,7 +14,7 @@ public class ProjectTests
         project.Name.Should().Be("Efor Takip Platformu");
         project.Status.Should().Be(ProjectStatus.Active);
         project.CustomerIds.Should().BeEmpty();
-        project.EmployeeIds.Should().BeEmpty();
+        project.UserIds.Should().BeEmpty();
     }
 
     [Theory]
@@ -54,26 +54,26 @@ public class ProjectTests
     }
 
     [Fact]
-    public void AssignEmployee_WithNewEmployee_AddsAssignment()
+    public void AssignUser_WithNewUser_AddsAssignment()
     {
         var project = Project.Create("Efor Takip Platformu", null);
-        var employeeId = Guid.NewGuid();
+        var userId = Guid.NewGuid();
 
-        var assignment = project.AssignEmployee(employeeId);
+        var assignment = project.AssignUser(userId);
 
-        project.EmployeeIds.Should().ContainSingle().Which.Should().Be(employeeId);
+        project.UserIds.Should().ContainSingle().Which.Should().Be(userId);
         assignment.ProjectId.Should().Be(project.Id);
-        assignment.EmployeeId.Should().Be(employeeId);
+        assignment.UserId.Should().Be(userId);
     }
 
     [Fact]
-    public void AssignEmployee_WithAlreadyAssignedEmployee_ThrowsBusinessRuleValidationException()
+    public void AssignUser_WithAlreadyAssignedUser_ThrowsBusinessRuleValidationException()
     {
         var project = Project.Create("Efor Takip Platformu", null);
-        var employeeId = Guid.NewGuid();
-        project.AssignEmployee(employeeId);
+        var userId = Guid.NewGuid();
+        project.AssignUser(userId);
 
-        var act = () => project.AssignEmployee(employeeId);
+        var act = () => project.AssignUser(userId);
 
         act.Should().Throw<BusinessRuleValidationException>();
     }

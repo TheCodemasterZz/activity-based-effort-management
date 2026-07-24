@@ -33,9 +33,9 @@ public sealed class ProjectIssueConfiguration : IEntityTypeConfiguration<Project
 
         builder.HasIndex(i => i.ProjectId);
 
-        builder.HasOne<EforTakip.Domain.Employees.Employee>()
+        builder.HasOne<EforTakip.Domain.Users.User>()
             .WithMany()
-            .HasForeignKey(i => i.OwnerEmployeeId)
+            .HasForeignKey(i => i.OwnerUserId)
             .OnDelete(DeleteBehavior.Restrict);
     }
 }

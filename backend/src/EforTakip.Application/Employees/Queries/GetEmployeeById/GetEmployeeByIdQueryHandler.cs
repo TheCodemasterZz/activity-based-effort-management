@@ -15,8 +15,8 @@ public sealed class GetEmployeeByIdQueryHandler(IApplicationDbContext db)
     {
         var employee = await db.Employees
             .AsNoTracking()
-            .FirstOrDefaultAsync(e => e.Id == request.EmployeeId, cancellationToken)
-            ?? throw new NotFoundException(nameof(Employee), request.EmployeeId);
+            .FirstOrDefaultAsync(e => e.Id == request.UserId, cancellationToken)
+            ?? throw new NotFoundException(nameof(Employee), request.UserId);
 
         return employee.Adapt<EmployeeDto>();
     }

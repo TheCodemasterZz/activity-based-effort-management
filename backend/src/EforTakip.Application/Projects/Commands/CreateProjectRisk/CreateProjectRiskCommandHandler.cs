@@ -16,7 +16,7 @@ public sealed class CreateProjectRiskCommandHandler(
 
         var risk = ProjectRisk.Create(
             request.ProjectId, request.Title, request.Description, request.Probability, request.Impact,
-            request.MitigationPlan, request.OwnerEmployeeId, request.IdentifiedDate);
+            request.MitigationPlan, request.OwnerUserId, request.IdentifiedDate);
 
         await repository.AddAsync(risk, cancellationToken);
         await unitOfWork.SaveChangesAsync(cancellationToken);

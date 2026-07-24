@@ -6,5 +6,5 @@ public sealed record UpdateProjectRiskRequestBody(
     int Probability,
     int Impact,
     string? MitigationPlan,
-    Guid? OwnerEmployeeId,
+    Guid? OwnerUserId,
     DateOnly IdentifiedDate);

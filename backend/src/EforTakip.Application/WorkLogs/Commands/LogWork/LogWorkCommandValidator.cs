@@ -7,7 +7,7 @@ public sealed class LogWorkCommandValidator : AbstractValidator<LogWorkCommand>
 {
     public LogWorkCommandValidator()
     {
-        RuleFor(x => x.EmployeeId).NotEmpty();
+        RuleFor(x => x.UserId).NotEmpty();
         RuleFor(x => x.ProjectId).NotEmpty();
         RuleFor(x => x.ActivityL1Id).NotEmpty();
         RuleFor(x => x.ActivityL2Id).NotEmpty().WithMessage("Activity L2 seçimi zorunludur.");

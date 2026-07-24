@@ -3,7 +3,7 @@ using EforTakip.Api.Authorization;
 using EforTakip.Api.Contracts.Projects;
 using EforTakip.Application.Common.Models;
 using EforTakip.Application.Projects.Commands.AssignCustomerToProject;
-using EforTakip.Application.Projects.Commands.AssignEmployeeToProject;
+using EforTakip.Application.Projects.Commands.AssignUserToProject;
 using EforTakip.Application.Projects.Commands.CreateProject;
 using EforTakip.Application.Projects.Commands.DeleteProject;
 using EforTakip.Application.Projects.Commands.UpdateProject;
@@ -52,7 +52,7 @@ public sealed class ProjectsController(ISender mediator) : ControllerBase
         await mediator.Send(
             new UpdateProjectCommand(
                 id, body.Name, body.Description, body.StartDate, body.EndDate,
-                body.Sponsor, body.ProjectManagerEmployeeId, body.Priority, body.StrategicGoal),
+                body.Sponsor, body.ProjectManagerUserId, body.Priority, body.StrategicGoal),
             cancellationToken);
         return NoContent();
     }
@@ -87,9 +87,9 @@ public sealed class ProjectsController(ISender mediator) : ControllerBase
     [RequirePermission(Permissions.Project.Update)]
     [HttpPost("{id:guid}/employees")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
-    public async Task<IActionResult> AssignEmployee(Guid id, AssignEmployeeRequestBody body, CancellationToken cancellationToken)
+    public async Task<IActionResult> AssignUser(Guid id, AssignUserRequestBody body, CancellationToken cancellationToken)
     {
-        await mediator.Send(new AssignEmployeeToProjectCommand(id, body.EmployeeId), cancellationToken);
+        await mediator.Send(new AssignUserToProjectCommand(id, body.UserId), cancellationToken);
         return NoContent();
     }
 }

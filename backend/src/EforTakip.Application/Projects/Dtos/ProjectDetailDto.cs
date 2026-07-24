@@ -10,9 +10,9 @@ public sealed class ProjectDetailDto
     public DateOnly? EndDate { get; init; }
     public string HealthStatus { get; init; } = default!;
     public string? Sponsor { get; init; }
-    public Guid? ProjectManagerEmployeeId { get; init; }
+    public Guid? ProjectManagerUserId { get; init; }
     public string Priority { get; init; } = default!;
     public string? StrategicGoal { get; init; }
     public IReadOnlyCollection<CustomerSummaryDto> Customers { get; init; } = [];
-    public IReadOnlyCollection<EmployeeSummaryDto> Employees { get; init; } = [];
+    public IReadOnlyCollection<UserSummaryDto> Users { get; init; } = [];
 }

@@ -15,7 +15,7 @@ public sealed class CreateProjectCommandHandler(IProjectRepository repository, I
             request.StartDate,
             request.EndDate,
             request.Sponsor,
-            request.ProjectManagerEmployeeId,
+            request.ProjectManagerUserId,
             request.Priority,
             request.StrategicGoal);
 

@@ -1,7 +1,7 @@
 using EforTakip.Domain.Activities;
 using EforTakip.Domain.Customers;
 using EforTakip.Domain.Directories;
-using EforTakip.Domain.EmployeeLeaves;
+using EforTakip.Domain.Leaves;
 using EforTakip.Domain.Employees;
 using EforTakip.Domain.Holidays;
 using EforTakip.Domain.Notifications;
@@ -27,7 +27,7 @@ public interface IApplicationDbContext
 
     DbSet<ProjectCustomerAssignment> ProjectCustomerAssignments { get; }
 
-    DbSet<ProjectEmployeeAssignment> ProjectEmployeeAssignments { get; }
+    DbSet<ProjectUserAssignment> ProjectUserAssignments { get; }
 
     DbSet<ProjectTask> ProjectTasks { get; }
 
@@ -43,7 +43,7 @@ public interface IApplicationDbContext
 
     DbSet<StageActivityAssignment> StageActivityAssignments { get; }
 
-    DbSet<EmployeeWorkLog> EmployeeWorkLogs { get; }
+    DbSet<WorkLog> WorkLogs { get; }
 
     DbSet<Holiday> Holidays { get; }
 
@@ -55,7 +55,7 @@ public interface IApplicationDbContext
 
     DbSet<WorkLogApproval> WorkLogApprovals { get; }
 
-    DbSet<EmployeeLeave> EmployeeLeaves { get; }
+    DbSet<Leave> Leaves { get; }
 
     DbSet<Domain.Directories.Directory> Directories { get; }
 

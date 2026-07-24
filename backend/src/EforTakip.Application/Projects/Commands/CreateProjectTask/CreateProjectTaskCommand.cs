@@ -11,4 +11,4 @@ public sealed record CreateProjectTaskCommand(
     bool IsMilestone,
     Guid? ParentTaskId = null,
     Guid? DependsOnTaskId = null,
-    Guid? AssignedEmployeeId = null) : IRequest<Guid>;
+    Guid? AssignedUserId = null) : IRequest<Guid>;

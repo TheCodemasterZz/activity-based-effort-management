@@ -15,7 +15,7 @@ public sealed class UpdateProjectRiskCommandHandler(IRepository<ProjectRisk> rep
 
         risk.Update(
             request.Title, request.Description, request.Probability, request.Impact,
-            request.MitigationPlan, request.OwnerEmployeeId, request.IdentifiedDate);
+            request.MitigationPlan, request.OwnerUserId, request.IdentifiedDate);
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
     }

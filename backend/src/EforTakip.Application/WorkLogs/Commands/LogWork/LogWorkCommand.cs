@@ -4,7 +4,7 @@ using MediatR;
 namespace EforTakip.Application.WorkLogs.Commands.LogWork;
 
 public sealed record LogWorkCommand(
-    Guid EmployeeId,
+    Guid UserId,
     Guid ProjectId,
     Guid ActivityL1Id,
     Guid ActivityL2Id,

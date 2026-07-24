@@ -12,7 +12,7 @@ public sealed class CreateWorkLogApprovalCommandHandler(IApplicationDbContext db
     public async Task<Guid> Handle(CreateWorkLogApprovalCommand request, CancellationToken cancellationToken)
     {
         var hasOverlap = await db.WorkLogApprovals.AnyAsync(
-            a => a.EmployeeId == request.EmployeeId && a.EntryType == request.EntryType
+            a => a.UserId == request.UserId && a.EntryType == request.EntryType
                 && a.PeriodStart <= request.PeriodEnd && a.PeriodEnd >= request.PeriodStart,
             cancellationToken);
 
@@ -20,11 +20,11 @@ public sealed class CreateWorkLogApprovalCommandHandler(IApplicationDbContext db
             throw new BusinessRuleValidationException("Bu dönemin bir kısmı zaten onaylanmış.");
 
         var approval = WorkLogApproval.Create(
-            request.EmployeeId, request.PeriodType, request.PeriodStart, request.PeriodEnd, request.Description,
+            request.UserId, request.PeriodType, request.PeriodStart, request.PeriodEnd, request.Description,
             request.EntryType);
 
-        var logsToApprove = await db.EmployeeWorkLogs
-            .Where(l => l.EmployeeId == request.EmployeeId && l.EntryType == request.EntryType
+        var logsToApprove = await db.WorkLogs
+            .Where(l => l.UserId == request.UserId && l.EntryType == request.EntryType
                 && l.WorkDate >= request.PeriodStart && l.WorkDate <= request.PeriodEnd
                 && l.ApprovalId == null)
             .ToListAsync(cancellationToken);

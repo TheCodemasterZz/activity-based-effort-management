@@ -1,7 +1,8 @@
 using Bogus;
 using EforTakip.Domain.Customers;
-using EforTakip.Domain.EmployeeLeaves;
-using EforTakip.Domain.Employees;
+using EforTakip.Domain.Directories;
+using EforTakip.Domain.Users;
+using EforTakip.Domain.Leaves;
 using EforTakip.Domain.Projects;
 using EforTakip.Domain.Settings;
 using EforTakip.Domain.ValueStreams;
@@ -31,14 +32,41 @@ public static class TestDataSeeder
             .Generate(5);
         context.Customers.AddRange(customers);
 
-        // Faker<T>.CustomInstantiator index vermediğinden, çalışanları 2 sabit mesai
+        // Sahte kullanıcılar internal klasöre bağlanır — BootstrapAdminSeeder henüz
+        // çalışmadıysa klasör burada oluşturulur (aynı ad, idempotent).
+        var internalDirectory = await context.Directories
+            .FirstOrDefaultAsync(d => d.Source == DirectorySource.Internal);
+        if (internalDirectory is null)
+        {
+            internalDirectory = EforTakip.Domain.Directories.Directory.CreateInternal(
+                BootstrapAdminSeeder.InternalDirectoryName, 0);
+            context.Directories.Add(internalDirectory);
+        }
+
+        // Faker<T>.CustomInstantiator index vermediğinden, kullanıcıları 2 sabit mesai
         // takviminden (bkz. WorkCalendarSeedData) sırayla atayabilmek için düz bir Faker
-        // örneği + Enumerable.Range kullanılıyor.
-        var employeeCalendarIds = new[] { WorkCalendarSeedData.StandardCalendarId, WorkCalendarSeedData.FlexCalendarId };
-        var employees = Enumerable.Range(0, 25)
-            .Select(i => Employee.Create(bogus.Name.FullName(), bogus.Internet.Email(), employeeCalendarIds[i % 2]))
+        // örneği + Enumerable.Range kullanılıyor. Takvim ataması zorunlu — takvimsiz
+        // kullanıcı efor/plan girişi yapamaz (WorkLogValidationHelper kuralı), aksi halde
+        // seed edilen work log'lar bu kuralla çelişirdi.
+        var userCalendarIds = new[] { WorkCalendarSeedData.StandardCalendarId, WorkCalendarSeedData.FlexCalendarId };
+        var users = Enumerable.Range(0, 25)
+            .Select(i =>
+            {
+                var firstName = bogus.Name.FirstName();
+                var lastName = bogus.Name.LastName();
+                var user = User.CreateInternal(
+                    internalDirectory.Id,
+                    username: $"testuser{i:D2}",
+                    firstName: firstName,
+                    lastName: lastName,
+                    displayName: $"{firstName} {lastName}",
+                    email: bogus.Internet.Email(),
+                    passwordHash: "seed-only-not-a-real-hash");
+                user.AssignWorkCalendar(userCalendarIds[i % 2]);
+                return user;
+            })
             .ToList();
-        context.Employees.AddRange(employees);
+        context.Users.AddRange(users);
 
         // Rastgele efor kayıtları (work log) için Activity L1/L2 kaynağı: "Software Delivery"
         // değer akışının HasData ile önceden (EnsureCreatedAsync üzerinden) yüklenmiş gerçek
@@ -87,24 +115,24 @@ public static class TestDataSeeder
                 project.AssignCustomer(customer.Id);
         }
 
-        // Her çalışan en az bir projeye atanır — 25 kişinin hepsi için PlanWork/LogWork'te
+        // Her kullanıcı en az bir projeye atanır — 25 kişinin hepsi için PlanWork/LogWork'te
         // Temmuz ayının tamamını kapsayan mock veri üretebilmek adına kimse boşta kalmasın.
         // Bir kişi, çeşitlilik olsun diye 1-2 rastgele projeye atanabilir.
-        foreach (var employee in employees)
+        foreach (var user in users)
         {
             foreach (var project in projects.OrderBy(_ => random.Next()).Take(random.Next(1, 3)))
-                project.AssignEmployee(employee.Id);
+                project.AssignUser(user.Id);
         }
 
-        // Proje yöneticisi — atanmış çalışanlardan biri (Overview sekmesi). Employee ataması
+        // Proje yöneticisi — atanmış kullanıcılardan biri (Overview sekmesi). Kullanıcı ataması
         // bittikten SONRA belirlenir ki gerçek bir proje üyesi olsun; Update tam-değiştirme
         // şeklinde olduğu için diğer alanlar kendi mevcut değerleriyle geri yazılıyor.
         foreach (var project in projects)
         {
-            if (project.EmployeeIds.Count == 0)
+            if (project.UserIds.Count == 0)
                 continue;
 
-            var pmId = project.EmployeeIds.ElementAt(random.Next(project.EmployeeIds.Count));
+            var pmId = project.UserIds.ElementAt(random.Next(project.UserIds.Count));
             project.Update(
                 project.Name, project.Description, project.StartDate, project.EndDate,
                 project.Sponsor, pmId, project.Priority, project.StrategicGoal);
@@ -131,8 +159,8 @@ public static class TestDataSeeder
             var totalDays = Math.Max(taskCount, projectEnd.DayNumber - projectStart.DayNumber);
             var slice = totalDays / taskCount;
 
-            var projectEmployeeIds = project.EmployeeIds.ToList();
-            Guid? PickAssignee() => projectEmployeeIds.Count > 0 ? projectEmployeeIds[random.Next(projectEmployeeIds.Count)] : null;
+            var projectUserIds = project.UserIds.ToList();
+            Guid? PickAssignee() => projectUserIds.Count > 0 ? projectUserIds[random.Next(projectUserIds.Count)] : null;
 
             // Basit 2 seviyeli WBS (Schedule sekmesi): ilk görev "Faz 1", ortadaki görev
             // "Faz 2" başlığı olur (ParentTaskId=null); aradaki/sonraki görevler bu iki fazın
@@ -159,7 +187,7 @@ public static class TestDataSeeder
 
                 var task = ProjectTask.Create(
                     project.Id, name, taskStart, taskEnd, estimatedHours, isMilestone: false,
-                    parentTaskId: parentTaskId, dependsOnTaskId: dependsOnTaskId, assignedEmployeeId: PickAssignee());
+                    parentTaskId: parentTaskId, dependsOnTaskId: dependsOnTaskId, assignedUserId: PickAssignee());
 
                 // Bitiş tarihi geçmişse çoğunlukla Bitti — ama bir kısmı kasıtlı olarak hâlâ
                 // Devam Ediyor durumunda bırakılıyor (SPI'nin 1'in altına düşmesini sağlayan,
@@ -205,8 +233,8 @@ public static class TestDataSeeder
         var projectIssues = new List<ProjectIssue>();
         foreach (var project in projects)
         {
-            var projectEmployeeIds = project.EmployeeIds.ToList();
-            Guid? PickOwner() => projectEmployeeIds.Count > 0 ? projectEmployeeIds[random.Next(projectEmployeeIds.Count)] : null;
+            var projectUserIds = project.UserIds.ToList();
+            Guid? PickOwner() => projectUserIds.Count > 0 ? projectUserIds[random.Next(projectUserIds.Count)] : null;
 
             var riskTitles = riskTitlePool.OrderBy(_ => random.Next()).Take(random.Next(2, 5)).ToList();
             for (var i = 0; i < riskTitles.Count; i++)
@@ -273,9 +301,9 @@ public static class TestDataSeeder
         var monthStart = new DateOnly(todayDate.Year, todayDate.Month, 1);
         var monthEnd = new DateOnly(todayDate.Year, todayDate.Month, DateTime.DaysInMonth(todayDate.Year, todayDate.Month));
 
-        var employeeProjects = projects
-            .SelectMany(p => p.EmployeeIds.Select(employeeId => (employeeId, project: p)))
-            .GroupBy(x => x.employeeId)
+        var userProjects = projects
+            .SelectMany(p => p.UserIds.Select(userId => (userId, project: p)))
+            .GroupBy(x => x.userId)
             .ToDictionary(g => g.Key, g => g.Select(x => x.project).ToList());
 
         // Bir günlük toplam saati (ör. 8h), 15dk (0.25h) ile 2h arasında değişen, gerçek bir
@@ -312,12 +340,12 @@ public static class TestDataSeeder
         // Aynı gün için hem Actual hem Planned kaydı oluşabilir; bu Kapasite Yönetimi'ndeki
         // "karma" modun (günlük bazda Actual varsa onu, yoksa Planned'ı sayan, asla ikisini
         // toplamayan) tam olarak neden var olduğu senaryo.
-        List<EmployeeWorkLog> GenerateWorkLogs(WorkLogEntryType entryType, DateOnly rangeStart, DateOnly rangeEnd)
+        List<WorkLog> GenerateWorkLogs(WorkLogEntryType entryType, DateOnly rangeStart, DateOnly rangeEnd)
         {
-            var result = new List<EmployeeWorkLog>();
-            foreach (var employee in employees)
+            var result = new List<WorkLog>();
+            foreach (var user in users)
             {
-                if (!employeeProjects.TryGetValue(employee.Id, out var assignedProjects) || assignedProjects.Count == 0)
+                if (!userProjects.TryGetValue(user.Id, out var assignedProjects) || assignedProjects.Count == 0)
                     continue;
 
                 for (var date = rangeStart; date <= rangeEnd; date = date.AddDays(1))
@@ -345,8 +373,8 @@ public static class TestDataSeeder
                         var candidatesL2 = subActivities.Where(a => a.ParentActivityId == activityL1.Id).ToList();
                         var activityL2 = candidatesL2[random.Next(candidatesL2.Count)];
 
-                        result.Add(EmployeeWorkLog.Create(
-                            employee.Id,
+                        result.Add(WorkLog.Create(
+                            user.Id,
                             project.Id,
                             activityL1.Id,
                             activityL2.Id,
@@ -360,7 +388,7 @@ public static class TestDataSeeder
             return result;
         }
 
-        var workLogs = new List<EmployeeWorkLog>();
+        var workLogs = new List<WorkLog>();
         workLogs.AddRange(GenerateWorkLogs(WorkLogEntryType.Actual, monthStart, todayDate));
         workLogs.AddRange(GenerateWorkLogs(WorkLogEntryType.Planned, monthStart, monthEnd));
 
@@ -370,20 +398,20 @@ public static class TestDataSeeder
         // yerleştiriliyor ki rastgele üretilen normal kayıtlarla asla çakışmasın (temiz, deterministik
         // bir demo senaryosu olsun).
         var badDataMonday = todayDate.AddDays(-(((int)todayDate.DayOfWeek + 6) % 7) - 35);
-        var badDataEmployees = employeeProjects.Where(kv => kv.Value.Count > 0).Take(2).Select(kv => kv.Key).ToList();
+        var badDataUsers = userProjects.Where(kv => kv.Value.Count > 0).Take(2).Select(kv => kv.Key).ToList();
 
-        void AddBadLog(Guid employeeId, DateOnly date, decimal hours, string description)
+        void AddBadLog(Guid userId, DateOnly date, decimal hours, string description)
         {
-            var project = employeeProjects[employeeId][0];
+            var project = userProjects[userId][0];
             var activityL1 = topLevelActivities[0];
             var activityL2 = subActivities.First(a => a.ParentActivityId == activityL1.Id);
-            workLogs.Add(EmployeeWorkLog.Create(
-                employeeId, project.Id, activityL1.Id, activityL2.Id, date, hours, description, WorkLogEntryType.Actual));
+            workLogs.Add(WorkLog.Create(
+                userId, project.Id, activityL1.Id, activityL2.Id, date, hours, description, WorkLogEntryType.Actual));
         }
 
-        if (badDataEmployees.Count >= 1)
+        if (badDataUsers.Count >= 1)
         {
-            var e1 = badDataEmployees[0];
+            var e1 = badDataUsers[0];
             AddBadLog(e1, badDataMonday, 8m, "toplantı"); // jenerik + kısa + tam saat (tekil) + günlük toplam yuvarlak
             AddBadLog(e1, badDataMonday.AddDays(1), 8m, "toplantı"); // önceki günle birebir aynı açıklama (tekrar)
             AddBadLog(e1, badDataMonday.AddDays(2), 7m, "genel işler"); // + aşağıdakiyle birlikte günlük toplam 13h (şüpheli)
@@ -392,28 +420,28 @@ public static class TestDataSeeder
             AddBadLog(e1, badDataMonday.AddDays(5), 4m, "email"); // hafta sonu (Cumartesi) + jenerik + kısa
         }
 
-        if (badDataEmployees.Count >= 2)
+        if (badDataUsers.Count >= 2)
         {
-            var e2 = badDataEmployees[1];
+            var e2 = badDataUsers[1];
             AddBadLog(e2, badDataMonday, 3m, "misc");
             AddBadLog(e2, badDataMonday.AddDays(1), 3m, "misc"); // tekrar
             AddBadLog(e2, badDataMonday.AddDays(6), 2m, "ofis işleri"); // hafta sonu (Pazar) + jenerik
         }
 
-        context.EmployeeWorkLogs.AddRange(workLogs);
+        context.WorkLogs.AddRange(workLogs);
 
         var actualWorkLogs = workLogs.Where(l => l.EntryType == WorkLogEntryType.Actual).ToList();
         var plannedWorkLogs = workLogs.Where(l => l.EntryType == WorkLogEntryType.Planned).ToList();
 
         // İzin (leave) örnek verisi — 25 çalışanın bir kısmına tam günlük, bir kısmına saatlik
         // (kısmi) izin atanır. Tarihler ayın tamamına yayılır.
-        var assignedEmployeeIdsPool = employeeProjects.Keys.ToList();
-        var leaveCandidates = assignedEmployeeIdsPool.OrderBy(_ => random.Next()).Take(10).ToList();
-        var leaves = new List<EmployeeLeave>();
+        var assignedUserIdsPool = userProjects.Keys.ToList();
+        var leaveCandidates = assignedUserIdsPool.OrderBy(_ => random.Next()).Take(10).ToList();
+        var leaves = new List<Leave>();
 
         for (var i = 0; i < leaveCandidates.Count; i++)
         {
-            var employeeId = leaveCandidates[i];
+            var userId = leaveCandidates[i];
             var isFullDay = i % 2 == 0;
             var dayOffset = random.Next(0, monthEnd.DayNumber - monthStart.DayNumber);
             var date = monthStart.AddDays(dayOffset);
@@ -425,21 +453,21 @@ public static class TestDataSeeder
             if (isFullDay)
             {
                 var spanDays = random.Next(0, 3); // tek gün ya da 2-3 günlük tam izin
-                leaves.Add(EmployeeLeave.Create(
-                    employeeId, date, date.AddDays(spanDays), isFullDay: true, startTime: null, endTime: null,
+                leaves.Add(Leave.Create(
+                    userId, date, date.AddDays(spanDays), isFullDay: true, startTime: null, endTime: null,
                     description: "Yıllık izin"));
             }
             else
             {
                 var startHour = random.Next(9, 15);
                 var duration = random.Next(1, 4);
-                leaves.Add(EmployeeLeave.Create(
-                    employeeId, date, date, isFullDay: false,
+                leaves.Add(Leave.Create(
+                    userId, date, date, isFullDay: false,
                     startTime: new TimeOnly(startHour, 0), endTime: new TimeOnly(Math.Min(startHour + duration, 18), 0),
                     description: "Kısmi mazeret izni"));
             }
         }
-        context.EmployeeLeaves.AddRange(leaves);
+        context.Leaves.AddRange(leaves);
 
         // Onaylı hafta örnekleri — Log Work tarafında tamamen geçmişte kalmış (Pazartesi–Pazar)
         // bir hafta, Plan Work tarafında ise tamamen gelecekteki bir hafta, daha geniş bir
@@ -450,15 +478,15 @@ public static class TestDataSeeder
         var approvedWeekStart = thisWeekMonday.AddDays(-7);
         var approvedWeekEnd = approvedWeekStart.AddDays(6);
 
-        var approvalCandidates = assignedEmployeeIdsPool.OrderBy(_ => random.Next()).Take(8).ToList();
+        var approvalCandidates = assignedUserIdsPool.OrderBy(_ => random.Next()).Take(8).ToList();
         var approvals = new List<WorkLogApproval>();
-        foreach (var employeeId in approvalCandidates)
+        foreach (var userId in approvalCandidates)
         {
             var approval = WorkLogApproval.Create(
-                employeeId, ApprovalPeriodType.Weekly, approvedWeekStart, approvedWeekEnd, "Demo: haftalık onay örneği");
+                userId, ApprovalPeriodType.Weekly, approvedWeekStart, approvedWeekEnd, "Demo: haftalık onay örneği");
 
             foreach (var log in actualWorkLogs.Where(l =>
-                l.EmployeeId == employeeId && l.WorkDate >= approvedWeekStart && l.WorkDate <= approvedWeekEnd))
+                l.UserId == userId && l.WorkDate >= approvedWeekStart && l.WorkDate <= approvedWeekEnd))
                 log.MarkApproved(approval.Id);
 
             approvals.Add(approval);
@@ -470,16 +498,16 @@ public static class TestDataSeeder
         var plannedApprovedWeekStart = thisWeekMonday.AddDays(7);
         var plannedApprovedWeekEnd = plannedApprovedWeekStart.AddDays(6);
 
-        var plannedApprovalCandidates = assignedEmployeeIdsPool.OrderBy(_ => random.Next()).Take(8).ToList();
+        var plannedApprovalCandidates = assignedUserIdsPool.OrderBy(_ => random.Next()).Take(8).ToList();
         var plannedApprovals = new List<WorkLogApproval>();
-        foreach (var employeeId in plannedApprovalCandidates)
+        foreach (var userId in plannedApprovalCandidates)
         {
             var approval = WorkLogApproval.Create(
-                employeeId, ApprovalPeriodType.Weekly, plannedApprovedWeekStart, plannedApprovedWeekEnd,
+                userId, ApprovalPeriodType.Weekly, plannedApprovedWeekStart, plannedApprovedWeekEnd,
                 "Demo: haftalık plan onayı örneği", WorkLogEntryType.Planned);
 
             foreach (var log in plannedWorkLogs.Where(l =>
-                l.EmployeeId == employeeId && l.WorkDate >= plannedApprovedWeekStart && l.WorkDate <= plannedApprovedWeekEnd))
+                l.UserId == userId && l.WorkDate >= plannedApprovedWeekStart && l.WorkDate <= plannedApprovedWeekEnd))
                 log.MarkApproved(approval.Id);
 
             plannedApprovals.Add(approval);

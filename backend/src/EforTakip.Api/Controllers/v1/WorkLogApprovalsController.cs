@@ -22,7 +22,7 @@ public sealed class WorkLogApprovalsController(ISender mediator) : ControllerBas
     public async Task<IActionResult> Create(CreateWorkLogApprovalRequestBody body, CancellationToken cancellationToken)
     {
         var command = new CreateWorkLogApprovalCommand(
-            body.EmployeeId, body.PeriodType, body.PeriodStart, body.PeriodEnd, body.Description, body.EntryType);
+            body.UserId, body.PeriodType, body.PeriodStart, body.PeriodEnd, body.Description, body.EntryType);
         var id = await mediator.Send(command, cancellationToken);
         return StatusCode(StatusCodes.Status201Created, new { id });
     }

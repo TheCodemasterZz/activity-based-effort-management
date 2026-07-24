@@ -43,7 +43,7 @@ public sealed class ProjectIssuesController(ISender mediator) : ControllerBase
         await mediator.Send(
             new UpdateProjectIssueCommand(
                 id, body.Title, body.Description, body.Priority,
-                body.OwnerEmployeeId, body.DueDate, body.Resolution),
+                body.OwnerUserId, body.DueDate, body.Resolution),
             cancellationToken);
         return NoContent();
     }

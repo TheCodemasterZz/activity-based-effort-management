@@ -10,6 +10,6 @@ public sealed class ProjectRiskDto
     public int Impact { get; init; }
     public string Status { get; init; } = default!;
     public string? MitigationPlan { get; init; }
-    public Guid? OwnerEmployeeId { get; init; }
+    public Guid? OwnerUserId { get; init; }
     public DateOnly IdentifiedDate { get; init; }
 }

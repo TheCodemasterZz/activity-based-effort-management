@@ -12,7 +12,7 @@ public sealed class ProjectIssue : Entity, IAggregateRoot
     public string? Description { get; private set; }
     public ProjectIssuePriority Priority { get; private set; }
     public ProjectIssueStatus Status { get; private set; } = ProjectIssueStatus.Open;
-    public Guid? OwnerEmployeeId { get; private set; }
+    public Guid? OwnerUserId { get; private set; }
     public DateOnly? DueDate { get; private set; }
     public string? Resolution { get; private set; }
 
@@ -23,7 +23,7 @@ public sealed class ProjectIssue : Entity, IAggregateRoot
 
     public static ProjectIssue Create(
         Guid projectId, string title, string? description, ProjectIssuePriority priority,
-        Guid? ownerEmployeeId, DateOnly? dueDate)
+        Guid? ownerUserId, DateOnly? dueDate)
     {
         Validate(title);
 
@@ -34,21 +34,21 @@ public sealed class ProjectIssue : Entity, IAggregateRoot
             Description = description,
             Priority = priority,
             Status = ProjectIssueStatus.Open,
-            OwnerEmployeeId = ownerEmployeeId,
+            OwnerUserId = ownerUserId,
             DueDate = dueDate
         };
     }
 
     public void Update(
         string title, string? description, ProjectIssuePriority priority,
-        Guid? ownerEmployeeId, DateOnly? dueDate, string? resolution)
+        Guid? ownerUserId, DateOnly? dueDate, string? resolution)
     {
         Validate(title);
 
         Title = title.Trim();
         Description = description;
         Priority = priority;
-        OwnerEmployeeId = ownerEmployeeId;
+        OwnerUserId = ownerUserId;
         DueDate = dueDate;
         Resolution = resolution;
     }

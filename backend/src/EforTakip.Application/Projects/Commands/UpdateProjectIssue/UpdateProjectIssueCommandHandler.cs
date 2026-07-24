@@ -15,7 +15,7 @@ public sealed class UpdateProjectIssueCommandHandler(IRepository<ProjectIssue> r
 
         issue.Update(
             request.Title, request.Description, request.Priority,
-            request.OwnerEmployeeId, request.DueDate, request.Resolution);
+            request.OwnerUserId, request.DueDate, request.Resolution);
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
     }

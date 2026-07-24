@@ -3,7 +3,7 @@ using EforTakip.Domain.WorkLogs;
 namespace EforTakip.Api.Contracts.WorkLogs;
 
 public sealed record LogWorkRequestBody(
-    Guid EmployeeId,
+    Guid UserId,
     Guid ProjectId,
     Guid ActivityL1Id,
     Guid ActivityL2Id,

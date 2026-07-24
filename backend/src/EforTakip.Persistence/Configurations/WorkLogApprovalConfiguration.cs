@@ -26,6 +26,11 @@ public sealed class WorkLogApprovalConfiguration : IEntityTypeConfiguration<Work
             .HasMaxLength(20)
             .IsRequired();
 
-        builder.HasIndex(a => new { a.EmployeeId, a.EntryType, a.PeriodStart, a.PeriodEnd });
+        builder.HasIndex(a => new { a.UserId, a.EntryType, a.PeriodStart, a.PeriodEnd });
+
+        builder.HasOne<Domain.Users.User>()
+            .WithMany()
+            .HasForeignKey(a => a.UserId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }

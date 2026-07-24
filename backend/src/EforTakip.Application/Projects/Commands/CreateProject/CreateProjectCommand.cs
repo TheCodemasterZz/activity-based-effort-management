@@ -9,6 +9,6 @@ public sealed record CreateProjectCommand(
     DateOnly? StartDate = null,
     DateOnly? EndDate = null,
     string? Sponsor = null,
-    Guid? ProjectManagerEmployeeId = null,
+    Guid? ProjectManagerUserId = null,
     ProjectPriority Priority = ProjectPriority.Medium,
     string? StrategicGoal = null) : IRequest<Guid>;

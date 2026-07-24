@@ -8,5 +8,5 @@ public sealed record CreateProjectIssueCommand(
     string Title,
     string? Description,
     ProjectIssuePriority Priority,
-    Guid? OwnerEmployeeId,
+    Guid? OwnerUserId,
     DateOnly? DueDate) : IRequest<Guid>;

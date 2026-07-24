@@ -37,9 +37,9 @@ public sealed class ProjectRiskConfiguration : IEntityTypeConfiguration<ProjectR
 
         builder.HasIndex(r => r.ProjectId);
 
-        builder.HasOne<EforTakip.Domain.Employees.Employee>()
+        builder.HasOne<EforTakip.Domain.Users.User>()
             .WithMany()
-            .HasForeignKey(r => r.OwnerEmployeeId)
+            .HasForeignKey(r => r.OwnerUserId)
             .OnDelete(DeleteBehavior.Restrict);
     }
 }

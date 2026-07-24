@@ -5,13 +5,13 @@ using EforTakip.Domain.WorkLogs;
 namespace EforTakip.Domain.WorkLogApprovals;
 
 /// <summary>Bir çalışanın belirli bir haftadaki (Pazartesi–Pazar) tüm efor kayıtlarının toplu
-/// olarak onaylandığını temsil eder. Onaylanan EmployeeWorkLog kayıtları bu kaydın Id'sini
+/// olarak onaylandığını temsil eder. Onaylanan WorkLog kayıtları bu kaydın Id'sini
 /// ApprovalId olarak taşır ve bu sayede değiştirilemez/silinemez hale gelir. Onay her zaman tam
 /// bir hafta kapsar — haftanın bir kısmı onaylı bir kısmı onaysız olamaz (ör. Pazartesi onaylı,
 /// Salı onaysız, Çarşamba onaylı gibi parçalı bir durum yapısal olarak imkansızdır).</summary>
 public sealed class WorkLogApproval : Entity, IAggregateRoot
 {
-    public Guid EmployeeId { get; private set; }
+    public Guid UserId { get; private set; }
     public ApprovalPeriodType PeriodType { get; private set; }
     public DateOnly PeriodStart { get; private set; }
     public DateOnly PeriodEnd { get; private set; }
@@ -25,7 +25,7 @@ public sealed class WorkLogApproval : Entity, IAggregateRoot
     }
 
     public static WorkLogApproval Create(
-        Guid employeeId,
+        Guid userId,
         ApprovalPeriodType periodType,
         DateOnly periodStart,
         DateOnly periodEnd,
@@ -43,7 +43,7 @@ public sealed class WorkLogApproval : Entity, IAggregateRoot
 
         return new WorkLogApproval
         {
-            EmployeeId = employeeId,
+            UserId = userId,
             PeriodType = periodType,
             PeriodStart = periodStart,
             PeriodEnd = periodEnd,

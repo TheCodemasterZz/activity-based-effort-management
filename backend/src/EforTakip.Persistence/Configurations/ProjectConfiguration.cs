@@ -45,9 +45,9 @@ public sealed class ProjectConfiguration : IEntityTypeConfiguration<Project>
         builder.Property(p => p.StrategicGoal)
             .HasMaxLength(500);
 
-        builder.HasOne<EforTakip.Domain.Employees.Employee>()
+        builder.HasOne<EforTakip.Domain.Users.User>()
             .WithMany()
-            .HasForeignKey(p => p.ProjectManagerEmployeeId)
+            .HasForeignKey(p => p.ProjectManagerUserId)
             .OnDelete(DeleteBehavior.Restrict);
 
         // Soft delete: pasife alınmış projeler tüm sorgulardan (liste, GetById) otomatik
@@ -62,12 +62,12 @@ public sealed class ProjectConfiguration : IEntityTypeConfiguration<Project>
         builder.Metadata.FindNavigation(nameof(Project.CustomerAssignments))!
             .SetPropertyAccessMode(PropertyAccessMode.Field);
 
-        builder.HasMany(p => p.EmployeeAssignments)
+        builder.HasMany(p => p.UserAssignments)
             .WithOne()
             .HasForeignKey(a => a.ProjectId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        builder.Metadata.FindNavigation(nameof(Project.EmployeeAssignments))!
+        builder.Metadata.FindNavigation(nameof(Project.UserAssignments))!
             .SetPropertyAccessMode(PropertyAccessMode.Field);
     }
 }

@@ -10,7 +10,7 @@ public sealed class ProjectRepository(EforTakipDbContext context)
     public override async Task<Project?> GetByIdAsync(Guid id, CancellationToken cancellationToken)
         => await Context.Projects
             .Include(p => p.CustomerAssignments)
-            .Include(p => p.EmployeeAssignments)
+            .Include(p => p.UserAssignments)
             .FirstOrDefaultAsync(p => p.Id == id, cancellationToken);
 
     public async Task<bool> ExistsWithNameAsync(string name, CancellationToken cancellationToken)

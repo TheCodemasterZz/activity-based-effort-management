@@ -17,8 +17,8 @@ public sealed class GetWorkLogApprovalsQueryHandler(IApplicationDbContext db)
         IQueryable<WorkLogApproval> query = db.WorkLogApprovals.AsNoTracking()
             .Where(a => a.EntryType == request.EntryType);
 
-        if (request.EmployeeId is { } employeeId)
-            query = query.Where(a => a.EmployeeId == employeeId);
+        if (request.UserId is { } userId)
+            query = query.Where(a => a.UserId == userId);
 
         query = query.OrderByDescending(a => a.PeriodStart);
 

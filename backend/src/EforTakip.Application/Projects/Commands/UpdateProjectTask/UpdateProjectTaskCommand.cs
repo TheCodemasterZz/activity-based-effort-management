@@ -11,4 +11,4 @@ public sealed record UpdateProjectTaskCommand(
     bool IsMilestone,
     Guid? ParentTaskId = null,
     Guid? DependsOnTaskId = null,
-    Guid? AssignedEmployeeId = null) : IRequest;
+    Guid? AssignedUserId = null) : IRequest;

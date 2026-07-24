@@ -21,10 +21,10 @@ public sealed class GetProjectsQueryHandler(IApplicationDbContext db)
             query = query.Where(p => p.Name.ToLower().Contains(nameFilter));
         }
 
-        if (request.EmployeeId is { } employeeId)
+        if (request.UserId is { } userId)
         {
-            var assignedProjectIds = db.ProjectEmployeeAssignments
-                .Where(a => a.EmployeeId == employeeId)
+            var assignedProjectIds = db.ProjectUserAssignments
+                .Where(a => a.UserId == userId)
                 .Select(a => a.ProjectId);
             query = query.Where(p => assignedProjectIds.Contains(p.Id));
         }

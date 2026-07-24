@@ -8,7 +8,7 @@ public sealed class WorkLogMappingConfig : IRegister
 {
     public void Register(TypeAdapterConfig config)
     {
-        config.NewConfig<EmployeeWorkLog, EmployeeWorkLogDto>()
+        config.NewConfig<WorkLog, WorkLogDto>()
             .Map(dest => dest.IsApproved, src => src.ApprovalId != null);
     }
 }

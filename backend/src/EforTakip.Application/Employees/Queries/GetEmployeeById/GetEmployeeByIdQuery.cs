@@ -3,4 +3,4 @@ using MediatR;
 
 namespace EforTakip.Application.Employees.Queries.GetEmployeeById;
 
-public sealed record GetEmployeeByIdQuery(Guid EmployeeId) : IRequest<EmployeeDto>;
+public sealed record GetEmployeeByIdQuery(Guid UserId) : IRequest<EmployeeDto>;

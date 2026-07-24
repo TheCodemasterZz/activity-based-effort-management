@@ -16,7 +16,7 @@ internal static class WorkLogValidationHelper
         IProjectRepository projectRepository,
         IRepository<DomainActivity> activityRepository,
         Guid projectId,
-        Guid employeeId,
+        Guid userId,
         Guid activityL1Id,
         Guid activityL2Id,
         CancellationToken cancellationToken)
@@ -24,7 +24,7 @@ internal static class WorkLogValidationHelper
         var project = await projectRepository.GetByIdAsync(projectId, cancellationToken)
             ?? throw new NotFoundException(nameof(Project), projectId);
 
-        if (!project.EmployeeIds.Contains(employeeId))
+        if (!project.UserIds.Contains(userId))
             throw new BusinessRuleValidationException("Seçilen çalışan bu projeye atanmamış.");
 
         var activityL1 = await activityRepository.GetByIdAsync(activityL1Id, cancellationToken)

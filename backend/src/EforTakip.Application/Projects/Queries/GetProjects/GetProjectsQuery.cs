@@ -9,5 +9,5 @@ public sealed class GetProjectsQuery : PaginationParams, IRequest<PagedResult<Pr
     public string? NameFilter { get; set; }
 
     /// <summary>Doluysa sadece bu çalışanın atandığı projeler döner.</summary>
-    public Guid? EmployeeId { get; set; }
+    public Guid? UserId { get; set; }
 }

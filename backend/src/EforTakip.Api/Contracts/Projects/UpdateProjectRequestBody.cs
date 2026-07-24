@@ -8,6 +8,6 @@ public sealed record UpdateProjectRequestBody(
     DateOnly? StartDate,
     DateOnly? EndDate,
     string? Sponsor,
-    Guid? ProjectManagerEmployeeId,
+    Guid? ProjectManagerUserId,
     ProjectPriority Priority,
     string? StrategicGoal);

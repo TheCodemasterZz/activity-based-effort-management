@@ -7,6 +7,6 @@ namespace EforTakip.Application.WorkLogApprovals.Queries.GetWorkLogApprovals;
 
 public sealed class GetWorkLogApprovalsQuery : PaginationParams, IRequest<PagedResult<WorkLogApprovalDto>>
 {
-    public Guid? EmployeeId { get; set; }
+    public Guid? UserId { get; set; }
     public WorkLogEntryType EntryType { get; set; } = WorkLogEntryType.Actual;
 }

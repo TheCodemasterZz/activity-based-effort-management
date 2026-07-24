@@ -19,7 +19,7 @@ public sealed class UpdateProjectCommandHandler(IProjectRepository repository, I
             request.StartDate,
             request.EndDate,
             request.Sponsor,
-            request.ProjectManagerEmployeeId,
+            request.ProjectManagerUserId,
             request.Priority,
             request.StrategicGoal);
 

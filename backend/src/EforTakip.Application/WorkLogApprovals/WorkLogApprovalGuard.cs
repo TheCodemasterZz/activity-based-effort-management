@@ -12,11 +12,11 @@ namespace EforTakip.Application.WorkLogApprovals;
 public static class WorkLogApprovalGuard
 {
     public static async Task EnsureRangeNotApprovedAsync(
-        IApplicationDbContext db, Guid employeeId, DateOnly start, DateOnly end, WorkLogEntryType entryType,
+        IApplicationDbContext db, Guid userId, DateOnly start, DateOnly end, WorkLogEntryType entryType,
         CancellationToken cancellationToken)
     {
         var hasOverlap = await db.WorkLogApprovals.AnyAsync(
-            a => a.EmployeeId == employeeId && a.EntryType == entryType
+            a => a.UserId == userId && a.EntryType == entryType
                 && a.PeriodStart <= end && a.PeriodEnd >= start,
             cancellationToken);
 

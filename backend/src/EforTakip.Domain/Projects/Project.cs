@@ -13,7 +13,7 @@ public sealed class Project : Entity, IAggregateRoot
     public DateOnly? EndDate { get; private set; }
     public ProjectHealthStatus HealthStatus { get; private set; } = ProjectHealthStatus.OnTrack;
     public string? Sponsor { get; private set; }
-    public Guid? ProjectManagerEmployeeId { get; private set; }
+    public Guid? ProjectManagerUserId { get; private set; }
     public ProjectPriority Priority { get; private set; } = ProjectPriority.Medium;
     public string? StrategicGoal { get; private set; }
 
@@ -21,9 +21,9 @@ public sealed class Project : Entity, IAggregateRoot
     public IReadOnlyCollection<ProjectCustomerAssignment> CustomerAssignments => _customerAssignments.AsReadOnly();
     public IReadOnlyCollection<Guid> CustomerIds => _customerAssignments.Select(a => a.CustomerId).ToList();
 
-    private readonly List<ProjectEmployeeAssignment> _employeeAssignments = [];
-    public IReadOnlyCollection<ProjectEmployeeAssignment> EmployeeAssignments => _employeeAssignments.AsReadOnly();
-    public IReadOnlyCollection<Guid> EmployeeIds => _employeeAssignments.Select(a => a.EmployeeId).ToList();
+    private readonly List<ProjectUserAssignment> _userAssignments = [];
+    public IReadOnlyCollection<ProjectUserAssignment> UserAssignments => _userAssignments.AsReadOnly();
+    public IReadOnlyCollection<Guid> UserIds => _userAssignments.Select(a => a.UserId).ToList();
 
     private Project()
     {
@@ -36,7 +36,7 @@ public sealed class Project : Entity, IAggregateRoot
         DateOnly? startDate = null,
         DateOnly? endDate = null,
         string? sponsor = null,
-        Guid? projectManagerEmployeeId = null,
+        Guid? projectManagerUserId = null,
         ProjectPriority priority = ProjectPriority.Medium,
         string? strategicGoal = null)
     {
@@ -54,7 +54,7 @@ public sealed class Project : Entity, IAggregateRoot
             EndDate = endDate,
             HealthStatus = ProjectHealthStatus.OnTrack,
             Sponsor = sponsor,
-            ProjectManagerEmployeeId = projectManagerEmployeeId,
+            ProjectManagerUserId = projectManagerUserId,
             Priority = priority,
             StrategicGoal = strategicGoal
         };
@@ -66,7 +66,7 @@ public sealed class Project : Entity, IAggregateRoot
         DateOnly? startDate,
         DateOnly? endDate,
         string? sponsor,
-        Guid? projectManagerEmployeeId,
+        Guid? projectManagerUserId,
         ProjectPriority priority,
         string? strategicGoal)
     {
@@ -80,7 +80,7 @@ public sealed class Project : Entity, IAggregateRoot
         StartDate = startDate;
         EndDate = endDate;
         Sponsor = sponsor;
-        ProjectManagerEmployeeId = projectManagerEmployeeId;
+        ProjectManagerUserId = projectManagerUserId;
         Priority = priority;
         StrategicGoal = strategicGoal;
     }
@@ -110,13 +110,13 @@ public sealed class Project : Entity, IAggregateRoot
         return assignment;
     }
 
-    public ProjectEmployeeAssignment AssignEmployee(Guid employeeId)
+    public ProjectUserAssignment AssignUser(Guid userId)
     {
-        if (_employeeAssignments.Any(a => a.EmployeeId == employeeId))
+        if (_userAssignments.Any(a => a.UserId == userId))
             throw new BusinessRuleValidationException("Çalışan bu projeye zaten atanmış.");
 
-        var assignment = ProjectEmployeeAssignment.Create(Id, employeeId);
-        _employeeAssignments.Add(assignment);
+        var assignment = ProjectUserAssignment.Create(Id, userId);
+        _userAssignments.Add(assignment);
         return assignment;
     }
 

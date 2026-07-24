@@ -15,12 +15,12 @@ public sealed class GetProjectByIdQueryHandler(IApplicationDbContext db)
         var project = await db.Projects
             .AsNoTracking()
             .Include(p => p.CustomerAssignments)
-            .Include(p => p.EmployeeAssignments)
+            .Include(p => p.UserAssignments)
             .FirstOrDefaultAsync(p => p.Id == request.ProjectId, cancellationToken)
             ?? throw new NotFoundException(nameof(Project), request.ProjectId);
 
         var customerIds = project.CustomerAssignments.Select(a => a.CustomerId).ToList();
-        var employeeIds = project.EmployeeAssignments.Select(a => a.EmployeeId).ToList();
+        var userIds = project.UserAssignments.Select(a => a.UserId).ToList();
 
         var customers = await db.Customers
             .AsNoTracking()
@@ -28,10 +28,10 @@ public sealed class GetProjectByIdQueryHandler(IApplicationDbContext db)
             .Select(c => new CustomerSummaryDto { Id = c.Id, Name = c.Name })
             .ToListAsync(cancellationToken);
 
-        var employees = await db.Employees
+        var users = await db.Users
             .AsNoTracking()
-            .Where(e => employeeIds.Contains(e.Id))
-            .Select(e => new EmployeeSummaryDto { Id = e.Id, Name = e.Name })
+            .Where(u => userIds.Contains(u.Id))
+            .Select(u => new UserSummaryDto { Id = u.Id, Name = u.DisplayName ?? u.Username })
             .ToListAsync(cancellationToken);
 
         return new ProjectDetailDto
@@ -44,11 +44,11 @@ public sealed class GetProjectByIdQueryHandler(IApplicationDbContext db)
             EndDate = project.EndDate,
             HealthStatus = project.HealthStatus.ToString(),
             Sponsor = project.Sponsor,
-            ProjectManagerEmployeeId = project.ProjectManagerEmployeeId,
+            ProjectManagerUserId = project.ProjectManagerUserId,
             Priority = project.Priority.ToString(),
             StrategicGoal = project.StrategicGoal,
             Customers = customers,
-            Employees = employees
+            Users = users
         };
     }
 }

@@ -9,7 +9,7 @@ using DomainActivity = EforTakip.Domain.Activities.Activity;
 namespace EforTakip.Application.WorkLogs.Commands.UpdateWorkLog;
 
 public sealed class UpdateWorkLogCommandHandler(
-    IRepository<EmployeeWorkLog> workLogRepository,
+    IRepository<WorkLog> workLogRepository,
     IProjectRepository projectRepository,
     IRepository<DomainActivity> activityRepository,
     IApplicationDbContext db,
@@ -19,18 +19,18 @@ public sealed class UpdateWorkLogCommandHandler(
     public async Task Handle(UpdateWorkLogCommand request, CancellationToken cancellationToken)
     {
         var log = await workLogRepository.GetByIdAsync(request.Id, cancellationToken)
-            ?? throw new NotFoundException(nameof(EmployeeWorkLog), request.Id);
+            ?? throw new NotFoundException(nameof(WorkLog), request.Id);
 
         await WorkLogValidationHelper.ValidateAsync(
             projectRepository, activityRepository,
-            request.ProjectId, request.EmployeeId,
+            request.ProjectId, request.UserId,
             request.ActivityL1Id, request.ActivityL2Id, cancellationToken);
 
         await WorkLogApprovalGuard.EnsureRangeNotApprovedAsync(
-            db, request.EmployeeId, request.WorkDate, request.WorkDate, log.EntryType, cancellationToken);
+            db, request.UserId, request.WorkDate, request.WorkDate, log.EntryType, cancellationToken);
 
         log.Update(
-            request.EmployeeId, request.ProjectId,
+            request.UserId, request.ProjectId,
             request.ActivityL1Id, request.ActivityL2Id, request.WorkDate, request.Hours, request.Description);
 
         await unitOfWork.SaveChangesAsync(cancellationToken);

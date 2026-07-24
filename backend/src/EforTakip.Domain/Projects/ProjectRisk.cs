@@ -15,7 +15,7 @@ public sealed class ProjectRisk : Entity, IAggregateRoot
     public int Impact { get; private set; }
     public ProjectRiskStatus Status { get; private set; } = ProjectRiskStatus.Open;
     public string? MitigationPlan { get; private set; }
-    public Guid? OwnerEmployeeId { get; private set; }
+    public Guid? OwnerUserId { get; private set; }
     public DateOnly IdentifiedDate { get; private set; }
 
     private ProjectRisk()
@@ -25,7 +25,7 @@ public sealed class ProjectRisk : Entity, IAggregateRoot
 
     public static ProjectRisk Create(
         Guid projectId, string title, string? description, int probability, int impact,
-        string? mitigationPlan, Guid? ownerEmployeeId, DateOnly identifiedDate)
+        string? mitigationPlan, Guid? ownerUserId, DateOnly identifiedDate)
     {
         Validate(title, probability, impact);
 
@@ -38,14 +38,14 @@ public sealed class ProjectRisk : Entity, IAggregateRoot
             Impact = impact,
             Status = ProjectRiskStatus.Open,
             MitigationPlan = mitigationPlan,
-            OwnerEmployeeId = ownerEmployeeId,
+            OwnerUserId = ownerUserId,
             IdentifiedDate = identifiedDate
         };
     }
 
     public void Update(
         string title, string? description, int probability, int impact,
-        string? mitigationPlan, Guid? ownerEmployeeId, DateOnly identifiedDate)
+        string? mitigationPlan, Guid? ownerUserId, DateOnly identifiedDate)
     {
         Validate(title, probability, impact);
 
@@ -54,7 +54,7 @@ public sealed class ProjectRisk : Entity, IAggregateRoot
         Probability = probability;
         Impact = impact;
         MitigationPlan = mitigationPlan;
-        OwnerEmployeeId = ownerEmployeeId;
+        OwnerUserId = ownerUserId;
         IdentifiedDate = identifiedDate;
     }
 

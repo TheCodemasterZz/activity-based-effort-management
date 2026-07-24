@@ -43,7 +43,7 @@ public sealed class ProjectTasksController(ISender mediator) : ControllerBase
         await mediator.Send(
             new UpdateProjectTaskCommand(
                 id, body.Name, body.StartDate, body.EndDate, body.EstimatedEffortHours, body.IsMilestone,
-                body.ParentTaskId, body.DependsOnTaskId, body.AssignedEmployeeId),
+                body.ParentTaskId, body.DependsOnTaskId, body.AssignedUserId),
             cancellationToken);
         return NoContent();
     }

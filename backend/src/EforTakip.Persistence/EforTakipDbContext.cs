@@ -1,7 +1,7 @@
 using EforTakip.Application.Common.Interfaces;
 using EforTakip.Domain.Customers;
 using EforTakip.Domain.Directories;
-using EforTakip.Domain.EmployeeLeaves;
+using EforTakip.Domain.Leaves;
 using EforTakip.Domain.Employees;
 using EforTakip.Domain.Holidays;
 using EforTakip.Domain.Notifications;
@@ -29,7 +29,7 @@ public sealed class EforTakipDbContext(DbContextOptions<EforTakipDbContext> opti
 
     public DbSet<ProjectCustomerAssignment> ProjectCustomerAssignments => Set<ProjectCustomerAssignment>();
 
-    public DbSet<ProjectEmployeeAssignment> ProjectEmployeeAssignments => Set<ProjectEmployeeAssignment>();
+    public DbSet<ProjectUserAssignment> ProjectUserAssignments => Set<ProjectUserAssignment>();
 
     public DbSet<ProjectTask> ProjectTasks => Set<ProjectTask>();
 
@@ -45,7 +45,7 @@ public sealed class EforTakipDbContext(DbContextOptions<EforTakipDbContext> opti
 
     public DbSet<StageActivityAssignment> StageActivityAssignments => Set<StageActivityAssignment>();
 
-    public DbSet<EmployeeWorkLog> EmployeeWorkLogs => Set<EmployeeWorkLog>();
+    public DbSet<WorkLog> WorkLogs => Set<WorkLog>();
 
     public DbSet<Holiday> Holidays => Set<Holiday>();
 
@@ -57,7 +57,7 @@ public sealed class EforTakipDbContext(DbContextOptions<EforTakipDbContext> opti
 
     public DbSet<WorkLogApproval> WorkLogApprovals => Set<WorkLogApproval>();
 
-    public DbSet<EmployeeLeave> EmployeeLeaves => Set<EmployeeLeave>();
+    public DbSet<Leave> Leaves => Set<Leave>();
 
     public DbSet<Domain.Directories.Directory> Directories => Set<Domain.Directories.Directory>();
 

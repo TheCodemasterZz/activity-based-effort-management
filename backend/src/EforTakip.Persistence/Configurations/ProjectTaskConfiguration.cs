@@ -46,9 +46,9 @@ public sealed class ProjectTaskConfiguration : IEntityTypeConfiguration<ProjectT
             .HasForeignKey(t => t.DependsOnTaskId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        builder.HasOne<EforTakip.Domain.Employees.Employee>()
+        builder.HasOne<EforTakip.Domain.Users.User>()
             .WithMany()
-            .HasForeignKey(t => t.AssignedEmployeeId)
+            .HasForeignKey(t => t.AssignedUserId)
             .OnDelete(DeleteBehavior.Restrict);
     }
 }

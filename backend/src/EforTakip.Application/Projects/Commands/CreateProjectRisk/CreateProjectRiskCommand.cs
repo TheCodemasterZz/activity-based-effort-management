@@ -9,5 +9,5 @@ public sealed record CreateProjectRiskCommand(
     int Probability,
     int Impact,
     string? MitigationPlan,
-    Guid? OwnerEmployeeId,
+    Guid? OwnerUserId,
     DateOnly IdentifiedDate) : IRequest<Guid>;

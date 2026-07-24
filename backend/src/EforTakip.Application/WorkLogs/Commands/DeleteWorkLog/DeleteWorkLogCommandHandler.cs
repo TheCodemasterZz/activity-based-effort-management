@@ -5,13 +5,13 @@ using MediatR;
 
 namespace EforTakip.Application.WorkLogs.Commands.DeleteWorkLog;
 
-public sealed class DeleteWorkLogCommandHandler(IRepository<EmployeeWorkLog> repository, IUnitOfWork unitOfWork)
+public sealed class DeleteWorkLogCommandHandler(IRepository<WorkLog> repository, IUnitOfWork unitOfWork)
     : IRequestHandler<DeleteWorkLogCommand>
 {
     public async Task Handle(DeleteWorkLogCommand request, CancellationToken cancellationToken)
     {
         var log = await repository.GetByIdAsync(request.Id, cancellationToken)
-            ?? throw new NotFoundException(nameof(EmployeeWorkLog), request.Id);
+            ?? throw new NotFoundException(nameof(WorkLog), request.Id);
 
         log.EnsureDeletable();
         repository.Remove(log);

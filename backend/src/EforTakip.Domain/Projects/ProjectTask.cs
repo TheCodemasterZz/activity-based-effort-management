@@ -33,7 +33,7 @@ public sealed class ProjectTask : Entity, IAggregateRoot
 
     /// <summary>Görevin sorumlusu (Tasks sekmesi) — önceden hiçbir görev bir kişiye
     /// atanmıyordu, iş yükü/atama görünümü için eklendi.</summary>
-    public Guid? AssignedEmployeeId { get; private set; }
+    public Guid? AssignedUserId { get; private set; }
 
     private ProjectTask()
     {
@@ -45,7 +45,7 @@ public sealed class ProjectTask : Entity, IAggregateRoot
         bool isMilestone = false,
         Guid? parentTaskId = null,
         Guid? dependsOnTaskId = null,
-        Guid? assignedEmployeeId = null)
+        Guid? assignedUserId = null)
     {
         Validate(name, startDate, endDate, estimatedEffortHours);
 
@@ -62,7 +62,7 @@ public sealed class ProjectTask : Entity, IAggregateRoot
             BaselineEndDate = endDate,
             ParentTaskId = parentTaskId,
             DependsOnTaskId = dependsOnTaskId,
-            AssignedEmployeeId = assignedEmployeeId
+            AssignedUserId = assignedUserId
         };
     }
 
@@ -72,7 +72,7 @@ public sealed class ProjectTask : Entity, IAggregateRoot
         string name, DateOnly startDate, DateOnly endDate, decimal estimatedEffortHours, bool isMilestone,
         Guid? parentTaskId = null,
         Guid? dependsOnTaskId = null,
-        Guid? assignedEmployeeId = null)
+        Guid? assignedUserId = null)
     {
         Validate(name, startDate, endDate, estimatedEffortHours);
 
@@ -83,7 +83,7 @@ public sealed class ProjectTask : Entity, IAggregateRoot
         IsMilestone = isMilestone;
         ParentTaskId = parentTaskId;
         DependsOnTaskId = dependsOnTaskId;
-        AssignedEmployeeId = assignedEmployeeId;
+        AssignedUserId = assignedUserId;
     }
 
     public void SetStatus(ProjectTaskStatus status)

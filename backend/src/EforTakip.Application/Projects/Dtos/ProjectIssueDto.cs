@@ -8,7 +8,7 @@ public sealed class ProjectIssueDto
     public string? Description { get; init; }
     public string Priority { get; init; } = default!;
     public string Status { get; init; } = default!;
-    public Guid? OwnerEmployeeId { get; init; }
+    public Guid? OwnerUserId { get; init; }
     public DateOnly? DueDate { get; init; }
     public string? Resolution { get; init; }
 }

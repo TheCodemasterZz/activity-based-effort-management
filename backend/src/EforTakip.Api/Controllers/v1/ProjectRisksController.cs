@@ -43,7 +43,7 @@ public sealed class ProjectRisksController(ISender mediator) : ControllerBase
         await mediator.Send(
             new UpdateProjectRiskCommand(
                 id, body.Title, body.Description, body.Probability, body.Impact,
-                body.MitigationPlan, body.OwnerEmployeeId, body.IdentifiedDate),
+                body.MitigationPlan, body.OwnerUserId, body.IdentifiedDate),
             cancellationToken);
         return NoContent();
     }

@@ -8,4 +8,4 @@ public sealed record UpdateProjectTaskRequestBody(
     bool IsMilestone,
     Guid? ParentTaskId = null,
     Guid? DependsOnTaskId = null,
-    Guid? AssignedEmployeeId = null);
+    Guid? AssignedUserId = null);

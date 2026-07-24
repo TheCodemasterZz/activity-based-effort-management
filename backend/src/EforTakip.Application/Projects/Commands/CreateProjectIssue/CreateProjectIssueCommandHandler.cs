@@ -16,7 +16,7 @@ public sealed class CreateProjectIssueCommandHandler(
 
         var issue = ProjectIssue.Create(
             request.ProjectId, request.Title, request.Description, request.Priority,
-            request.OwnerEmployeeId, request.DueDate);
+            request.OwnerUserId, request.DueDate);
 
         await repository.AddAsync(issue, cancellationToken);
         await unitOfWork.SaveChangesAsync(cancellationToken);

@@ -7,7 +7,7 @@ public sealed class CreateWorkLogApprovalCommandValidator : AbstractValidator<Cr
 {
     public CreateWorkLogApprovalCommandValidator()
     {
-        RuleFor(x => x.EmployeeId).NotEmpty();
+        RuleFor(x => x.UserId).NotEmpty();
 
         RuleFor(x => x.PeriodStart)
             .Must(d => d.DayOfWeek == DayOfWeek.Monday)

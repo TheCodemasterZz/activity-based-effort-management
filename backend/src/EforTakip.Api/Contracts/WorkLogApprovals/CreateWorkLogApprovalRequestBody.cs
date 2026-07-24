@@ -4,7 +4,7 @@ using EforTakip.Domain.WorkLogs;
 namespace EforTakip.Api.Contracts.WorkLogApprovals;
 
 public sealed record CreateWorkLogApprovalRequestBody(
-    Guid EmployeeId,
+    Guid UserId,
     ApprovalPeriodType PeriodType,
     DateOnly PeriodStart,
     DateOnly PeriodEnd,

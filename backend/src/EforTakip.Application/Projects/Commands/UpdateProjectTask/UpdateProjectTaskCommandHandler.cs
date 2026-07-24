@@ -15,7 +15,7 @@ public sealed class UpdateProjectTaskCommandHandler(IRepository<ProjectTask> rep
 
         task.UpdatePlan(
             request.Name, request.StartDate, request.EndDate, request.EstimatedEffortHours, request.IsMilestone,
-            request.ParentTaskId, request.DependsOnTaskId, request.AssignedEmployeeId);
+            request.ParentTaskId, request.DependsOnTaskId, request.AssignedUserId);
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
     }
