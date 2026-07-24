@@ -17,7 +17,7 @@ public sealed class LogWorkCommandHandler(
     public async Task<IReadOnlyCollection<Guid>> Handle(LogWorkCommand request, CancellationToken cancellationToken)
     {
         await WorkLogValidationHelper.ValidateAsync(
-            projectRepository, activityRepository,
+            projectRepository, activityRepository, db,
             request.ProjectId, request.UserId,
             request.ActivityL1Id, request.ActivityL2Id, cancellationToken);
 

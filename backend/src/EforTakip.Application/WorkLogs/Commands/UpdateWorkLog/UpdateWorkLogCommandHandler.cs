@@ -22,7 +22,7 @@ public sealed class UpdateWorkLogCommandHandler(
             ?? throw new NotFoundException(nameof(WorkLog), request.Id);
 
         await WorkLogValidationHelper.ValidateAsync(
-            projectRepository, activityRepository,
+            projectRepository, activityRepository, db,
             request.ProjectId, request.UserId,
             request.ActivityL1Id, request.ActivityL2Id, cancellationToken);
 
