@@ -5,6 +5,7 @@ using EforTakip.Application.Common.Models;
 using EforTakip.Application.Directories.Ldap;
 using EforTakip.Application.Tests.Directories.Commands;
 using EforTakip.Domain.Directories;
+using EforTakip.Domain.Users;
 using EforTakip.Domain.Roles;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
@@ -47,21 +48,21 @@ public class LoginCommandHandlerTests : IAsyncDisposable
             SyncScheduleKind.Off, 0);
 
     /// <summary>Kullanıcıyı ekler ve dizinini repository mock'una tanıtır (handler dizini yükler).</summary>
-    private async Task<DirectoryUser> AddInternalUserAsync(Directory directory, string username = "sanal.kullanici")
+    private async Task<User> AddInternalUserAsync(Directory directory, string username = "sanal.kullanici")
     {
-        var user = DirectoryUser.CreateInternal(
+        var user = User.CreateInternal(
             directory.Id, username, "Sanal", "Kullanıcı", "Sanal Kullanıcı", null, "HASHED");
-        _db.DirectoryUsers.Add(user);
+        _db.Users.Add(user);
         await _db.SaveChangesAsync();
         _directoryRepository.GetByIdAsync(directory.Id, Arg.Any<CancellationToken>()).Returns(directory);
         return user;
     }
 
-    private async Task<DirectoryUser> AddAdUserAsync(Directory directory, string username = "serkan.gultepe")
+    private async Task<User> AddAdUserAsync(Directory directory, string username = "serkan.gultepe")
     {
-        var user = DirectoryUser.CreateFromActiveDirectory(
+        var user = User.CreateFromActiveDirectory(
             directory.Id, username, "Serkan", "Gültepe", "Serkan Gültepe", null, "guid-1");
-        _db.DirectoryUsers.Add(user);
+        _db.Users.Add(user);
         await _db.SaveChangesAsync();
         _directoryRepository.GetByIdAsync(directory.Id, Arg.Any<CancellationToken>()).Returns(directory);
         return user;
@@ -198,7 +199,7 @@ public class LoginCommandHandlerTests : IAsyncDisposable
         role.GrantPermission("project:read");
         var assignment = user.AssignRole(role.Id);
         _db.Roles.Add(role);
-        _db.DirectoryUserRoles.Add(assignment!);
+        _db.UserRoles.Add(assignment!);
         await _db.SaveChangesAsync();
         _passwordHasher.Verify(Arg.Any<string>(), Arg.Any<string>()).Returns(true);
 

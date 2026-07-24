@@ -12,7 +12,7 @@ namespace EforTakip.Application.Tests.Directories.Commands;
 
 /// <summary>
 /// TestDbContext (bkz. <see cref="TestDbContext"/>) EF model konfigürasyonunu elle, eksik olarak
-/// kurduğu için (ör. DirectoryUserAttribute -> DirectoryAttributeMapping FK'i, unique index)
+/// kurduğu için (ör. UserAttribute -> DirectoryAttributeMapping FK'i, unique index)
 /// gerçek EforTakipDbContext'te ortaya çıkan bir izleme (change tracking) hatasını yakalayamıyordu.
 /// Bu testler gerçek DbContext'i ve her istek için ayrı bir scope'u (ayrı DbContext örneği)
 /// kullanarak üretim davranışını taklit eder.
@@ -99,7 +99,7 @@ public sealed class SyncDirectoryCommandHandlerRealDbContextTests : IAsyncDispos
         // Değerin gerçekten kaydedildiğini doğrula.
         await using (var db = new EforTakipDbContext(_options))
         {
-            var user = await db.DirectoryUsers.Include(u => u.Attributes).SingleAsync(u => u.DirectoryId == directoryId);
+            var user = await db.Users.Include(u => u.Attributes).SingleAsync(u => u.DirectoryId == directoryId);
             user.Attributes.Should().ContainSingle(a => a.Value == "Kızılay");
         }
     }

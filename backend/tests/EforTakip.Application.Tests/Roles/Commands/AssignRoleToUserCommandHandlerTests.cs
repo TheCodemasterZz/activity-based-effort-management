@@ -2,6 +2,7 @@ using EforTakip.Application.Common.Interfaces;
 using EforTakip.Application.Roles.Commands.AssignRoleToUser;
 using EforTakip.Application.Tests.Directories.Commands;
 using EforTakip.Domain.Directories;
+using EforTakip.Domain.Users;
 using EforTakip.Domain.Exceptions;
 using EforTakip.Domain.Roles;
 using FluentAssertions;
@@ -31,13 +32,13 @@ public class AssignRoleToUserCommandHandlerTests : IAsyncDisposable
 
     private AssignRoleToUserCommandHandler CreateHandler() => new(_db, _unitOfWork);
 
-    private async Task<(DirectoryUser User, Role Role)> SeedUserAndRoleAsync()
+    private async Task<(User User, Role Role)> SeedUserAndRoleAsync()
     {
         var directory = Directory.CreateInternal("Internal Users", 0);
-        var user = DirectoryUser.CreateInternal(directory.Id, "kullanici", null, null, null, null, "HASH");
+        var user = User.CreateInternal(directory.Id, "kullanici", null, null, null, null, "HASH");
         var role = Role.Create("Proje Yöneticisi", null, false);
         _db.Directories.Add(directory);
-        _db.DirectoryUsers.Add(user);
+        _db.Users.Add(user);
         _db.Roles.Add(role);
         await _db.SaveChangesAsync();
         return (user, role);
@@ -50,7 +51,7 @@ public class AssignRoleToUserCommandHandlerTests : IAsyncDisposable
 
         await CreateHandler().Handle(new AssignRoleToUserCommand(user.Id, role.Id), CancellationToken.None);
 
-        var reloaded = await _db.DirectoryUsers.Include(u => u.Roles).FirstAsync(u => u.Id == user.Id);
+        var reloaded = await _db.Users.Include(u => u.Roles).FirstAsync(u => u.Id == user.Id);
         reloaded.Roles.Should().ContainSingle(r => r.RoleId == role.Id);
     }
 
@@ -63,7 +64,7 @@ public class AssignRoleToUserCommandHandlerTests : IAsyncDisposable
         await handler.Handle(new AssignRoleToUserCommand(user.Id, role.Id), CancellationToken.None);
         await handler.Handle(new AssignRoleToUserCommand(user.Id, role.Id), CancellationToken.None);
 
-        var reloaded = await _db.DirectoryUsers.Include(u => u.Roles).FirstAsync(u => u.Id == user.Id);
+        var reloaded = await _db.Users.Include(u => u.Roles).FirstAsync(u => u.Id == user.Id);
         reloaded.Roles.Should().HaveCount(1);
     }
 
@@ -71,9 +72,9 @@ public class AssignRoleToUserCommandHandlerTests : IAsyncDisposable
     public async Task Handle_UnknownRole_ThrowsNotFound()
     {
         var directory = Directory.CreateInternal("Internal Users", 0);
-        var user = DirectoryUser.CreateInternal(directory.Id, "kullanici", null, null, null, null, "HASH");
+        var user = User.CreateInternal(directory.Id, "kullanici", null, null, null, null, "HASH");
         _db.Directories.Add(directory);
-        _db.DirectoryUsers.Add(user);
+        _db.Users.Add(user);
         await _db.SaveChangesAsync();
 
         var act = async () => await CreateHandler().Handle(
