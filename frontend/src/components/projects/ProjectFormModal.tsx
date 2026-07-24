@@ -2,8 +2,8 @@ import { useState } from 'react';
 import { useCreateProjectMutation } from '../../hooks/useCreateProjectMutation';
 import { useUpdateProjectMutation } from '../../hooks/useUpdateProjectMutation';
 import { useDeleteProjectMutation } from '../../hooks/useDeleteProjectMutation';
-import { useEmployeeSearch } from '../../hooks/useEmployees';
-import { useEmployeeById } from '../../hooks/useEmployeeById';
+import { useUserSearch } from '../../hooks/useUserRoster';
+import { useUserById } from '../../hooks/useUserRoster';
 import { AsyncSearchSelect } from '../common/AsyncSearchSelect';
 import { ApiError } from '../../api/client';
 import { PROJECT_PRIORITY, type ProjectDto, type ProjectPriorityValue } from '../../api/types';
@@ -37,8 +37,8 @@ export function ProjectFormModal({ mode, project, onClose, onDeleted }: ProjectF
   const [pmQuery, setPmQuery] = useState('');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const existingPm = useEmployeeById(project?.projectManagerUserId ?? null);
-  const pmSearch = useEmployeeSearch(pmQuery);
+  const existingPm = useUserById(project?.projectManagerUserId ?? null);
+  const pmSearch = useUserSearch(pmQuery);
   const pmLabel = projectManagerLabel || existingPm.data?.name || '';
 
   const createMutation = useCreateProjectMutation();

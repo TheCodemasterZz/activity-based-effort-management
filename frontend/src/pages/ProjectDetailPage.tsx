@@ -4,7 +4,7 @@ import { useProjectTasks } from '../hooks/useProjectTasks';
 import { useProjectRisks } from '../hooks/useProjectRisks';
 import { useProjectIssues } from '../hooks/useProjectIssues';
 import { useWorkLogs } from '../hooks/useWorkLogs';
-import { useEmployees } from '../hooks/useEmployees';
+import { useUserRoster } from '../hooks/useUserRoster';
 import { computeProjectEvmSummary } from '../lib/projectSpi';
 import { ProjectDetailTabs, type ProjectDetailTabKey } from '../components/projects/ProjectDetailTabs';
 import { OverviewTab } from '../components/projects/tabs/OverviewTab';
@@ -61,7 +61,7 @@ export function ProjectDetailPage({ projectId, onBack }: ProjectDetailPageProps)
   const risksQuery = useProjectRisks(projectId);
   const issuesQuery = useProjectIssues(projectId);
   const actualLogsQuery = useWorkLogs(dateKeyDaysAgo(90), todayKey(), WORK_LOG_ENTRY_TYPE.Actual);
-  const employees = useEmployees();
+  const employees = useUserRoster();
 
   const [activeTab, setActiveTab] = useState<ProjectDetailTabKey>('overview');
   const [taskModal, setTaskModal] = useState<{ task?: ProjectTaskDto } | null>(null);
@@ -84,7 +84,7 @@ export function ProjectDetailPage({ projectId, onBack }: ProjectDetailPageProps)
     [actualLogsQuery.data, projectId],
   );
   const actualHours90d = projectActualLogs.reduce((sum, l) => sum + l.hours, 0);
-  const activeEmployeeCount = new Set(projectActualLogs.map((l) => l.userId)).size;
+  const activeUserCount = new Set(projectActualLogs.map((l) => l.userId)).size;
 
   // Son 30 günün günlük gerçekleşen efor trendi — Overview'daki StatCardShell'in "chart" sahasında.
   const hoursTrend = useMemo<ChartPoint[]>(() => {
@@ -134,7 +134,7 @@ export function ProjectDetailPage({ projectId, onBack }: ProjectDetailPageProps)
                 evm={evm}
                 milestones={milestones}
                 actualHours90d={actualHours90d}
-                activeEmployeeCount={activeEmployeeCount}
+                activeUserCount={activeUserCount}
                 hoursTrend={hoursTrend}
                 resolveUser={resolveUser}
                 risks={risks}

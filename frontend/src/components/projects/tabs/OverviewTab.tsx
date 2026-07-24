@@ -28,7 +28,7 @@ interface OverviewTabProps {
   evm: ProjectEvmSummary;
   milestones: ProjectTaskDto[];
   actualHours90d: number;
-  activeEmployeeCount: number;
+  activeUserCount: number;
   hoursTrend: ChartPoint[];
   resolveUser: (id: string | null) => string;
   risks: ProjectRiskDto[];
@@ -52,7 +52,7 @@ function RagIndicator({ label, rag }: { label: string; rag: RagResult }) {
 }
 
 export function OverviewTab({
-  project, tasks, evm, milestones, actualHours90d, activeEmployeeCount, hoursTrend, resolveUser, risks, issues,
+  project, tasks, evm, milestones, actualHours90d, activeUserCount, hoursTrend, resolveUser, risks, issues,
 }: OverviewTabProps) {
   const todayKey = new Date().toISOString().slice(0, 10);
   const elapsedPct = timeElapsedPercent(project.startDate, project.endDate);
@@ -130,7 +130,7 @@ export function OverviewTab({
           icon="👥"
           iconBg="bg-emerald-50 text-emerald-600"
           label="Aktif Kişi"
-          value={String(activeEmployeeCount)}
+          value={String(activeUserCount)}
           caption="Son 90 gün efor girenler"
         />
       </div>

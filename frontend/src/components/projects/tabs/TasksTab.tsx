@@ -67,7 +67,7 @@ interface TasksTabProps {
 /** Görevlerin düz (WBS hiyerarşisi olmadan) listesi — Schedule sekmesinin ağaç görünümünün
  * aksine, burada odak kişi ataması ve iş yükü dağılımı üzerinde. */
 export function TasksTab({ tasks, resolveUser, onAddTask, onEditTask }: TasksTabProps) {
-  const [filterEmployeeId, setFilterEmployeeId] = useState<string | 'all'>('all');
+  const [filterUserId, setFilterUserId] = useState<string | 'all'>('all');
 
   const workload = useMemo(() => {
     const map = new Map<string, number>();
@@ -80,7 +80,7 @@ export function TasksTab({ tasks, resolveUser, onAddTask, onEditTask }: TasksTab
       .sort((a, b) => b.hours - a.hours);
   }, [tasks]);
 
-  const filteredTasks = filterEmployeeId === 'all' ? tasks : tasks.filter((t) => t.assignedUserId === filterEmployeeId);
+  const filteredTasks = filterUserId === 'all' ? tasks : tasks.filter((t) => t.assignedUserId === filterUserId);
 
   return (
     <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
@@ -110,10 +110,10 @@ export function TasksTab({ tasks, resolveUser, onAddTask, onEditTask }: TasksTab
           <div className="space-y-2">
             <button
               type="button"
-              onClick={() => setFilterEmployeeId('all')}
+              onClick={() => setFilterUserId('all')}
               className={
                 'block w-full rounded-md px-2 py-1 text-left text-xs font-medium ' +
-                (filterEmployeeId === 'all' ? 'bg-indigo-50 text-indigo-700' : 'text-slate-500 hover:bg-slate-50')
+                (filterUserId === 'all' ? 'bg-indigo-50 text-indigo-700' : 'text-slate-500 hover:bg-slate-50')
               }
             >
               Tümü
@@ -124,10 +124,10 @@ export function TasksTab({ tasks, resolveUser, onAddTask, onEditTask }: TasksTab
                 <button
                   type="button"
                   key={userId}
-                  onClick={() => setFilterEmployeeId(userId)}
+                  onClick={() => setFilterUserId(userId)}
                   className={
                     'block w-full rounded-md px-2 py-1.5 text-left ' +
-                    (filterEmployeeId === userId ? 'bg-indigo-50' : 'hover:bg-slate-50')
+                    (filterUserId === userId ? 'bg-indigo-50' : 'hover:bg-slate-50')
                   }
                 >
                   <div className="flex items-center justify-between text-xs">

@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { AsyncSearchSelect } from '../components/common/AsyncSearchSelect';
-import { useEmployeeSearch } from '../hooks/useEmployees';
+import { useUserSearch } from '../hooks/useUserRoster';
 import { useProjectSearch } from '../hooks/useProjects';
 import { pushSuccessNotification } from '../lib/notifications';
 
@@ -53,8 +53,8 @@ export function WidgetsPage() {
   const [token, setToken] = useState(generateDemoToken);
   const [userId, setUserId] = useState('');
   const [userLabel, setUserLabel] = useState('');
-  const [userQuery, setEmployeeQuery] = useState('');
-  const userSearch = useEmployeeSearch(userQuery);
+  const [userQuery, setUserQuery] = useState('');
+  const userSearch = useUserSearch(userQuery);
 
   const [projectId, setProjectId] = useState('');
   const [projectLabel, setProjectLabel] = useState('');
@@ -175,7 +175,7 @@ export function WidgetsPage() {
             <label className="mb-1 block text-xs font-medium text-slate-500">Kişi</label>
             <AsyncSearchSelect
               selectedLabel={userLabel || null}
-              onSearch={setEmployeeQuery}
+              onSearch={setUserQuery}
               options={(userSearch.data?.items ?? []).map((e) => ({ id: e.id, label: e.name }))}
               isLoading={userSearch.isLoading}
               onSelect={(option) => {

@@ -18,7 +18,7 @@ import { groupWorkLogsAccuracy } from '../lib/groupWorkLogsAccuracy';
 import type { GroupByDimension } from '../lib/groupWorkLogs';
 import { evaluateMql, type MqlNode } from '../lib/mql';
 import { useWorkLogs } from '../hooks/useWorkLogs';
-import { useEmployees } from '../hooks/useEmployees';
+import { useUserRoster } from '../hooks/useUserRoster';
 import { useProjects } from '../hooks/useProjects';
 import { useAllActivities } from '../hooks/useActivities';
 import { useHolidays } from '../hooks/useHolidays';
@@ -67,7 +67,7 @@ export function PlanningAccuracyPage() {
   const actualLogsQuery = useWorkLogs(periodRange.startKey, periodRange.endKey, WORK_LOG_ENTRY_TYPE.Actual);
   const plannedLogsQuery = useWorkLogs(periodRange.startKey, periodRange.endKey, WORK_LOG_ENTRY_TYPE.Planned);
 
-  const employees = useEmployees();
+  const employees = useUserRoster();
   const projects = useProjects();
   const activities = useAllActivities();
   const holidays = useHolidays();

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useCreateProjectTaskMutation, useUpdateProjectTaskMutation } from '../../hooks/useProjectTaskMutations';
-import { useEmployeeSearch } from '../../hooks/useEmployees';
-import { useEmployeeById } from '../../hooks/useEmployeeById';
+import { useUserSearch } from '../../hooks/useUserRoster';
+import { useUserById } from '../../hooks/useUserRoster';
 import { AsyncSearchSelect } from '../common/AsyncSearchSelect';
 import { ApiError } from '../../api/client';
 import type { ProjectTaskDto } from '../../api/types';
@@ -23,13 +23,13 @@ export function ProjectTaskFormModal({ projectId, task, onClose }: ProjectTaskFo
   const [endDate, setEndDate] = useState(task?.endDate ?? todayIso());
   const [estimatedEffortHours, setEstimatedEffortHours] = useState(String(task?.estimatedEffortHours ?? ''));
   const [isMilestone, setIsMilestone] = useState(task?.isMilestone ?? false);
-  const [assignedUserId, setAssignedEmployeeId] = useState(task?.assignedUserId ?? '');
+  const [assignedUserId, setAssignedUserId] = useState(task?.assignedUserId ?? '');
   const [assigneeLabel, setAssigneeLabel] = useState('');
   const [assigneeQuery, setAssigneeQuery] = useState('');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const existingAssignee = useEmployeeById(task?.assignedUserId ?? null);
-  const assigneeSearch = useEmployeeSearch(assigneeQuery);
+  const existingAssignee = useUserById(task?.assignedUserId ?? null);
+  const assigneeSearch = useUserSearch(assigneeQuery);
   const resolvedAssigneeLabel = assigneeLabel || existingAssignee.data?.name || '';
 
   const createMutation = useCreateProjectTaskMutation();
@@ -149,7 +149,7 @@ export function ProjectTaskFormModal({ projectId, task, onClose }: ProjectTaskFo
               options={(assigneeSearch.data?.items ?? []).map((e) => ({ id: e.id, label: e.name }))}
               isLoading={assigneeSearch.isLoading}
               onSelect={(option) => {
-                setAssignedEmployeeId(option.id);
+                setAssignedUserId(option.id);
                 setAssigneeLabel(option.label);
               }}
               placeholder="Kişi ara…"

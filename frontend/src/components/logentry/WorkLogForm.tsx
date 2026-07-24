@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { AsyncSearchSelect } from '../common/AsyncSearchSelect';
-import { useEmployeeSearch } from '../../hooks/useEmployees';
+import { useUserSearch } from '../../hooks/useUserRoster';
 import { useProjectSearch } from '../../hooks/useProjects';
 import { useSubActivities, useTopLevelActivities } from '../../hooks/useActivities';
 import { useHolidays } from '../../hooks/useHolidays';
@@ -8,7 +8,7 @@ import { useLogWorkMutation } from '../../hooks/useLogWorkMutation';
 import { useUpdateWorkLogMutation } from '../../hooks/useUpdateWorkLogMutation';
 import { useDeleteWorkLogMutation } from '../../hooks/useDeleteWorkLogMutation';
 import { ApiError } from '../../api/client';
-import { getEmployeeById } from '../../api/employees';
+import { getUserRosterEntry } from '../../hooks/useUserRoster';
 import { getWorkCalendarById } from '../../api/workCalendars';
 import { findOvertimeDates } from '../../lib/overtimeCheck';
 import { formatDuration, parseDuration } from '../../lib/duration';
@@ -114,8 +114,8 @@ export function WorkLogForm({
 
   const markTouched = (field: FieldName) => setTouched((prev) => ({ ...prev, [field]: true }));
 
-  const [userQuery, setEmployeeQuery] = useState('');
-  const userSearch = useEmployeeSearch(userQuery);
+  const [userQuery, setUserQuery] = useState('');
+  const userSearch = useUserSearch(userQuery);
 
   const [projectQuery, setProjectQuery] = useState('');
   const projectSearch = useProjectSearch(projectQuery, userId || null);
@@ -191,8 +191,12 @@ export function WorkLogForm({
 
     try {
       setIsCheckingOvertime(true);
-      const employee = await getEmployeeById(userId);
-      const calendar = await getWorkCalendarById(employee.workCalendarId);
+      const user = await getUserRosterEntry(userId);
+      // Takvimsiz kullanıcı için fazla mesai ön kontrolü yapılamaz; throw ile catch'e düşer
+      // ve kayıt denemesi engellenmez — backend zaten "mesai takvimi atanmamış" iş kuralıyla
+      // anlaşılır bir mesaj döndürür.
+      if (user.workCalendarId === null) throw new Error('no-calendar');
+      const calendar = await getWorkCalendarById(user.workCalendarId);
       const exceededDates = await findOvertimeDates({
         userId,
         calendar,
@@ -280,7 +284,7 @@ export function WorkLogForm({
           </label>
           <AsyncSearchSelect
             selectedLabel={userLabel || null}
-            onSearch={setEmployeeQuery}
+            onSearch={setUserQuery}
             options={(userSearch.data?.items ?? []).map((e) => ({ id: e.id, label: e.name }))}
             isLoading={userSearch.isLoading}
             onSelect={(option) => {

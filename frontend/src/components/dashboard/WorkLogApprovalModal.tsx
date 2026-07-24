@@ -2,8 +2,8 @@ import { useMemo, useState } from 'react';
 import { addWeeks, eachDayOfInterval, endOfWeek, format, startOfWeek } from 'date-fns';
 import { tr } from 'date-fns/locale/tr';
 import { AsyncSearchSelect } from '../common/AsyncSearchSelect';
-import { useEmployeeSearch } from '../../hooks/useEmployees';
-import { useEmployeeById } from '../../hooks/useEmployeeById';
+import { useUserSearch } from '../../hooks/useUserRoster';
+import { useUserById } from '../../hooks/useUserRoster';
 import { useUserWorkLogs } from '../../hooks/useWorkLogs';
 import { useLeaves } from '../../hooks/useLeaves';
 import { useHolidays } from '../../hooks/useHolidays';
@@ -67,8 +67,8 @@ export function WorkLogApprovalModal({
   const isPlanned = entryType === WORK_LOG_ENTRY_TYPE.Planned;
   const [userId, setUserId] = useState('');
   const [userLabel, setUserLabel] = useState('');
-  const [userQuery, setEmployeeQuery] = useState('');
-  const userSearch = useEmployeeSearch(userQuery);
+  const [userQuery, setUserQuery] = useState('');
+  const userSearch = useUserSearch(userQuery);
 
   const [weekOffset, setWeekOffset] = useState(0);
   const [description, setDescription] = useState('');
@@ -96,7 +96,7 @@ export function WorkLogApprovalModal({
   const confidenceContext = useConfidenceScoreContext(!isPlanned ? userId || null : null);
   const confidenceSettings = useConfidenceScoreSettings();
 
-  const employee = useEmployeeById(userId || null);
+  const employee = useUserById(userId || null);
   const calendar = useWorkCalendar(employee.data?.workCalendarId ?? null);
   const holidays = useHolidays();
   const weekLeaves = useLeaves(
@@ -202,7 +202,7 @@ export function WorkLogApprovalModal({
                 </label>
                 <AsyncSearchSelect
                   selectedLabel={userLabel || null}
-                  onSearch={setEmployeeQuery}
+                  onSearch={setUserQuery}
                   options={(userSearch.data?.items ?? []).map((e) => ({ id: e.id, label: e.name }))}
                   isLoading={userSearch.isLoading}
                   onSelect={(option) => {

@@ -16,13 +16,14 @@ import {
 } from '../lib/dateUtils';
 import { evaluateMql, type MqlNode } from '../lib/mql';
 import { useWorkLogs } from '../hooks/useWorkLogs';
-import { useEmployees } from '../hooks/useEmployees';
+import { useUserRoster } from '../hooks/useUserRoster';
 import { useLeaves } from '../hooks/useLeaves';
 import { useProjects } from '../hooks/useProjects';
 import { useAllActivities } from '../hooks/useActivities';
 import { useHolidays } from '../hooks/useHolidays';
 import { getWorkCalendarById } from '../api/workCalendars';
-import { WORK_LOG_ENTRY_TYPE, type EmployeeDto, type WorkLogDto, type WorkCalendarDetailDto } from '../api/types';
+import { WORK_LOG_ENTRY_TYPE, type WorkLogDto, type WorkCalendarDetailDto } from '../api/types';
+import type { UserRosterEntry } from '../hooks/useUserRoster';
 import type { LeaveDto } from '../api/leaves';
 
 type WorkloadMode = 'mixed' | 'actual' | 'planned';
@@ -47,7 +48,7 @@ function calendarDayHours(calendar: WorkCalendarDetailDto | undefined, dayOfWeek
   return (toMinutes(day.endTime) - toMinutes(day.startTime)) / 60;
 }
 
-function buildHoursByEmployeeDate(logs: WorkLogDto[]): Map<string, Map<string, number>> {
+function buildHoursByUserDate(logs: WorkLogDto[]): Map<string, Map<string, number>> {
   const map = new Map<string, Map<string, number>>();
   for (const log of logs) {
     const byDate = map.get(log.userId) ?? new Map<string, number>();
@@ -57,15 +58,17 @@ function buildHoursByEmployeeDate(logs: WorkLogDto[]): Map<string, Map<string, n
   return map;
 }
 
-function buildLeaveHoursByEmployeeDate(
+function buildLeaveHoursByUserDate(
   leaves: LeaveDto[],
-  employeesList: EmployeeDto[],
+  employeesList: UserRosterEntry[],
   calendarsById: Map<string, WorkCalendarDetailDto>,
 ): Map<string, Map<string, number>> {
-  const calendarByEmployee = new Map(employeesList.map((e) => [e.id, calendarsById.get(e.workCalendarId)]));
+  const calendarByUser = new Map(
+    employeesList.map((e) => [e.id, e.workCalendarId ? calendarsById.get(e.workCalendarId) : undefined]),
+  );
   const map = new Map<string, Map<string, number>>();
   for (const leave of leaves) {
-    const calendar = calendarByEmployee.get(leave.userId);
+    const calendar = calendarByUser.get(leave.userId);
     for (const day of eachDateKeyInRange(leave.startDate, leave.endDate)) {
       const dayOfWeek = new Date(`${day}T00:00:00`).getDay();
       const hours = leave.isFullDay
@@ -82,17 +85,19 @@ function buildLeaveHoursByEmployeeDate(
 }
 
 function computeDayCapacity(
-  employee: EmployeeDto,
+  employee: UserRosterEntry,
   dateKeyStr: string,
   calendarsById: Map<string, WorkCalendarDetailDto>,
   holidayDateKeys: Set<string>,
-  leaveHoursByEmployeeDate: Map<string, Map<string, number>>,
+  leaveHoursByUserDate: Map<string, Map<string, number>>,
 ): number {
   if (holidayDateKeys.has(dateKeyStr)) return 0;
-  const calendar = calendarsById.get(employee.workCalendarId);
+  // Takvimsiz kullanıcının beklenen kapasitesi bilinemez — 0 sayılır (hücre 'none'),
+  // sayfa üstündeki uyarı bandı bu kullanıcıları ayrıca listeler.
+  const calendar = employee.workCalendarId ? calendarsById.get(employee.workCalendarId) : undefined;
   const dayOfWeek = new Date(`${dateKeyStr}T00:00:00`).getDay();
   const raw = calendarDayHours(calendar, dayOfWeek);
-  const leaveHours = leaveHoursByEmployeeDate.get(employee.id)?.get(dateKeyStr) ?? 0;
+  const leaveHours = leaveHoursByUserDate.get(employee.id)?.get(dateKeyStr) ?? 0;
   return Math.max(0, raw - leaveHours);
 }
 
@@ -258,7 +263,7 @@ export function CapacityManagementPage() {
     [periodMode, anchorDate, customRange],
   );
 
-  const employees = useEmployees();
+  const employees = useUserRoster();
   const actualLogs = useWorkLogs(periodRange.startKey, periodRange.endKey, WORK_LOG_ENTRY_TYPE.Actual);
   const plannedLogs = useWorkLogs(periodRange.startKey, periodRange.endKey, WORK_LOG_ENTRY_TYPE.Planned);
   const leaves = useLeaves();
@@ -307,7 +312,18 @@ export function CapacityManagementPage() {
   const holidayDateKeys = useMemo(() => new Set(holidays.data?.items.map((h) => h.date) ?? []), [holidays.data]);
 
   const calendarIds = useMemo(
-    () => [...new Set((employees.data?.items ?? []).map((e) => e.workCalendarId))],
+    () => [
+      ...new Set(
+        (employees.data?.items ?? [])
+          .map((e) => e.workCalendarId)
+          .filter((id): id is string => id !== null),
+      ),
+    ],
+    [employees.data],
+  );
+
+  const usersWithoutCalendar = useMemo(
+    () => (employees.data?.items ?? []).filter((e) => e.workCalendarId === null),
     [employees.data],
   );
   const calendarQueries = useQueries({
@@ -326,10 +342,10 @@ export function CapacityManagementPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [calendarIds, calendarQueries.map((q) => q.dataUpdatedAt).join(',')]);
 
-  const actualHoursByEmployeeDate = useMemo(() => buildHoursByEmployeeDate(filteredActualLogs), [filteredActualLogs]);
-  const plannedHoursByEmployeeDate = useMemo(() => buildHoursByEmployeeDate(filteredPlannedLogs), [filteredPlannedLogs]);
-  const leaveHoursByEmployeeDate = useMemo(
-    () => buildLeaveHoursByEmployeeDate(leaves.data?.items ?? [], employees.data?.items ?? [], calendarsById),
+  const actualHoursByUserDate = useMemo(() => buildHoursByUserDate(filteredActualLogs), [filteredActualLogs]);
+  const plannedHoursByUserDate = useMemo(() => buildHoursByUserDate(filteredPlannedLogs), [filteredPlannedLogs]);
+  const leaveHoursByUserDate = useMemo(
+    () => buildLeaveHoursByUserDate(leaves.data?.items ?? [], employees.data?.items ?? [], calendarsById),
     [leaves.data, employees.data, calendarsById],
   );
 
@@ -337,7 +353,7 @@ export function CapacityManagementPage() {
   // çalışanları göstermeli — aksi halde (ReportPage'de daha önce düzeltilen aynı hata) tüm kadro
   // hep gösterilmeye devam eder ve MQL sadece hücre içindeki saatleri etkiler, kişi/toplamları
   // etkilemez; "Toplam Kapasite Görünümü" de filtre ne olursa olsun tüm şirketi toplar.
-  const matchingEmployeeIds = useMemo(() => {
+  const matchingUserIds = useMemo(() => {
     if (!mqlAst) return null;
     const ids = new Set<string>();
     for (const log of filteredActualLogs) ids.add(log.userId);
@@ -345,19 +361,19 @@ export function CapacityManagementPage() {
     return ids;
   }, [mqlAst, filteredActualLogs, filteredPlannedLogs]);
 
-  const sortedEmployees = useMemo(
+  const sortedUsers = useMemo(
     () =>
       (employees.data?.items ?? [])
-        .filter((e) => !matchingEmployeeIds || matchingEmployeeIds.has(e.id))
+        .filter((e) => !matchingUserIds || matchingUserIds.has(e.id))
         .sort((a, b) => (nameSort === 'asc' ? a.name.localeCompare(b.name, 'tr') : b.name.localeCompare(a.name, 'tr'))),
-    [employees.data, nameSort, matchingEmployeeIds],
+    [employees.data, nameSort, matchingUserIds],
   );
 
   const todayKey = dateKey(new Date());
 
-  const employeeColumnStats = useMemo(() => {
+  const userColumnStats = useMemo(() => {
     const result = new Map<string, Map<string, ColumnStat>>();
-    for (const employee of sortedEmployees) {
+    for (const employee of sortedUsers) {
       const columnMap = new Map<string, ColumnStat>();
       for (const column of periodRange.columns) {
         const days = eachDateKeyInRange(column.startKey, column.endKey);
@@ -368,12 +384,12 @@ export function CapacityManagementPage() {
         let timeOffHours = 0;
 
         for (const day of days) {
-          capacityHours += computeDayCapacity(employee, day, calendarsById, holidayDateKeys, leaveHoursByEmployeeDate);
-          const dayActual = actualHoursByEmployeeDate.get(employee.id)?.get(day) ?? 0;
-          const dayPlanned = plannedHoursByEmployeeDate.get(employee.id)?.get(day) ?? 0;
+          capacityHours += computeDayCapacity(employee, day, calendarsById, holidayDateKeys, leaveHoursByUserDate);
+          const dayActual = actualHoursByUserDate.get(employee.id)?.get(day) ?? 0;
+          const dayPlanned = plannedHoursByUserDate.get(employee.id)?.get(day) ?? 0;
           actualHours += dayActual;
           plannedHours += dayPlanned;
-          timeOffHours += leaveHoursByEmployeeDate.get(employee.id)?.get(day) ?? 0;
+          timeOffHours += leaveHoursByUserDate.get(employee.id)?.get(day) ?? 0;
 
           if (workloadMode === 'actual') workloadHours += dayActual;
           else if (workloadMode === 'planned') workloadHours += dayPlanned;
@@ -386,13 +402,13 @@ export function CapacityManagementPage() {
     }
     return result;
   }, [
-    sortedEmployees,
+    sortedUsers,
     periodRange.columns,
     calendarsById,
     holidayDateKeys,
-    leaveHoursByEmployeeDate,
-    actualHoursByEmployeeDate,
-    plannedHoursByEmployeeDate,
+    leaveHoursByUserDate,
+    actualHoursByUserDate,
+    plannedHoursByUserDate,
     workloadMode,
     todayKey,
   ]);
@@ -404,8 +420,8 @@ export function CapacityManagementPage() {
         let plannedHours = 0;
         let capacityHours = 0;
         let timeOffHours = 0;
-        for (const employee of sortedEmployees) {
-          const stat = employeeColumnStats.get(employee.id)?.get(column.key);
+        for (const employee of sortedUsers) {
+          const stat = userColumnStats.get(employee.id)?.get(column.key);
           if (!stat) continue;
           actualHours += stat.actualHours;
           plannedHours += stat.plannedHours;
@@ -420,12 +436,18 @@ export function CapacityManagementPage() {
           timeOffHours,
         };
       }),
-    [periodRange.columns, sortedEmployees, employeeColumnStats],
+    [periodRange.columns, sortedUsers, userColumnStats],
   );
 
   return (
     <div className="flex flex-1 overflow-hidden bg-slate-50">
       <main className="flex flex-1 flex-col overflow-hidden p-6">
+        {usersWithoutCalendar.length > 0 && (
+          <div className="mb-3 shrink-0 rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+            {usersWithoutCalendar.length} kullanıcının mesai takvimi atanmamış — kapasiteleri 0 sayıldı.
+            Yönetim &gt; Kullanıcılar ekranından takvim atayabilirsiniz.
+          </div>
+        )}
         <div className="mb-4 flex shrink-0 flex-wrap items-center gap-3">
           <div className="flex shrink-0 items-center gap-3">
             <MonthNavigator
@@ -519,13 +541,13 @@ export function CapacityManagementPage() {
                 </tr>
               </thead>
               <tbody>
-                {sortedEmployees.map((employee) => (
+                {sortedUsers.map((employee) => (
                   <tr key={employee.id} className="border-b border-slate-200 last:border-0 hover:bg-slate-50">
                     <td className="sticky left-0 z-10 border-r border-slate-200 bg-white px-3 py-2 font-medium text-slate-700">
                       {employee.name}
                     </td>
                     {periodRange.columns.map((column) => {
-                      const stat = employeeColumnStats.get(employee.id)?.get(column.key);
+                      const stat = userColumnStats.get(employee.id)?.get(column.key);
                       return (
                         <td key={column.key} className="border-r border-slate-200 p-1">
                           {stat && <CapacityCell stat={stat} />}

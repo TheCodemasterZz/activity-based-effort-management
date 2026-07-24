@@ -27,7 +27,7 @@ import { pushErrorNotification } from '../lib/notifications';
 import { useWorkLogs } from '../hooks/useWorkLogs';
 import { useWorkLogApprovals } from '../hooks/useWorkLogApprovals';
 import { useLeaves } from '../hooks/useLeaves';
-import { useEmployees } from '../hooks/useEmployees';
+import { useUserRoster } from '../hooks/useUserRoster';
 import { useProjects } from '../hooks/useProjects';
 import { useAllActivities } from '../hooks/useActivities';
 import { useHolidays } from '../hooks/useHolidays';
@@ -63,7 +63,7 @@ export function PlanWorkPage() {
   const workLogApprovals = useWorkLogApprovals(WORK_LOG_ENTRY_TYPE.Planned);
   const leaves = useLeaves();
 
-  const employees = useEmployees();
+  const employees = useUserRoster();
   const projects = useProjects();
   const activities = useAllActivities();
   const holidays = useHolidays();

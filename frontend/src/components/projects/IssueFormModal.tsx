@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useCreateProjectIssueMutation, useUpdateProjectIssueMutation } from '../../hooks/useProjectIssueMutations';
-import { useEmployeeSearch } from '../../hooks/useEmployees';
-import { useEmployeeById } from '../../hooks/useEmployeeById';
+import { useUserSearch } from '../../hooks/useUserRoster';
+import { useUserById } from '../../hooks/useUserRoster';
 import { AsyncSearchSelect } from '../common/AsyncSearchSelect';
 import { ApiError } from '../../api/client';
 import { PROJECT_ISSUE_PRIORITY, type ProjectIssueDto, type ProjectIssuePriorityValue } from '../../api/types';
@@ -33,8 +33,8 @@ export function IssueFormModal({ projectId, issue, onClose }: IssueFormModalProp
   const [ownerQuery, setOwnerQuery] = useState('');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const existingOwner = useEmployeeById(issue?.ownerUserId ?? null);
-  const ownerSearch = useEmployeeSearch(ownerQuery);
+  const existingOwner = useUserById(issue?.ownerUserId ?? null);
+  const ownerSearch = useUserSearch(ownerQuery);
   const resolvedOwnerLabel = ownerLabel || existingOwner.data?.name || '';
 
   const createMutation = useCreateProjectIssueMutation();

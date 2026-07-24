@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useCreateProjectRiskMutation, useUpdateProjectRiskMutation } from '../../hooks/useProjectRiskMutations';
-import { useEmployeeSearch } from '../../hooks/useEmployees';
-import { useEmployeeById } from '../../hooks/useEmployeeById';
+import { useUserSearch } from '../../hooks/useUserRoster';
+import { useUserById } from '../../hooks/useUserRoster';
 import { AsyncSearchSelect } from '../common/AsyncSearchSelect';
 import { ApiError } from '../../api/client';
 import type { ProjectRiskDto } from '../../api/types';
@@ -29,8 +29,8 @@ export function RiskFormModal({ projectId, risk, onClose }: RiskFormModalProps) 
   const [ownerQuery, setOwnerQuery] = useState('');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const existingOwner = useEmployeeById(risk?.ownerUserId ?? null);
-  const ownerSearch = useEmployeeSearch(ownerQuery);
+  const existingOwner = useUserById(risk?.ownerUserId ?? null);
+  const ownerSearch = useUserSearch(ownerQuery);
   const resolvedOwnerLabel = ownerLabel || existingOwner.data?.name || '';
 
   const createMutation = useCreateProjectRiskMutation();

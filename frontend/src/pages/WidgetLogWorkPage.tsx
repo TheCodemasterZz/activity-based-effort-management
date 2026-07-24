@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { WorkLogFormModal, type WorkLogFormInitialValues } from '../components/logentry/WorkLogFormModal';
-import { useEmployeeById } from '../hooks/useEmployeeById';
+import { useUserById } from '../hooks/useUserRoster';
 import { useProjectDetail } from '../hooks/useProjects';
 import { WORK_LOG_ENTRY_TYPE } from '../api/types';
 
@@ -29,7 +29,7 @@ export function WidgetLogWorkPage() {
   const activityL1IdParam = params.get('activityL1Id') ?? undefined;
   const activityL2IdParam = params.get('activityL2Id') ?? undefined;
 
-  const employee = useEmployeeById(userIdParam);
+  const employee = useUserById(userIdParam);
   const project = useProjectDetail(projectIdParam);
 
   const [closed, setClosed] = useState(false);

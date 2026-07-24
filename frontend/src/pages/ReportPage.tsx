@@ -27,7 +27,7 @@ import { pushErrorNotification } from '../lib/notifications';
 import { useWorkLogs } from '../hooks/useWorkLogs';
 import { useWorkLogApprovals } from '../hooks/useWorkLogApprovals';
 import { useLeaves } from '../hooks/useLeaves';
-import { useEmployees } from '../hooks/useEmployees';
+import { useUserRoster } from '../hooks/useUserRoster';
 import { useProjects } from '../hooks/useProjects';
 import { useAllActivities } from '../hooks/useActivities';
 import { useHolidays } from '../hooks/useHolidays';
@@ -66,7 +66,7 @@ export function ReportPage({ projectId }: ReportPageProps = {}) {
   const workLogApprovals = useWorkLogApprovals();
   const leaves = useLeaves();
 
-  const employees = useEmployees();
+  const employees = useUserRoster();
   const projects = useProjects();
   const activities = useAllActivities();
   const holidays = useHolidays();

@@ -3,7 +3,7 @@ import { useProjects } from '../hooks/useProjects';
 import { useAllProjectTasks } from '../hooks/useProjectTasks';
 import { useAllProjectRisks } from '../hooks/useProjectRisks';
 import { useAllProjectIssues } from '../hooks/useProjectIssues';
-import { useEmployees } from '../hooks/useEmployees';
+import { useUserRoster } from '../hooks/useUserRoster';
 import { useWorkLogs } from '../hooks/useWorkLogs';
 import { useDeleteProjectMutation } from '../hooks/useDeleteProjectMutation';
 import { ProjectsTable } from '../components/projects/ProjectsTable';
@@ -87,7 +87,7 @@ export function ProjectsPage() {
   const allTasks = useAllProjectTasks();
   const allRisks = useAllProjectRisks();
   const allIssues = useAllProjectIssues();
-  const employees = useEmployees();
+  const employees = useUserRoster();
   // Kartlardaki "Gerçekleşen" ve "Aktif Kişi" göstergeleri için — son 90 gün, mock verinin
   // (içinde bulunulan ay) her koşulda kapsanmasını garanti eden güvenli bir pencere.
   const recentActualLogs = useWorkLogs(dateKeyDaysAgo(90), todayKey(), WORK_LOG_ENTRY_TYPE.Actual);
