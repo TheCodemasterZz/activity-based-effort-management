@@ -17,6 +17,7 @@ public sealed class User : Entity, IAggregateRoot
     public string? PasswordHash { get; private set; }
     public bool IsActive { get; private set; }
     public DateTime? LastSyncedUtc { get; private set; }
+    public Guid? WorkCalendarId { get; private set; }
 
     private readonly List<UserAttribute> _attributes = [];
     public IReadOnlyCollection<UserAttribute> Attributes => _attributes.AsReadOnly();
@@ -92,6 +93,19 @@ public sealed class User : Entity, IAggregateRoot
     public void Deactivate() => IsActive = false;
 
     public void Activate() => IsActive = true;
+
+    /// <summary>
+    /// Kullanıcının mesai takvimini atar. AD senkronu ve internal kullanıcı oluşturma bu alanı
+    /// hep boş bırakır — sabit bir varsayılan atamak yanlış kapasite hesaplamalarına yol
+    /// açabilir; bu yüzden atama her zaman ayrı, bilinçli bir admin eylemidir.
+    /// </summary>
+    public void AssignWorkCalendar(Guid workCalendarId)
+    {
+        if (workCalendarId == Guid.Empty)
+            throw new BusinessRuleValidationException("Mesai takvimi seçilmelidir.");
+
+        WorkCalendarId = workCalendarId;
+    }
 
     /// <summary>
     /// Internal kullanıcının şifresini değiştirir. AD kullanıcılarının şifresi dizinde tutulur,
