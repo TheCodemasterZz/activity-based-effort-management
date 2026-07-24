@@ -61,7 +61,7 @@ export function ProjectDetailPage({ projectId, onBack }: ProjectDetailPageProps)
   const risksQuery = useProjectRisks(projectId);
   const issuesQuery = useProjectIssues(projectId);
   const actualLogsQuery = useWorkLogs(dateKeyDaysAgo(90), todayKey(), WORK_LOG_ENTRY_TYPE.Actual);
-  const employees = useUserRoster();
+  const users = useUserRoster();
 
   const [activeTab, setActiveTab] = useState<ProjectDetailTabKey>('overview');
   const [taskModal, setTaskModal] = useState<{ task?: ProjectTaskDto } | null>(null);
@@ -76,8 +76,8 @@ export function ProjectDetailPage({ projectId, onBack }: ProjectDetailPageProps)
   const evm = computeProjectEvmSummary(tasks);
   const milestones = tasks.filter((t) => t.isMilestone);
 
-  const employeesById = useMemo(() => new Map(employees.data?.items.map((e) => [e.id, e.name])), [employees.data]);
-  const resolveUser = (id: string | null) => (id ? employeesById.get(id) ?? 'Bilinmeyen kişi' : '—');
+  const usersById = useMemo(() => new Map(users.data?.items.map((e) => [e.id, e.name])), [users.data]);
+  const resolveUser = (id: string | null) => (id ? usersById.get(id) ?? 'Bilinmeyen kişi' : '—');
 
   const projectActualLogs = useMemo(
     () => (actualLogsQuery.data?.items ?? []).filter((l) => l.projectId === projectId),

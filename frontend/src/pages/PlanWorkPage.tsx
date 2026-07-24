@@ -63,7 +63,7 @@ export function PlanWorkPage() {
   const workLogApprovals = useWorkLogApprovals(WORK_LOG_ENTRY_TYPE.Planned);
   const leaves = useLeaves();
 
-  const employees = useUserRoster();
+  const users = useUserRoster();
   const projects = useProjects();
   const activities = useAllActivities();
   const holidays = useHolidays();
@@ -73,7 +73,7 @@ export function PlanWorkPage() {
     [holidays.data],
   );
 
-  const employeesById = useMemo(() => new Map(employees.data?.items.map((e) => [e.id, e.name])), [employees.data]);
+  const usersById = useMemo(() => new Map(users.data?.items.map((e) => [e.id, e.name])), [users.data]);
   const projectsById = useMemo(() => new Map(projects.data?.items.map((p) => [p.id, p.name])), [projects.data]);
   const activitiesById = useMemo(() => new Map(activities.data?.items.map((a) => [a.id, a.name])), [activities.data]);
 
@@ -99,19 +99,19 @@ export function PlanWorkPage() {
 
   const mqlFieldValues = useMemo(
     () => ({
-      employee: employees.data?.items.map((e) => e.name) ?? [],
+      employee: users.data?.items.map((e) => e.name) ?? [],
       project: projects.data?.items.map((p) => p.name) ?? [],
       activityL1: activities.data?.items.filter((a) => !a.parentActivityId).map((a) => a.name) ?? [],
       activityL2: activities.data?.items.filter((a) => a.parentActivityId).map((a) => a.name) ?? [],
     }),
-    [employees.data, projects.data, activities.data],
+    [users.data, projects.data, activities.data],
   );
 
   const resolveDimension = useMemo(() => {
     return (dimension: GroupByDimension, log: WorkLogDto) => {
       switch (dimension) {
         case 'employee':
-          return { key: log.userId, label: employeesById.get(log.userId) ?? 'Bilinmeyen kişi' };
+          return { key: log.userId, label: usersById.get(log.userId) ?? 'Bilinmeyen kişi' };
         case 'project':
           return { key: log.projectId, label: projectsById.get(log.projectId) ?? 'Bilinmeyen proje' };
         case 'activityL1':
@@ -122,7 +122,7 @@ export function PlanWorkPage() {
           return null;
       }
     };
-  }, [employeesById, projectsById, activitiesById]);
+  }, [usersById, projectsById, activitiesById]);
 
   const logs = workLogs.data?.items ?? [];
 
@@ -130,7 +130,7 @@ export function PlanWorkPage() {
     if (!mqlAst) return logs;
     return logs.filter((log) =>
       evaluateMql(mqlAst, {
-        employee: employeesById.get(log.userId) ?? '',
+        employee: usersById.get(log.userId) ?? '',
         project: projectsById.get(log.projectId) ?? '',
         activityL1: activitiesById.get(log.activityL1Id) ?? '',
         activityL2: activitiesById.get(log.activityL2Id) ?? '',
@@ -139,7 +139,7 @@ export function PlanWorkPage() {
         date: log.workDate,
       }),
     );
-  }, [logs, mqlAst, employeesById, projectsById, activitiesById]);
+  }, [logs, mqlAst, usersById, projectsById, activitiesById]);
 
   const grouped = useMemo(
     () =>
@@ -148,9 +148,9 @@ export function PlanWorkPage() {
         periodRange.columns,
         groupBy,
         resolveDimension,
-        mqlAst ? undefined : employees.data?.items,
+        mqlAst ? undefined : users.data?.items,
       ),
-    [filteredLogs, periodRange.columns, groupBy, resolveDimension, employees.data, mqlAst],
+    [filteredLogs, periodRange.columns, groupBy, resolveDimension, users.data, mqlAst],
   );
 
   const totalHours = filteredLogs.reduce((sum, l) => sum + l.hours, 0);
@@ -178,9 +178,9 @@ export function PlanWorkPage() {
       .filter((l) => l.isApproved && l.workDate >= c.startKey && l.workDate <= c.endKey)
       .reduce((sum, l) => sum + l.hours, 0),
   }));
-  const totalUserCount = employees.data?.items.length ?? 0;
+  const totalUserCount = users.data?.items.length ?? 0;
 
-  const resolveUser = (id: string) => employeesById.get(id) ?? 'Bilinmeyen kişi';
+  const resolveUser = (id: string) => usersById.get(id) ?? 'Bilinmeyen kişi';
   const resolveProject = (id: string) => projectsById.get(id) ?? 'Bilinmeyen proje';
   const resolveActivity = (id: string) => activitiesById.get(id) ?? 'Bilinmeyen aktivite';
 

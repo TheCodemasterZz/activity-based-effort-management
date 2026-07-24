@@ -53,7 +53,7 @@ function formatDateTr(dateIso: string): string {
 }
 
 export function HomePage() {
-  const employees = useUserRoster();
+  const users = useUserRoster();
   const projects = useProjects();
   const customers = useCustomers();
   const activities = useAllActivities();
@@ -62,9 +62,9 @@ export function HomePage() {
   const monthRange = useMemo(() => getPeriodRange('daily', new Date()), []);
   const workLogs = useWorkLogs(monthRange.startKey, monthRange.endKey);
 
-  const employeesById = useMemo(
-    () => new Map(employees.data?.items.map((e) => [e.id, e.name]) ?? []),
-    [employees.data],
+  const usersById = useMemo(
+    () => new Map(users.data?.items.map((e) => [e.id, e.name]) ?? []),
+    [users.data],
   );
   const projectsById = useMemo(() => new Map(projects.data?.items.map((p) => [p.id, p.name]) ?? []), [projects.data]);
   const activitiesById = useMemo(
@@ -77,7 +77,7 @@ export function HomePage() {
 
   const totalHours = logs.reduce((sum, l) => sum + l.hours, 0);
   const activeUserCount = new Set(logs.map((l) => l.userId)).size;
-  const totalUserCount = employees.data?.items.length ?? 0;
+  const totalUserCount = users.data?.items.length ?? 0;
   const totalProjectCount = projects.data?.items.length ?? 0;
   const totalCustomerCount = customers.data?.items.length ?? 0;
 
@@ -106,8 +106,8 @@ export function HomePage() {
     [logs, projectsById],
   );
   const topUsers = useMemo(
-    () => rankBy((id) => employeesById.get(id), (l) => l.userId),
-    [logs, employeesById],
+    () => rankBy((id) => usersById.get(id), (l) => l.userId),
+    [logs, usersById],
   );
   const topActivities = useMemo(
     () => rankBy((id) => activitiesById.get(id), (l) => l.activityL1Id),
@@ -123,7 +123,7 @@ export function HomePage() {
     [holidays.data, todayKey],
   );
 
-  const isLoading = employees.isLoading || projects.isLoading || customers.isLoading || workLogs.isLoading;
+  const isLoading = users.isLoading || projects.isLoading || customers.isLoading || workLogs.isLoading;
 
   return (
     <div className="flex flex-1 flex-col overflow-hidden bg-slate-50 p-6">

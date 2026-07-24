@@ -29,7 +29,7 @@ export function WidgetLogWorkPage() {
   const activityL1IdParam = params.get('activityL1Id') ?? undefined;
   const activityL2IdParam = params.get('activityL2Id') ?? undefined;
 
-  const employee = useUserById(userIdParam);
+  const user = useUserById(userIdParam);
   const project = useProjectDetail(projectIdParam);
 
   const [closed, setClosed] = useState(false);
@@ -65,7 +65,7 @@ export function WidgetLogWorkPage() {
     );
   }
 
-  const isResolving = employee.isLoading || project.isLoading;
+  const isResolving = user.isLoading || project.isLoading;
 
   if (closed) {
     return (
@@ -87,8 +87,8 @@ export function WidgetLogWorkPage() {
   }
 
   const initialValues: WorkLogFormInitialValues = {
-    userId: employee.data?.id,
-    userLabel: employee.data?.name,
+    userId: user.data?.id,
+    userLabel: user.data?.name,
     projectId: project.data?.id,
     projectLabel: project.data?.name,
     activityL1Id: activityL1IdParam,

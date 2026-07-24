@@ -60,11 +60,11 @@ function buildHoursByUserDate(logs: WorkLogDto[]): Map<string, Map<string, numbe
 
 function buildLeaveHoursByUserDate(
   leaves: LeaveDto[],
-  employeesList: UserRosterEntry[],
+  usersList: UserRosterEntry[],
   calendarsById: Map<string, WorkCalendarDetailDto>,
 ): Map<string, Map<string, number>> {
   const calendarByUser = new Map(
-    employeesList.map((e) => [e.id, e.workCalendarId ? calendarsById.get(e.workCalendarId) : undefined]),
+    usersList.map((e) => [e.id, e.workCalendarId ? calendarsById.get(e.workCalendarId) : undefined]),
   );
   const map = new Map<string, Map<string, number>>();
   for (const leave of leaves) {
@@ -85,7 +85,7 @@ function buildLeaveHoursByUserDate(
 }
 
 function computeDayCapacity(
-  employee: UserRosterEntry,
+  user: UserRosterEntry,
   dateKeyStr: string,
   calendarsById: Map<string, WorkCalendarDetailDto>,
   holidayDateKeys: Set<string>,
@@ -94,10 +94,10 @@ function computeDayCapacity(
   if (holidayDateKeys.has(dateKeyStr)) return 0;
   // Takvimsiz kullanıcının beklenen kapasitesi bilinemez — 0 sayılır (hücre 'none'),
   // sayfa üstündeki uyarı bandı bu kullanıcıları ayrıca listeler.
-  const calendar = employee.workCalendarId ? calendarsById.get(employee.workCalendarId) : undefined;
+  const calendar = user.workCalendarId ? calendarsById.get(user.workCalendarId) : undefined;
   const dayOfWeek = new Date(`${dateKeyStr}T00:00:00`).getDay();
   const raw = calendarDayHours(calendar, dayOfWeek);
-  const leaveHours = leaveHoursByUserDate.get(employee.id)?.get(dateKeyStr) ?? 0;
+  const leaveHours = leaveHoursByUserDate.get(user.id)?.get(dateKeyStr) ?? 0;
   return Math.max(0, raw - leaveHours);
 }
 
@@ -263,7 +263,7 @@ export function CapacityManagementPage() {
     [periodMode, anchorDate, customRange],
   );
 
-  const employees = useUserRoster();
+  const users = useUserRoster();
   const actualLogs = useWorkLogs(periodRange.startKey, periodRange.endKey, WORK_LOG_ENTRY_TYPE.Actual);
   const plannedLogs = useWorkLogs(periodRange.startKey, periodRange.endKey, WORK_LOG_ENTRY_TYPE.Planned);
   const leaves = useLeaves();
@@ -271,25 +271,25 @@ export function CapacityManagementPage() {
   const projects = useProjects();
   const activities = useAllActivities();
 
-  const employeesById = useMemo(() => new Map(employees.data?.items.map((e) => [e.id, e.name])), [employees.data]);
+  const usersById = useMemo(() => new Map(users.data?.items.map((e) => [e.id, e.name])), [users.data]);
   const projectsById = useMemo(() => new Map(projects.data?.items.map((p) => [p.id, p.name])), [projects.data]);
   const activitiesById = useMemo(() => new Map(activities.data?.items.map((a) => [a.id, a.name])), [activities.data]);
 
   const mqlFieldValues = useMemo(
     () => ({
-      employee: employees.data?.items.map((e) => e.name) ?? [],
+      employee: users.data?.items.map((e) => e.name) ?? [],
       project: projects.data?.items.map((p) => p.name) ?? [],
       activityL1: activities.data?.items.filter((a) => !a.parentActivityId).map((a) => a.name) ?? [],
       activityL2: activities.data?.items.filter((a) => a.parentActivityId).map((a) => a.name) ?? [],
     }),
-    [employees.data, projects.data, activities.data],
+    [users.data, projects.data, activities.data],
   );
 
   const filterLogs = (logs: WorkLogDto[]) => {
     if (!mqlAst) return logs;
     return logs.filter((log) =>
       evaluateMql(mqlAst, {
-        employee: employeesById.get(log.userId) ?? '',
+        employee: usersById.get(log.userId) ?? '',
         project: projectsById.get(log.projectId) ?? '',
         activityL1: activitiesById.get(log.activityL1Id) ?? '',
         activityL2: activitiesById.get(log.activityL2Id) ?? '',
@@ -302,11 +302,11 @@ export function CapacityManagementPage() {
 
   const filteredActualLogs = useMemo(
     () => filterLogs(actualLogs.data?.items ?? []),
-    [actualLogs.data, mqlAst, employeesById, projectsById, activitiesById],
+    [actualLogs.data, mqlAst, usersById, projectsById, activitiesById],
   );
   const filteredPlannedLogs = useMemo(
     () => filterLogs(plannedLogs.data?.items ?? []),
-    [plannedLogs.data, mqlAst, employeesById, projectsById, activitiesById],
+    [plannedLogs.data, mqlAst, usersById, projectsById, activitiesById],
   );
 
   const holidayDateKeys = useMemo(() => new Set(holidays.data?.items.map((h) => h.date) ?? []), [holidays.data]);
@@ -314,17 +314,17 @@ export function CapacityManagementPage() {
   const calendarIds = useMemo(
     () => [
       ...new Set(
-        (employees.data?.items ?? [])
+        (users.data?.items ?? [])
           .map((e) => e.workCalendarId)
           .filter((id): id is string => id !== null),
       ),
     ],
-    [employees.data],
+    [users.data],
   );
 
   const usersWithoutCalendar = useMemo(
-    () => (employees.data?.items ?? []).filter((e) => e.workCalendarId === null),
-    [employees.data],
+    () => (users.data?.items ?? []).filter((e) => e.workCalendarId === null),
+    [users.data],
   );
   const calendarQueries = useQueries({
     queries: calendarIds.map((id) => ({
@@ -345,8 +345,8 @@ export function CapacityManagementPage() {
   const actualHoursByUserDate = useMemo(() => buildHoursByUserDate(filteredActualLogs), [filteredActualLogs]);
   const plannedHoursByUserDate = useMemo(() => buildHoursByUserDate(filteredPlannedLogs), [filteredPlannedLogs]);
   const leaveHoursByUserDate = useMemo(
-    () => buildLeaveHoursByUserDate(leaves.data?.items ?? [], employees.data?.items ?? [], calendarsById),
-    [leaves.data, employees.data, calendarsById],
+    () => buildLeaveHoursByUserDate(leaves.data?.items ?? [], users.data?.items ?? [], calendarsById),
+    [leaves.data, users.data, calendarsById],
   );
 
   // MQL aktifken tablo/grafik sadece filtreye uyan en az bir Actual/Planned kaydı olan
@@ -363,17 +363,17 @@ export function CapacityManagementPage() {
 
   const sortedUsers = useMemo(
     () =>
-      (employees.data?.items ?? [])
+      (users.data?.items ?? [])
         .filter((e) => !matchingUserIds || matchingUserIds.has(e.id))
         .sort((a, b) => (nameSort === 'asc' ? a.name.localeCompare(b.name, 'tr') : b.name.localeCompare(a.name, 'tr'))),
-    [employees.data, nameSort, matchingUserIds],
+    [users.data, nameSort, matchingUserIds],
   );
 
   const todayKey = dateKey(new Date());
 
   const userColumnStats = useMemo(() => {
     const result = new Map<string, Map<string, ColumnStat>>();
-    for (const employee of sortedUsers) {
+    for (const user of sortedUsers) {
       const columnMap = new Map<string, ColumnStat>();
       for (const column of periodRange.columns) {
         const days = eachDateKeyInRange(column.startKey, column.endKey);
@@ -384,12 +384,12 @@ export function CapacityManagementPage() {
         let timeOffHours = 0;
 
         for (const day of days) {
-          capacityHours += computeDayCapacity(employee, day, calendarsById, holidayDateKeys, leaveHoursByUserDate);
-          const dayActual = actualHoursByUserDate.get(employee.id)?.get(day) ?? 0;
-          const dayPlanned = plannedHoursByUserDate.get(employee.id)?.get(day) ?? 0;
+          capacityHours += computeDayCapacity(user, day, calendarsById, holidayDateKeys, leaveHoursByUserDate);
+          const dayActual = actualHoursByUserDate.get(user.id)?.get(day) ?? 0;
+          const dayPlanned = plannedHoursByUserDate.get(user.id)?.get(day) ?? 0;
           actualHours += dayActual;
           plannedHours += dayPlanned;
-          timeOffHours += leaveHoursByUserDate.get(employee.id)?.get(day) ?? 0;
+          timeOffHours += leaveHoursByUserDate.get(user.id)?.get(day) ?? 0;
 
           if (workloadMode === 'actual') workloadHours += dayActual;
           else if (workloadMode === 'planned') workloadHours += dayPlanned;
@@ -398,7 +398,7 @@ export function CapacityManagementPage() {
 
         columnMap.set(column.key, { capacityHours, actualHours, plannedHours, workloadHours, timeOffHours });
       }
-      result.set(employee.id, columnMap);
+      result.set(user.id, columnMap);
     }
     return result;
   }, [
@@ -420,8 +420,8 @@ export function CapacityManagementPage() {
         let plannedHours = 0;
         let capacityHours = 0;
         let timeOffHours = 0;
-        for (const employee of sortedUsers) {
-          const stat = userColumnStats.get(employee.id)?.get(column.key);
+        for (const user of sortedUsers) {
+          const stat = userColumnStats.get(user.id)?.get(column.key);
           if (!stat) continue;
           actualHours += stat.actualHours;
           plannedHours += stat.plannedHours;
@@ -499,7 +499,7 @@ export function CapacityManagementPage() {
           <CapacityLegend />
         </div>
 
-        {employees.isLoading || actualLogs.isLoading || plannedLogs.isLoading ? (
+        {users.isLoading || actualLogs.isLoading || plannedLogs.isLoading ? (
           <div className="mt-3 min-h-0 flex-1 rounded-xl border border-slate-200 bg-white p-8 text-center text-slate-400">
             Yükleniyor…
           </div>
@@ -541,13 +541,13 @@ export function CapacityManagementPage() {
                 </tr>
               </thead>
               <tbody>
-                {sortedUsers.map((employee) => (
-                  <tr key={employee.id} className="border-b border-slate-200 last:border-0 hover:bg-slate-50">
+                {sortedUsers.map((user) => (
+                  <tr key={user.id} className="border-b border-slate-200 last:border-0 hover:bg-slate-50">
                     <td className="sticky left-0 z-10 border-r border-slate-200 bg-white px-3 py-2 font-medium text-slate-700">
-                      {employee.name}
+                      {user.name}
                     </td>
                     {periodRange.columns.map((column) => {
-                      const stat = userColumnStats.get(employee.id)?.get(column.key);
+                      const stat = userColumnStats.get(user.id)?.get(column.key);
                       return (
                         <td key={column.key} className="border-r border-slate-200 p-1">
                           {stat && <CapacityCell stat={stat} />}

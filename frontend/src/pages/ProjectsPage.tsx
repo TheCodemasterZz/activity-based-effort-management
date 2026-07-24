@@ -52,7 +52,7 @@ const PROJECT_MQL_FIELDS: MqlFieldInfo[] = [
   { field: 'spi', label: 'SPI', aliases: ['spi'], kind: 'number' },
   { field: 'completion', label: 'Tamamlanma (%)', aliases: ['completion', 'tamamlanma'], kind: 'number' },
   { field: 'actualHours', label: 'Gerçekleşen Saat', aliases: ['actualhours', 'saat', 'gerceklesen', 'gerçekleşen'], kind: 'number' },
-  { field: 'employeeCount', label: 'Aktif Kişi', aliases: ['employeecount', 'kisi', 'kişi'], kind: 'number' },
+  { field: 'userCount', label: 'Aktif Kişi', aliases: ['employeecount', 'kisi', 'kişi'], kind: 'number' },
   { field: 'taskCount', label: 'Görev Sayısı', aliases: ['taskcount', 'gorev', 'görev'], kind: 'number' },
   { field: 'milestoneCount', label: 'Kilometre Taşı', aliases: ['milestonecount', 'kilometretasi', 'kilometretaşı'], kind: 'number' },
 ];
@@ -76,7 +76,7 @@ function buildProjectMqlRecord(
     spi: evm.spi ?? 0,
     completion: evm.percentComplete,
     actualHours: stats?.actualHours ?? 0,
-    employeeCount: stats?.userIds.size ?? 0,
+    userCount: stats?.userIds.size ?? 0,
     taskCount: tasks.length,
     milestoneCount,
   };
@@ -87,7 +87,7 @@ export function ProjectsPage() {
   const allTasks = useAllProjectTasks();
   const allRisks = useAllProjectRisks();
   const allIssues = useAllProjectIssues();
-  const employees = useUserRoster();
+  const users = useUserRoster();
   // Kartlardaki "Gerçekleşen" ve "Aktif Kişi" göstergeleri için — son 90 gün, mock verinin
   // (içinde bulunulan ay) her koşulda kapsanmasını garanti eden güvenli bir pencere.
   const recentActualLogs = useWorkLogs(dateKeyDaysAgo(90), todayKey(), WORK_LOG_ENTRY_TYPE.Actual);
@@ -129,11 +129,11 @@ export function ProjectsPage() {
     return map;
   }, [allIssues.data]);
 
-  const employeesById = useMemo(
-    () => new Map(employees.data?.items.map((e) => [e.id, e.name])),
-    [employees.data],
+  const usersById = useMemo(
+    () => new Map(users.data?.items.map((e) => [e.id, e.name])),
+    [users.data],
   );
-  const resolveUser = (id: string | null) => (id ? employeesById.get(id) ?? 'Bilinmeyen kişi' : '—');
+  const resolveUser = (id: string | null) => (id ? usersById.get(id) ?? 'Bilinmeyen kişi' : '—');
 
   const projectStatsById = useMemo(() => {
     const map = new Map<string, { actualHours: number; userIds: Set<string> }>();
@@ -183,7 +183,7 @@ export function ProjectsPage() {
     recentActualLogs.isLoading ||
     allRisks.isLoading ||
     allIssues.isLoading ||
-    employees.isLoading;
+    users.isLoading;
 
   // Portföyün tamamına bakan 5 özet widget — arama filtresinden BAĞIMSIZ, her zaman tüm
   // projeleri kapsar (SummaryCards ile aynı StatCardShell kabuğu kullanılıyor).

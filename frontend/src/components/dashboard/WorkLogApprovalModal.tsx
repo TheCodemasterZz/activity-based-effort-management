@@ -96,8 +96,8 @@ export function WorkLogApprovalModal({
   const confidenceContext = useConfidenceScoreContext(!isPlanned ? userId || null : null);
   const confidenceSettings = useConfidenceScoreSettings();
 
-  const employee = useUserById(userId || null);
-  const calendar = useWorkCalendar(employee.data?.workCalendarId ?? null);
+  const user = useUserById(userId || null);
+  const calendar = useWorkCalendar(user.data?.workCalendarId ?? null);
   const holidays = useHolidays();
   const weekLeaves = useLeaves(
     userId ? { userId, dateFrom: week.startKey, dateTo: week.endKey } : undefined,

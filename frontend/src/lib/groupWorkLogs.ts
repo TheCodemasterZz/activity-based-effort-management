@@ -60,8 +60,8 @@ function buildLevel(
   const groups = new Map<string, { label: string; logs: WorkLogDto[] }>();
 
   if (userRoster && dimension === 'employee') {
-    for (const employee of userRoster) {
-      groups.set(employee.id, { label: employee.name, logs: [] });
+    for (const user of userRoster) {
+      groups.set(user.id, { label: user.name, logs: [] });
     }
   }
 

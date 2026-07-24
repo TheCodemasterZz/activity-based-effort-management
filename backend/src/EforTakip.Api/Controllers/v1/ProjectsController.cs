@@ -85,7 +85,7 @@ public sealed class ProjectsController(ISender mediator) : ControllerBase
     }
 
     [RequirePermission(Permissions.Project.Update)]
-    [HttpPost("{id:guid}/employees")]
+    [HttpPost("{id:guid}/users")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> AssignUser(Guid id, AssignUserRequestBody body, CancellationToken cancellationToken)
     {
