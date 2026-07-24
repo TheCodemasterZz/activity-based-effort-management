@@ -1,14 +1,14 @@
 import { apiClient } from './client';
-import type { DirectoryUserDetailDto, DirectoryUserDto, PagedResult } from './types';
+import type { UserDetailDto, UserDto, PagedResult } from './types';
 
-export function getDirectoryUsers(options?: {
+export function getUsers(options?: {
   directoryId?: string;
   searchTerm?: string;
   onlyActive?: boolean;
   pageNumber?: number;
   pageSize?: number;
 }) {
-  return apiClient.get<PagedResult<DirectoryUserDto>>('/api/v1/directoryusers', {
+  return apiClient.get<PagedResult<UserDto>>('/api/v1/users', {
     directoryId: options?.directoryId,
     searchTerm: options?.searchTerm,
     onlyActive: options?.onlyActive,
@@ -17,8 +17,8 @@ export function getDirectoryUsers(options?: {
   });
 }
 
-export function getDirectoryUserById(id: string) {
-  return apiClient.get<DirectoryUserDetailDto>(`/api/v1/directoryusers/${id}`);
+export function getUserById(id: string) {
+  return apiClient.get<UserDetailDto>(`/api/v1/users/${id}`);
 }
 
 export interface CreateInternalUserPayload {
@@ -32,12 +32,12 @@ export interface CreateInternalUserPayload {
 }
 
 export function createInternalUser(payload: CreateInternalUserPayload) {
-  return apiClient.post<void>('/api/v1/directoryusers/internal', payload);
+  return apiClient.post<void>('/api/v1/users/internal', payload);
 }
 
-export function resetInternalUserPassword(directoryUserId: string, newPassword: string) {
-  return apiClient.post<void>(`/api/v1/directoryusers/${directoryUserId}/reset-password`, {
-    directoryUserId,
+export function resetInternalUserPassword(userId: string, newPassword: string) {
+  return apiClient.post<void>(`/api/v1/users/${userId}/reset-password`, {
+    userId,
     newPassword,
   });
 }

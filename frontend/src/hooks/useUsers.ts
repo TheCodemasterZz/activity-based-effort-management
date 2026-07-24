@@ -1,11 +1,11 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
 import {
-  getDirectoryUserById,
-  getDirectoryUsers,
+  getUserById,
+  getUsers,
   resetInternalUserPassword,
-} from '../api/directoryUsers';
+} from '../api/users';
 
-export function useDirectoryUsers(options: {
+export function useUsers(options: {
   directoryId?: string;
   searchTerm?: string;
   pageNumber?: number;
@@ -13,20 +13,20 @@ export function useDirectoryUsers(options: {
 }) {
   return useQuery({
     queryKey: [
-      'directoryUsers',
+      'users',
       options.directoryId ?? null,
       options.searchTerm ?? '',
       options.pageNumber ?? 1,
       options.pageSize ?? 25,
     ],
-    queryFn: () => getDirectoryUsers(options),
+    queryFn: () => getUsers(options),
   });
 }
 
-export function useDirectoryUser(id: string | null) {
+export function useUser(id: string | null) {
   return useQuery({
-    queryKey: ['directoryUsers', 'detail', id],
-    queryFn: () => getDirectoryUserById(id!),
+    queryKey: ['users', 'detail', id],
+    queryFn: () => getUserById(id!),
     enabled: id !== null,
   });
 }

@@ -1,11 +1,11 @@
 import { useState, type FormEvent } from 'react';
 import { ApiError } from '../../../api/client';
 import {
-  useDirectoryUser,
+  useUser,
   useResetInternalUserPasswordMutation,
-} from '../../../hooks/useDirectoryUsers';
+} from '../../../hooks/useUsers';
 
-interface DirectoryUserCardProps {
+interface UserCardProps {
   userId: string;
   onBack?: () => void;
   onSelectUser?: (userId: string) => void;
@@ -32,22 +32,22 @@ function InfoRow({ label, value }: { label: string; value: string }) {
 function AttributeRow({
   label,
   value,
-  referencedDirectoryUserId,
+  referencedUserId,
   onSelectUser,
 }: {
   label: string;
   value: string;
-  referencedDirectoryUserId: string | null;
+  referencedUserId: string | null;
   onSelectUser?: (userId: string) => void;
 }) {
   return (
     <div className="flex border-b border-slate-50 py-2 last:border-0">
       <div className="w-48 shrink-0 text-sm text-slate-500">{label}</div>
       <div className="text-sm text-slate-700">
-        {referencedDirectoryUserId && onSelectUser ? (
+        {referencedUserId && onSelectUser ? (
           <button
             type="button"
-            onClick={() => onSelectUser(referencedDirectoryUserId)}
+            onClick={() => onSelectUser(referencedUserId)}
             className="inline-flex items-center gap-1 text-indigo-600 hover:underline"
           >
             {value}
@@ -131,8 +131,8 @@ function ResetPasswordPanel({ userId }: { userId: string }) {
   );
 }
 
-export function DirectoryUserCard({ userId, onBack, onSelectUser }: DirectoryUserCardProps) {
-  const { data: user, isLoading } = useDirectoryUser(userId);
+export function UserCard({ userId, onBack, onSelectUser }: UserCardProps) {
+  const { data: user, isLoading } = useUser(userId);
   const photoAttribute = user?.attributes.find((a) => a.fieldType === 'photo' && a.value);
   const otherAttributes = user?.attributes.filter((a) => a.fieldType !== 'photo') ?? [];
 
@@ -215,7 +215,7 @@ export function DirectoryUserCard({ userId, onBack, onSelectUser }: DirectoryUse
                   key={attribute.adAttributeName}
                   label={attribute.systemFieldName}
                   value={attribute.value ?? '—'}
-                  referencedDirectoryUserId={attribute.referencedDirectoryUserId}
+                  referencedUserId={attribute.referencedUserId}
                   onSelectUser={onSelectUser}
                 />
               ))

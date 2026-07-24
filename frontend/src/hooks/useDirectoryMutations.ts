@@ -40,7 +40,7 @@ export function useSyncDirectoryMutation() {
     onSuccess: () => {
       // Senkronizasyon hem kullanıcıları hem dizinin son senkron zamanını değiştirir.
       queryClient.invalidateQueries({ queryKey: ['directories'] });
-      queryClient.invalidateQueries({ queryKey: ['directoryUsers'] });
+      queryClient.invalidateQueries({ queryKey: ['users'] });
     },
   });
 }

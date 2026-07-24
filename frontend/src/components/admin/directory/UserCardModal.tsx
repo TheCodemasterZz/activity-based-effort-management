@@ -1,6 +1,6 @@
-import { DirectoryUserCard } from './DirectoryUserCard';
+import { UserCard } from './UserCard';
 
-interface DirectoryUserCardModalProps {
+interface UserCardModalProps {
   userId: string;
   onClose: () => void;
   onSelectUser: (userId: string) => void;
@@ -10,7 +10,7 @@ interface DirectoryUserCardModalProps {
  * Organizasyon şemasındaki bir düğüme tıklanınca kullanıcı kartını sayfadan ayrılmadan gösterir.
  * Modal içindeki "Yönetici" referansına tıklanınca `onSelectUser` ile içerik değişir, modal kapanmaz.
  */
-export function DirectoryUserCardModal({ userId, onClose, onSelectUser }: DirectoryUserCardModalProps) {
+export function UserCardModal({ userId, onClose, onSelectUser }: UserCardModalProps) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4">
       <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-xl bg-white p-6 shadow-xl">
@@ -24,7 +24,7 @@ export function DirectoryUserCardModal({ userId, onClose, onSelectUser }: Direct
             ✕
           </button>
         </div>
-        <DirectoryUserCard userId={userId} onSelectUser={onSelectUser} />
+        <UserCard userId={userId} onSelectUser={onSelectUser} />
       </div>
     </div>
   );

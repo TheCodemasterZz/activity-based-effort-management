@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import { ApiError } from '../../../api/client';
 import type { PermissionDescriptorDto } from '../../../api/types';
-import { useDirectoryUsers } from '../../../hooks/useDirectoryUsers';
+import { useUsers } from '../../../hooks/useUsers';
 import {
   useAssignUserToRoleMutation,
   useCreateRoleMutation,
@@ -91,7 +91,7 @@ function RoleDetail({ roleId, onBack }: { roleId: string; onBack: () => void }) 
   const [userSearch, setUserSearch] = useState('');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const users = useDirectoryUsers({ searchTerm: userSearch, pageSize: 10 });
+  const users = useUsers({ searchTerm: userSearch, pageSize: 10 });
 
   if (role.isLoading || !role.data) {
     return <div className="py-8 text-center text-sm text-slate-400">Yükleniyor…</div>;
