@@ -1,5 +1,6 @@
 using EforTakip.Domain.Directories;
 using EforTakip.Domain.Users;
+using EforTakip.Domain.WorkCalendars;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Directory = EforTakip.Domain.Directories.Directory;
@@ -36,6 +37,11 @@ public sealed class UserConfiguration : IEntityTypeConfiguration<User>
         builder.HasOne<Directory>()
             .WithMany()
             .HasForeignKey(u => u.DirectoryId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne<WorkCalendar>()
+            .WithMany()
+            .HasForeignKey(u => u.WorkCalendarId)
             .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasMany(u => u.Roles)
