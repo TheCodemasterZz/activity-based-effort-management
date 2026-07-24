@@ -43,7 +43,7 @@ public sealed class Role : Entity, IAggregateRoot
     /// <summary>
     /// Zaten çağıranın _permissions'ı önceden (Include ile) yüklemiş olması gerekir; aksi halde
     /// yinelenen kontrol her zaman "yok" der ve tekrarlanan satır eklenmeye çalışılabilir (bkz.
-    /// DirectoryUser.SetAttribute ile aynı desen). Yeni oluşturulan varlığı geri döner — çağıran
+    /// User.SetAttribute ile aynı desen). Yeni oluşturulan varlığı geri döner — çağıran
     /// taraf context'e açıkça eklemelidir.
     /// </summary>
     public RolePermission? GrantPermission(string permissionKey)

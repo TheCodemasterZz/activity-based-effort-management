@@ -1060,120 +1060,6 @@ namespace EforTakip.Persistence.Migrations
                     b.ToTable("DirectoryAttributeMappings", (string)null);
                 });
 
-            modelBuilder.Entity("EforTakip.Domain.Directories.DirectoryUser", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("DirectoryId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("DisplayName")
-                        .HasMaxLength(300)
-                        .HasColumnType("character varying(300)");
-
-                    b.Property<string>("Email")
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
-
-                    b.Property<string>("FirstName")
-                        .HasMaxLength(150)
-                        .HasColumnType("character varying(150)");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("boolean");
-
-                    b.Property<string>("LastName")
-                        .HasMaxLength(150)
-                        .HasColumnType("character varying(150)");
-
-                    b.Property<DateTime?>("LastSyncedUtc")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("ObjectGuid")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<string>("PasswordHash")
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
-
-                    b.Property<string>("Source")
-                        .IsRequired()
-                        .HasMaxLength(30)
-                        .HasColumnType("character varying(30)");
-
-                    b.Property<string>("Username")
-                        .IsRequired()
-                        .HasMaxLength(150)
-                        .HasColumnType("character varying(150)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("DirectoryId");
-
-                    b.HasIndex("Username")
-                        .IsUnique();
-
-                    b.ToTable("DirectoryUsers", (string)null);
-                });
-
-            modelBuilder.Entity("EforTakip.Domain.Directories.DirectoryUserAttribute", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("AttributeMappingId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("DirectoryUserId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid?>("ReferencedDirectoryUserId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Value")
-                        .HasColumnType("text");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("AttributeMappingId");
-
-                    b.HasIndex("ReferencedDirectoryUserId");
-
-                    b.HasIndex("DirectoryUserId", "AttributeMappingId")
-                        .IsUnique();
-
-                    b.ToTable("DirectoryUserAttributes", (string)null);
-                });
-
-            modelBuilder.Entity("EforTakip.Domain.Directories.DirectoryUserRole", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("AssignedAtUtc")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("DirectoryUserId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("RoleId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("RoleId");
-
-                    b.HasIndex("DirectoryUserId", "RoleId")
-                        .IsUnique();
-
-                    b.ToTable("DirectoryUserRoles", (string)null);
-                });
-
             modelBuilder.Entity("EforTakip.Domain.EmployeeLeaves.EmployeeLeave", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1748,6 +1634,120 @@ namespace EforTakip.Persistence.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("ConfidenceScoreSettings", (string)null);
+                });
+
+            modelBuilder.Entity("EforTakip.Domain.Users.User", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("DirectoryId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("DisplayName")
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)");
+
+                    b.Property<string>("Email")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<string>("FirstName")
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("LastName")
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)");
+
+                    b.Property<DateTime?>("LastSyncedUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ObjectGuid")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("PasswordHash")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("Source")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
+                    b.Property<string>("Username")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DirectoryId");
+
+                    b.HasIndex("Username")
+                        .IsUnique();
+
+                    b.ToTable("Users", (string)null);
+                });
+
+            modelBuilder.Entity("EforTakip.Domain.Users.UserAttribute", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("AttributeMappingId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("ReferencedUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Value")
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AttributeMappingId");
+
+                    b.HasIndex("ReferencedUserId");
+
+                    b.HasIndex("UserId", "AttributeMappingId")
+                        .IsUnique();
+
+                    b.ToTable("UserAttributes", (string)null);
+                });
+
+            modelBuilder.Entity("EforTakip.Domain.Users.UserRole", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("AssignedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("RoleId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RoleId");
+
+                    b.HasIndex("UserId", "RoleId")
+                        .IsUnique();
+
+                    b.ToTable("UserRoles", (string)null);
                 });
 
             modelBuilder.Entity("EforTakip.Domain.ValueStreams.StageActivityAssignment", b =>
@@ -2573,50 +2573,6 @@ namespace EforTakip.Persistence.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("EforTakip.Domain.Directories.DirectoryUser", b =>
-                {
-                    b.HasOne("EforTakip.Domain.Directories.Directory", null)
-                        .WithMany()
-                        .HasForeignKey("DirectoryId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("EforTakip.Domain.Directories.DirectoryUserAttribute", b =>
-                {
-                    b.HasOne("EforTakip.Domain.Directories.DirectoryAttributeMapping", null)
-                        .WithMany()
-                        .HasForeignKey("AttributeMappingId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("EforTakip.Domain.Directories.DirectoryUser", null)
-                        .WithMany("Attributes")
-                        .HasForeignKey("DirectoryUserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("EforTakip.Domain.Directories.DirectoryUser", null)
-                        .WithMany()
-                        .HasForeignKey("ReferencedDirectoryUserId")
-                        .OnDelete(DeleteBehavior.Restrict);
-                });
-
-            modelBuilder.Entity("EforTakip.Domain.Directories.DirectoryUserRole", b =>
-                {
-                    b.HasOne("EforTakip.Domain.Directories.DirectoryUser", null)
-                        .WithMany("Roles")
-                        .HasForeignKey("DirectoryUserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("EforTakip.Domain.Roles.Role", null)
-                        .WithMany()
-                        .HasForeignKey("RoleId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
             modelBuilder.Entity("EforTakip.Domain.EmployeeLeaves.EmployeeLeave", b =>
                 {
                     b.HasOne("EforTakip.Domain.Employees.Employee", null)
@@ -2716,6 +2672,50 @@ namespace EforTakip.Persistence.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("EforTakip.Domain.Users.User", b =>
+                {
+                    b.HasOne("EforTakip.Domain.Directories.Directory", null)
+                        .WithMany()
+                        .HasForeignKey("DirectoryId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("EforTakip.Domain.Users.UserAttribute", b =>
+                {
+                    b.HasOne("EforTakip.Domain.Directories.DirectoryAttributeMapping", null)
+                        .WithMany()
+                        .HasForeignKey("AttributeMappingId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("EforTakip.Domain.Users.User", null)
+                        .WithMany()
+                        .HasForeignKey("ReferencedUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("EforTakip.Domain.Users.User", null)
+                        .WithMany("Attributes")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("EforTakip.Domain.Users.UserRole", b =>
+                {
+                    b.HasOne("EforTakip.Domain.Roles.Role", null)
+                        .WithMany()
+                        .HasForeignKey("RoleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("EforTakip.Domain.Users.User", null)
+                        .WithMany("Roles")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("EforTakip.Domain.ValueStreams.StageActivityAssignment", b =>
                 {
                     b.HasOne("EforTakip.Domain.Activities.Activity", null)
@@ -2781,13 +2781,6 @@ namespace EforTakip.Persistence.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("EforTakip.Domain.Directories.DirectoryUser", b =>
-                {
-                    b.Navigation("Attributes");
-
-                    b.Navigation("Roles");
-                });
-
             modelBuilder.Entity("EforTakip.Domain.Projects.Project", b =>
                 {
                     b.Navigation("CustomerAssignments");
@@ -2798,6 +2791,13 @@ namespace EforTakip.Persistence.Migrations
             modelBuilder.Entity("EforTakip.Domain.Roles.Role", b =>
                 {
                     b.Navigation("Permissions");
+                });
+
+            modelBuilder.Entity("EforTakip.Domain.Users.User", b =>
+                {
+                    b.Navigation("Attributes");
+
+                    b.Navigation("Roles");
                 });
 
             modelBuilder.Entity("EforTakip.Domain.ValueStreams.ValueStream", b =>

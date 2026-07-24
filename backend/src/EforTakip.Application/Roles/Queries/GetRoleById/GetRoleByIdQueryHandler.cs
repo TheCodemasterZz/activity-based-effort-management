@@ -19,8 +19,8 @@ public sealed class GetRoleByIdQueryHandler(IApplicationDbContext db)
             ?? throw new NotFoundException(nameof(Role), request.RoleId);
 
         var assignedUsers = await (
-            from userRole in db.DirectoryUserRoles.AsNoTracking()
-            join user in db.DirectoryUsers.AsNoTracking() on userRole.DirectoryUserId equals user.Id
+            from userRole in db.UserRoles.AsNoTracking()
+            join user in db.Users.AsNoTracking() on userRole.UserId equals user.Id
             where userRole.RoleId == request.RoleId
             orderby user.Username
             select new RoleAssignedUserDto

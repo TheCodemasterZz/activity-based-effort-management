@@ -1,5 +1,6 @@
 using EforTakip.Application.Common.Interfaces;
 using EforTakip.Application.Projects;
+using EforTakip.Application.Tests.Directories.Commands;
 using EforTakip.Application.WorkLogs.Commands.LogWork;
 using EforTakip.Domain.Exceptions;
 using EforTakip.Domain.Projects;
@@ -15,12 +16,15 @@ public class LogWorkCommandHandlerTests
 {
     private readonly IProjectRepository _projectRepository = Substitute.For<IProjectRepository>();
     private readonly IRepository<DomainActivity> _activityRepository = Substitute.For<IRepository<DomainActivity>>();
-    private readonly IApplicationDbContext _db = Substitute.For<IApplicationDbContext>();
+    private readonly TestDbContext _db;
     private readonly IUnitOfWork _unitOfWork = Substitute.For<IUnitOfWork>();
 
     public LogWorkCommandHandlerTests()
     {
-        _db.EmployeeWorkLogs.Returns(Substitute.For<DbSet<EmployeeWorkLog>>());
+        var options = new DbContextOptionsBuilder<TestDbContext>()
+            .UseInMemoryDatabase($"log-work-tests-{Guid.NewGuid()}")
+            .Options;
+        _db = new TestDbContext(options);
     }
 
     private (Project project, Guid employeeId) CreateAssignedProject()
@@ -50,7 +54,7 @@ public class LogWorkCommandHandlerTests
         var result = await handler.Handle(command, CancellationToken.None);
 
         result.Should().HaveCount(1);
-        _db.EmployeeWorkLogs.Received(1).AddRange(Arg.Is<IEnumerable<EmployeeWorkLog>>(logs => logs.Count() == 1));
+        _db.EmployeeWorkLogs.Local.Should().HaveCount(1);
         await _unitOfWork.Received(1).SaveChangesAsync(Arg.Any<CancellationToken>());
     }
 

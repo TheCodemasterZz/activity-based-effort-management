@@ -2,6 +2,7 @@ using EforTakip.Application.Common.Interfaces;
 using EforTakip.Domain.Activities;
 using EforTakip.Domain.Customers;
 using EforTakip.Domain.Directories;
+using EforTakip.Domain.Users;
 using EforTakip.Domain.EmployeeLeaves;
 using EforTakip.Domain.Employees;
 using EforTakip.Domain.Holidays;
@@ -45,33 +46,33 @@ public sealed class TestDbContext(DbContextOptions<TestDbContext> options)
     public DbSet<WorkLogApproval> WorkLogApprovals => Set<WorkLogApproval>();
     public DbSet<EmployeeLeave> EmployeeLeaves => Set<EmployeeLeave>();
     public DbSet<Domain.Directories.Directory> Directories => Set<Domain.Directories.Directory>();
-    public DbSet<DirectoryUser> DirectoryUsers => Set<DirectoryUser>();
+    public DbSet<User> Users => Set<User>();
     public DbSet<DirectoryAttributeMapping> DirectoryAttributeMappings => Set<DirectoryAttributeMapping>();
-    public DbSet<DirectoryUserAttribute> DirectoryUserAttributes => Set<DirectoryUserAttribute>();
+    public DbSet<UserAttribute> UserAttributes => Set<UserAttribute>();
     public DbSet<Role> Roles => Set<Role>();
     public DbSet<RolePermission> RolePermissions => Set<RolePermission>();
-    public DbSet<DirectoryUserRole> DirectoryUserRoles => Set<DirectoryUserRole>();
+    public DbSet<UserRole> UserRoles => Set<UserRole>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder.Entity<DirectoryUser>()
+        modelBuilder.Entity<User>()
             .HasMany(u => u.Attributes)
             .WithOne()
-            .HasForeignKey(a => a.DirectoryUserId);
+            .HasForeignKey(a => a.UserId);
 
-        modelBuilder.Entity<DirectoryUser>()
+        modelBuilder.Entity<User>()
             .Metadata
-            .FindNavigation(nameof(DirectoryUser.Attributes))!
+            .FindNavigation(nameof(User.Attributes))!
             .SetPropertyAccessMode(PropertyAccessMode.Field);
 
-        modelBuilder.Entity<DirectoryUser>()
+        modelBuilder.Entity<User>()
             .HasMany(u => u.Roles)
             .WithOne()
-            .HasForeignKey(r => r.DirectoryUserId);
+            .HasForeignKey(r => r.UserId);
 
-        modelBuilder.Entity<DirectoryUser>()
+        modelBuilder.Entity<User>()
             .Metadata
-            .FindNavigation(nameof(DirectoryUser.Roles))!
+            .FindNavigation(nameof(User.Roles))!
             .SetPropertyAccessMode(PropertyAccessMode.Field);
 
         modelBuilder.Entity<Role>()

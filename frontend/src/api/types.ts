@@ -223,7 +223,7 @@ export interface DirectoryDto {
   lastSyncedUtc: string | null;
 }
 
-export interface DirectoryUserDto {
+export interface UserDto {
   id: string;
   directoryId: string;
   directoryName: string;
@@ -237,16 +237,16 @@ export interface DirectoryUserDto {
   lastSyncedUtc: string | null;
 }
 
-export interface DirectoryUserAttributeValueDto {
+export interface UserAttributeValueDto {
   systemFieldName: string;
   adAttributeName: string;
   fieldType: string;
   value: string | null;
-  referencedDirectoryUserId: string | null;
+  referencedUserId: string | null;
 }
 
-export interface DirectoryUserDetailDto extends DirectoryUserDto {
-  attributes: DirectoryUserAttributeValueDto[];
+export interface UserDetailDto extends UserDto {
+  attributes: UserAttributeValueDto[];
 }
 
 export interface DirectoryAttributeMappingDto {

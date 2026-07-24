@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useDirectories } from '../../../hooks/useDirectories';
 import { OrgChart } from './OrgChart';
-import { DirectoryUserCardModal } from './DirectoryUserCardModal';
+import { UserCardModal } from './UserCardModal';
 
 const ACTIVE_DIRECTORY_SOURCE = 1;
 
@@ -52,7 +52,7 @@ export function OrgChartSection() {
       )}
 
       {selectedUserId && (
-        <DirectoryUserCardModal
+        <UserCardModal
           userId={selectedUserId}
           onClose={() => setSelectedUserId(null)}
           onSelectUser={setSelectedUserId}

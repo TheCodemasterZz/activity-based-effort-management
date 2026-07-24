@@ -5,6 +5,7 @@ using EforTakip.Application.Directories.Dtos;
 using EforTakip.Application.Directories.Ldap;
 using EforTakip.Domain.Directories;
 using EforTakip.Domain.Exceptions;
+using EforTakip.Domain.Users;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Directory = EforTakip.Domain.Directories.Directory;
@@ -46,7 +47,7 @@ public sealed partial class SyncDirectoryCommandHandler(
         var ldapUsers = await ldapService.SearchUsersAsync(
             directory, extraAttributeNames, binaryAttributeNames, cancellationToken);
 
-        var existingUsers = await db.DirectoryUsers
+        var existingUsers = await db.Users
             .Include(u => u.Attributes)
             .Where(u => u.DirectoryId == directory.Id)
             .ToListAsync(cancellationToken);
@@ -68,7 +69,7 @@ public sealed partial class SyncDirectoryCommandHandler(
         var seenObjectGuids = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         var added = 0;
         var updated = 0;
-        var processed = new List<(LdapUser LdapUser, DirectoryUser User)>();
+        var processed = new List<(LdapUser LdapUser, User User)>();
 
         // 1. geçiş: tüm kullanıcılar oluşturulur/güncellenir — attribute'lar henüz uygulanmaz.
         // Böylece "Yönetici" gibi başka bir kullanıcıya referans veren alanlar, referans verilen
@@ -87,12 +88,12 @@ public sealed partial class SyncDirectoryCommandHandler(
             }
             else
             {
-                var created = DirectoryUser.CreateFromActiveDirectory(
+                var created = User.CreateFromActiveDirectory(
                     directory.Id, ldapUser.Username, ldapUser.FirstName, ldapUser.LastName,
                     ldapUser.DisplayName, ldapUser.Email, ldapUser.ObjectGuid);
                 if (!ldapUser.IsEnabled)
                     created.Deactivate();
-                db.DirectoryUsers.Add(created);
+                db.Users.Add(created);
                 byObjectGuid[created.ObjectGuid!] = created;
                 processed.Add((ldapUser, created));
                 added++;
@@ -140,24 +141,24 @@ public sealed partial class SyncDirectoryCommandHandler(
     /// önce hiç attribute'u yoksa). Bu yüzden yeni oluşturulan attribute context'e açıkça eklenir.
     /// </summary>
     private static void ApplyAttributes(
-        IApplicationDbContext db, DirectoryUser user, LdapUser ldapUser,
+        IApplicationDbContext db, User user, LdapUser ldapUser,
         IReadOnlyCollection<DirectoryAttributeMapping> mappings,
         IReadOnlyDictionary<string, string> dnToObjectGuid,
-        IReadOnlyDictionary<string, DirectoryUser> byObjectGuid)
+        IReadOnlyDictionary<string, User> byObjectGuid)
     {
         foreach (var mapping in mappings)
         {
             ldapUser.Attributes.TryGetValue(mapping.AdAttributeName, out var rawValue);
 
             string? value = rawValue;
-            Guid? referencedDirectoryUserId = null;
+            Guid? referencedUserId = null;
 
             if (mapping.FieldType == DirectoryAttributeMapping.UserReferenceFieldType && rawValue is not null)
             {
                 if (dnToObjectGuid.TryGetValue(NormalizeDn(rawValue), out var referencedObjectGuid)
                     && byObjectGuid.TryGetValue(referencedObjectGuid, out var referencedUser))
                 {
-                    referencedDirectoryUserId = referencedUser.Id;
+                    referencedUserId = referencedUser.Id;
                     value = referencedUser.DisplayName ?? referencedUser.Username;
                 }
                 else
@@ -168,9 +169,9 @@ public sealed partial class SyncDirectoryCommandHandler(
                 }
             }
 
-            var createdAttribute = user.SetAttribute(mapping.Id, value, referencedDirectoryUserId);
+            var createdAttribute = user.SetAttribute(mapping.Id, value, referencedUserId);
             if (createdAttribute is not null)
-                db.DirectoryUserAttributes.Add(createdAttribute);
+                db.UserAttributes.Add(createdAttribute);
         }
     }
 

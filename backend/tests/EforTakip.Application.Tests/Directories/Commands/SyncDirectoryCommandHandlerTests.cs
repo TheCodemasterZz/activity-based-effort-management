@@ -2,6 +2,7 @@ using EforTakip.Application.Common.Interfaces;
 using EforTakip.Application.Directories.Commands.SyncDirectory;
 using EforTakip.Application.Directories.Ldap;
 using EforTakip.Domain.Directories;
+using EforTakip.Domain.Users;
 using EforTakip.Domain.Exceptions;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
@@ -78,16 +79,16 @@ public class SyncDirectoryCommandHandlerTests : IAsyncDisposable
         result.Updated.Should().Be(0);
         result.Deactivated.Should().Be(0);
         result.TotalFromDirectory.Should().Be(1);
-        _db.DirectoryUsers.Should().ContainSingle(u => u.Username == "serkan.gultepe");
+        _db.Users.Should().ContainSingle(u => u.Username == "serkan.gultepe");
     }
 
     [Fact]
     public async Task Handle_ExistingUser_UpdatesInsteadOfDuplicating()
     {
         var directory = ValidAd();
-        var existing = DirectoryUser.CreateFromActiveDirectory(
+        var existing = User.CreateFromActiveDirectory(
             directory.Id, "serkan.gultepe", "Serkan", "Eski", "Eski Ad", "eski@x.com", "guid-1");
-        _db.DirectoryUsers.Add(existing);
+        _db.Users.Add(existing);
         await _db.SaveChangesAsync();
 
         _directoryRepository.GetByIdAsync(directory.Id, Arg.Any<CancellationToken>()).Returns(directory);
@@ -98,17 +99,17 @@ public class SyncDirectoryCommandHandlerTests : IAsyncDisposable
 
         result.Added.Should().Be(0);
         result.Updated.Should().Be(1);
-        _db.DirectoryUsers.Should().ContainSingle();
-        _db.DirectoryUsers.Single().LastName.Should().Be("Gültepe");
+        _db.Users.Should().ContainSingle();
+        _db.Users.Single().LastName.Should().Be("Gültepe");
     }
 
     [Fact]
     public async Task Handle_UserMissingFromLdap_IsDeactivatedNotDeleted()
     {
         var directory = ValidAd();
-        var stale = DirectoryUser.CreateFromActiveDirectory(
+        var stale = User.CreateFromActiveDirectory(
             directory.Id, "ayrilan.kullanici", "Ayrılan", "Kullanıcı", "Ayrılan", null, "guid-eski");
-        _db.DirectoryUsers.Add(stale);
+        _db.Users.Add(stale);
         await _db.SaveChangesAsync();
 
         _directoryRepository.GetByIdAsync(directory.Id, Arg.Any<CancellationToken>()).Returns(directory);
@@ -118,8 +119,8 @@ public class SyncDirectoryCommandHandlerTests : IAsyncDisposable
         var result = await CreateHandler().Handle(new SyncDirectoryCommand(directory.Id), CancellationToken.None);
 
         result.Deactivated.Should().Be(1);
-        _db.DirectoryUsers.Should().ContainSingle();
-        _db.DirectoryUsers.Single().IsActive.Should().BeFalse();
+        _db.Users.Should().ContainSingle();
+        _db.Users.Single().IsActive.Should().BeFalse();
     }
 
     [Fact]
@@ -133,16 +134,16 @@ public class SyncDirectoryCommandHandlerTests : IAsyncDisposable
         var result = await CreateHandler().Handle(new SyncDirectoryCommand(directory.Id), CancellationToken.None);
 
         result.Added.Should().Be(1);
-        _db.DirectoryUsers.Single().IsActive.Should().BeFalse();
+        _db.Users.Single().IsActive.Should().BeFalse();
     }
 
     [Fact]
     public async Task Handle_ExistingUserDisabledInDirectory_BecomesInactive()
     {
         var directory = ValidAd();
-        var existing = DirectoryUser.CreateFromActiveDirectory(
+        var existing = User.CreateFromActiveDirectory(
             directory.Id, "serkan.gultepe", "Serkan", "Gültepe", "Serkan Gültepe", null, "guid-1");
-        _db.DirectoryUsers.Add(existing);
+        _db.Users.Add(existing);
         await _db.SaveChangesAsync();
 
         _directoryRepository.GetByIdAsync(directory.Id, Arg.Any<CancellationToken>()).Returns(directory);
@@ -151,7 +152,7 @@ public class SyncDirectoryCommandHandlerTests : IAsyncDisposable
 
         await CreateHandler().Handle(new SyncDirectoryCommand(directory.Id), CancellationToken.None);
 
-        _db.DirectoryUsers.Single().IsActive.Should().BeFalse();
+        _db.Users.Single().IsActive.Should().BeFalse();
     }
 
     [Fact]
@@ -169,7 +170,7 @@ public class SyncDirectoryCommandHandlerTests : IAsyncDisposable
 
         await CreateHandler().Handle(new SyncDirectoryCommand(directory.Id), CancellationToken.None);
 
-        var user = _db.DirectoryUsers.Include(u => u.Attributes).Single();
+        var user = _db.Users.Include(u => u.Attributes).Single();
         user.Attributes.Should().ContainSingle();
         user.Attributes.Single().AttributeMappingId.Should().Be(mapping.Id);
         user.Attributes.Single().Value.Should().Be("Kızılay");
@@ -195,11 +196,11 @@ public class SyncDirectoryCommandHandlerTests : IAsyncDisposable
 
         await CreateHandler().Handle(new SyncDirectoryCommand(directory.Id), CancellationToken.None);
 
-        var employee = _db.DirectoryUsers.Include(u => u.Attributes).Single(u => u.Username == "baris.kalaycioglu");
-        var manager = _db.DirectoryUsers.Single(u => u.Username == "gokhan.yetkin");
+        var employee = _db.Users.Include(u => u.Attributes).Single(u => u.Username == "baris.kalaycioglu");
+        var manager = _db.Users.Single(u => u.Username == "gokhan.yetkin");
 
         var attribute = employee.Attributes.Single();
-        attribute.ReferencedDirectoryUserId.Should().Be(manager.Id);
+        attribute.ReferencedUserId.Should().Be(manager.Id);
         attribute.Value.Should().Be(manager.DisplayName);
     }
 
@@ -227,10 +228,10 @@ public class SyncDirectoryCommandHandlerTests : IAsyncDisposable
 
         await CreateHandler().Handle(new SyncDirectoryCommand(directory.Id), CancellationToken.None);
 
-        var employee = _db.DirectoryUsers.Include(u => u.Attributes).Single(u => u.Username == "baris.kalaycioglu");
-        var manager = _db.DirectoryUsers.Single(u => u.Username == "gokhan.yetkin");
+        var employee = _db.Users.Include(u => u.Attributes).Single(u => u.Username == "baris.kalaycioglu");
+        var manager = _db.Users.Single(u => u.Username == "gokhan.yetkin");
 
-        employee.Attributes.Single().ReferencedDirectoryUserId.Should().Be(manager.Id);
+        employee.Attributes.Single().ReferencedUserId.Should().Be(manager.Id);
     }
 
     [Fact]
@@ -252,10 +253,10 @@ public class SyncDirectoryCommandHandlerTests : IAsyncDisposable
 
         await CreateHandler().Handle(new SyncDirectoryCommand(directory.Id), CancellationToken.None);
 
-        var employee = _db.DirectoryUsers.Include(u => u.Attributes).Single();
+        var employee = _db.Users.Include(u => u.Attributes).Single();
         var attribute = employee.Attributes.Single();
 
-        attribute.ReferencedDirectoryUserId.Should().BeNull();
+        attribute.ReferencedUserId.Should().BeNull();
         attribute.Value.Should().Be("Gökhan Yetkin");
     }
 
@@ -298,7 +299,7 @@ public class SyncDirectoryCommandHandlerTests : IAsyncDisposable
 
         await CreateHandler().Handle(new SyncDirectoryCommand(directory.Id), CancellationToken.None);
 
-        var user = _db.DirectoryUsers.Include(u => u.Attributes).Single();
+        var user = _db.Users.Include(u => u.Attributes).Single();
         user.Attributes.Should().ContainSingle();
         user.Attributes.Single().AttributeMappingId.Should().Be(mapping.Id);
 

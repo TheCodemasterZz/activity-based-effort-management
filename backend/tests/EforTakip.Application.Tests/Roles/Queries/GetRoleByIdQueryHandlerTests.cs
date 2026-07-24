@@ -1,6 +1,7 @@
 using EforTakip.Application.Roles.Queries.GetRoleById;
 using EforTakip.Application.Tests.Directories.Commands;
 using EforTakip.Domain.Directories;
+using EforTakip.Domain.Users;
 using EforTakip.Domain.Exceptions;
 using EforTakip.Domain.Roles;
 using FluentAssertions;
@@ -29,15 +30,15 @@ public class GetRoleByIdQueryHandlerTests : IAsyncDisposable
     public async Task Handle_ExistingRole_ReturnsPermissionsAndAssignedUsers()
     {
         var directory = Directory.CreateInternal("Internal Users", 0);
-        var user = DirectoryUser.CreateInternal(directory.Id, "kullanici", null, null, "Kullanıcı", null, "HASH");
+        var user = User.CreateInternal(directory.Id, "kullanici", null, null, "Kullanıcı", null, "HASH");
         var role = Role.Create("Proje Yöneticisi", "Açıklama", false);
         role.GrantPermission("project:read");
         var assignment = user.AssignRole(role.Id);
 
         _db.Directories.Add(directory);
-        _db.DirectoryUsers.Add(user);
+        _db.Users.Add(user);
         _db.Roles.Add(role);
-        _db.DirectoryUserRoles.Add(assignment!);
+        _db.UserRoles.Add(assignment!);
         await _db.SaveChangesAsync();
 
         var result = await CreateHandler().Handle(new GetRoleByIdQuery(role.Id), CancellationToken.None);

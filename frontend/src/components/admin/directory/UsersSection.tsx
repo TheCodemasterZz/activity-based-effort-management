@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useDirectories } from '../../../hooks/useDirectories';
-import { useDirectoryUsers } from '../../../hooks/useDirectoryUsers';
-import { DirectoryUserCard } from './DirectoryUserCard';
+import { useUsers } from '../../../hooks/useUsers';
+import { UserCard } from './UserCard';
 
 const PAGE_SIZE_OPTIONS = [25, 50, 100];
 
@@ -15,7 +15,7 @@ export function UsersSection() {
   const [pageNumber, setPageNumber] = useState(1);
   const [pageSize, setPageSize] = useState(PAGE_SIZE_OPTIONS[0]);
 
-  const users = useDirectoryUsers({
+  const users = useUsers({
     directoryId: selectedDirectoryId || undefined,
     searchTerm,
     pageNumber,
@@ -27,7 +27,7 @@ export function UsersSection() {
 
   if (view.kind === 'detail') {
     return (
-      <DirectoryUserCard
+      <UserCard
         userId={view.userId}
         onBack={() => setView({ kind: 'list' })}
         onSelectUser={(userId) => setView({ kind: 'detail', userId })}
