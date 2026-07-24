@@ -1,12 +1,12 @@
 import { useState } from 'react';
-import { useEmployeeLeaves } from '../../hooks/useEmployeeLeaves';
-import { useCreateEmployeeLeaveMutation } from '../../hooks/useCreateEmployeeLeaveMutation';
-import { useDeleteEmployeeLeaveMutation } from '../../hooks/useDeleteEmployeeLeaveMutation';
+import { useLeaves } from '../../hooks/useLeaves';
+import { useCreateLeaveMutation } from '../../hooks/useCreateLeaveMutation';
+import { useDeleteLeaveMutation } from '../../hooks/useDeleteLeaveMutation';
 import { ApiError } from '../../api/client';
 
-interface EmployeeLeaveScheduleModalProps {
-  employeeId: string;
-  employeeName: string;
+interface LeaveScheduleModalProps {
+  userId: string;
+  userName: string;
   onClose: () => void;
 }
 
@@ -22,10 +22,10 @@ function formatTime(t: string | null): string {
   return t ? t.slice(0, 5) : '';
 }
 
-export function EmployeeLeaveScheduleModal({ employeeId, employeeName, onClose }: EmployeeLeaveScheduleModalProps) {
-  const leaves = useEmployeeLeaves({ employeeId });
-  const createMutation = useCreateEmployeeLeaveMutation();
-  const deleteMutation = useDeleteEmployeeLeaveMutation();
+export function LeaveScheduleModal({ userId, userName, onClose }: LeaveScheduleModalProps) {
+  const leaves = useLeaves({ userId });
+  const createMutation = useCreateLeaveMutation();
+  const deleteMutation = useDeleteLeaveMutation();
 
   const [isAdding, setIsAdding] = useState(false);
   const [startDate, setStartDate] = useState(todayIso());
@@ -53,7 +53,7 @@ export function EmployeeLeaveScheduleModal({ employeeId, employeeName, onClose }
     setErrorMessage(null);
     try {
       await createMutation.mutateAsync({
-        employeeId,
+        userId,
         startDate,
         endDate: isFullDay ? endDate : startDate,
         isFullDay,
@@ -79,7 +79,7 @@ export function EmployeeLeaveScheduleModal({ employeeId, employeeName, onClose }
         <div className="mb-4 flex items-center justify-between">
           <div>
             <h2 className="text-lg font-semibold text-slate-800">İzin Programı</h2>
-            <p className="text-xs text-slate-400">{employeeName}</p>
+            <p className="text-xs text-slate-400">{userName}</p>
           </div>
           <button type="button" onClick={onClose} className="text-slate-400 hover:text-slate-600">
             ✕

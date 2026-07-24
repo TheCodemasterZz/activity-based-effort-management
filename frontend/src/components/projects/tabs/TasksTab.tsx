@@ -12,7 +12,7 @@ function formatDateTr(date: string): string {
   return new Date(`${date}T00:00:00`).toLocaleDateString('tr-TR');
 }
 
-function TaskRow({ task, resolveEmployee, onEdit }: { task: ProjectTaskDto; resolveEmployee: (id: string | null) => string; onEdit: () => void }) {
+function TaskRow({ task, resolveUser, onEdit }: { task: ProjectTaskDto; resolveUser: (id: string | null) => string; onEdit: () => void }) {
   const statusMutation = useUpdateProjectTaskStatusMutation();
   const deleteMutation = useDeleteProjectTaskMutation();
   const statusInfo = TASK_STATUS_LABEL[task.status] ?? { label: task.status, className: 'bg-slate-100 text-slate-500' };
@@ -31,7 +31,7 @@ function TaskRow({ task, resolveEmployee, onEdit }: { task: ProjectTaskDto; reso
         </div>
         <div className="text-xs text-slate-400">
           {formatDateTr(task.startDate)} – {formatDateTr(task.endDate)} · {task.estimatedEffortHours}h ·{' '}
-          <span className="text-slate-500">{resolveEmployee(task.assignedEmployeeId)}</span>
+          <span className="text-slate-500">{resolveUser(task.assignedUserId)}</span>
         </div>
       </div>
       <div className="flex shrink-0 items-center gap-1.5">
@@ -59,28 +59,28 @@ function TaskRow({ task, resolveEmployee, onEdit }: { task: ProjectTaskDto; reso
 
 interface TasksTabProps {
   tasks: ProjectTaskDto[];
-  resolveEmployee: (id: string | null) => string;
+  resolveUser: (id: string | null) => string;
   onAddTask: () => void;
   onEditTask: (task: ProjectTaskDto) => void;
 }
 
 /** Görevlerin düz (WBS hiyerarşisi olmadan) listesi — Schedule sekmesinin ağaç görünümünün
  * aksine, burada odak kişi ataması ve iş yükü dağılımı üzerinde. */
-export function TasksTab({ tasks, resolveEmployee, onAddTask, onEditTask }: TasksTabProps) {
+export function TasksTab({ tasks, resolveUser, onAddTask, onEditTask }: TasksTabProps) {
   const [filterEmployeeId, setFilterEmployeeId] = useState<string | 'all'>('all');
 
   const workload = useMemo(() => {
     const map = new Map<string, number>();
     for (const task of tasks) {
-      if (!task.assignedEmployeeId) continue;
-      map.set(task.assignedEmployeeId, (map.get(task.assignedEmployeeId) ?? 0) + task.estimatedEffortHours);
+      if (!task.assignedUserId) continue;
+      map.set(task.assignedUserId, (map.get(task.assignedUserId) ?? 0) + task.estimatedEffortHours);
     }
     return Array.from(map.entries())
-      .map(([employeeId, hours]) => ({ employeeId, hours }))
+      .map(([userId, hours]) => ({ userId, hours }))
       .sort((a, b) => b.hours - a.hours);
   }, [tasks]);
 
-  const filteredTasks = filterEmployeeId === 'all' ? tasks : tasks.filter((t) => t.assignedEmployeeId === filterEmployeeId);
+  const filteredTasks = filterEmployeeId === 'all' ? tasks : tasks.filter((t) => t.assignedUserId === filterEmployeeId);
 
   return (
     <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
@@ -96,7 +96,7 @@ export function TasksTab({ tasks, resolveEmployee, onAddTask, onEditTask }: Task
             <p className="text-sm text-slate-400">Görev bulunamadı.</p>
           ) : (
             filteredTasks.map((task) => (
-              <TaskRow key={task.id} task={task} resolveEmployee={resolveEmployee} onEdit={() => onEditTask(task)} />
+              <TaskRow key={task.id} task={task} resolveUser={resolveUser} onEdit={() => onEditTask(task)} />
             ))
           )}
         </div>
@@ -118,20 +118,20 @@ export function TasksTab({ tasks, resolveEmployee, onAddTask, onEditTask }: Task
             >
               Tümü
             </button>
-            {workload.map(({ employeeId, hours }) => {
+            {workload.map(({ userId, hours }) => {
               const maxHours = workload[0]?.hours || 1;
               return (
                 <button
                   type="button"
-                  key={employeeId}
-                  onClick={() => setFilterEmployeeId(employeeId)}
+                  key={userId}
+                  onClick={() => setFilterEmployeeId(userId)}
                   className={
                     'block w-full rounded-md px-2 py-1.5 text-left ' +
-                    (filterEmployeeId === employeeId ? 'bg-indigo-50' : 'hover:bg-slate-50')
+                    (filterEmployeeId === userId ? 'bg-indigo-50' : 'hover:bg-slate-50')
                   }
                 >
                   <div className="flex items-center justify-between text-xs">
-                    <span className="truncate font-medium text-slate-700">{resolveEmployee(employeeId)}</span>
+                    <span className="truncate font-medium text-slate-700">{resolveUser(userId)}</span>
                     <span className="shrink-0 text-slate-400">{hours.toFixed(0)}h</span>
                   </div>
                   <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-slate-100">

@@ -17,13 +17,13 @@ import {
 import { evaluateMql, type MqlNode } from '../lib/mql';
 import { useWorkLogs } from '../hooks/useWorkLogs';
 import { useEmployees } from '../hooks/useEmployees';
-import { useEmployeeLeaves } from '../hooks/useEmployeeLeaves';
+import { useLeaves } from '../hooks/useLeaves';
 import { useProjects } from '../hooks/useProjects';
 import { useAllActivities } from '../hooks/useActivities';
 import { useHolidays } from '../hooks/useHolidays';
 import { getWorkCalendarById } from '../api/workCalendars';
-import { WORK_LOG_ENTRY_TYPE, type EmployeeDto, type EmployeeWorkLogDto, type WorkCalendarDetailDto } from '../api/types';
-import type { EmployeeLeaveDto } from '../api/employeeLeaves';
+import { WORK_LOG_ENTRY_TYPE, type EmployeeDto, type WorkLogDto, type WorkCalendarDetailDto } from '../api/types';
+import type { LeaveDto } from '../api/leaves';
 
 type WorkloadMode = 'mixed' | 'actual' | 'planned';
 type CellStatus = 'over' | 'full' | 'free' | 'none';
@@ -47,25 +47,25 @@ function calendarDayHours(calendar: WorkCalendarDetailDto | undefined, dayOfWeek
   return (toMinutes(day.endTime) - toMinutes(day.startTime)) / 60;
 }
 
-function buildHoursByEmployeeDate(logs: EmployeeWorkLogDto[]): Map<string, Map<string, number>> {
+function buildHoursByEmployeeDate(logs: WorkLogDto[]): Map<string, Map<string, number>> {
   const map = new Map<string, Map<string, number>>();
   for (const log of logs) {
-    const byDate = map.get(log.employeeId) ?? new Map<string, number>();
+    const byDate = map.get(log.userId) ?? new Map<string, number>();
     byDate.set(log.workDate, (byDate.get(log.workDate) ?? 0) + log.hours);
-    map.set(log.employeeId, byDate);
+    map.set(log.userId, byDate);
   }
   return map;
 }
 
 function buildLeaveHoursByEmployeeDate(
-  leaves: EmployeeLeaveDto[],
+  leaves: LeaveDto[],
   employeesList: EmployeeDto[],
   calendarsById: Map<string, WorkCalendarDetailDto>,
 ): Map<string, Map<string, number>> {
   const calendarByEmployee = new Map(employeesList.map((e) => [e.id, calendarsById.get(e.workCalendarId)]));
   const map = new Map<string, Map<string, number>>();
   for (const leave of leaves) {
-    const calendar = calendarByEmployee.get(leave.employeeId);
+    const calendar = calendarByEmployee.get(leave.userId);
     for (const day of eachDateKeyInRange(leave.startDate, leave.endDate)) {
       const dayOfWeek = new Date(`${day}T00:00:00`).getDay();
       const hours = leave.isFullDay
@@ -73,9 +73,9 @@ function buildLeaveHoursByEmployeeDate(
         : leave.startTime && leave.endTime
           ? (toMinutes(leave.endTime) - toMinutes(leave.startTime)) / 60
           : 0;
-      const byDate = map.get(leave.employeeId) ?? new Map<string, number>();
+      const byDate = map.get(leave.userId) ?? new Map<string, number>();
       byDate.set(day, (byDate.get(day) ?? 0) + hours);
-      map.set(leave.employeeId, byDate);
+      map.set(leave.userId, byDate);
     }
   }
   return map;
@@ -261,7 +261,7 @@ export function CapacityManagementPage() {
   const employees = useEmployees();
   const actualLogs = useWorkLogs(periodRange.startKey, periodRange.endKey, WORK_LOG_ENTRY_TYPE.Actual);
   const plannedLogs = useWorkLogs(periodRange.startKey, periodRange.endKey, WORK_LOG_ENTRY_TYPE.Planned);
-  const employeeLeaves = useEmployeeLeaves();
+  const leaves = useLeaves();
   const holidays = useHolidays();
   const projects = useProjects();
   const activities = useAllActivities();
@@ -280,11 +280,11 @@ export function CapacityManagementPage() {
     [employees.data, projects.data, activities.data],
   );
 
-  const filterLogs = (logs: EmployeeWorkLogDto[]) => {
+  const filterLogs = (logs: WorkLogDto[]) => {
     if (!mqlAst) return logs;
     return logs.filter((log) =>
       evaluateMql(mqlAst, {
-        employee: employeesById.get(log.employeeId) ?? '',
+        employee: employeesById.get(log.userId) ?? '',
         project: projectsById.get(log.projectId) ?? '',
         activityL1: activitiesById.get(log.activityL1Id) ?? '',
         activityL2: activitiesById.get(log.activityL2Id) ?? '',
@@ -329,8 +329,8 @@ export function CapacityManagementPage() {
   const actualHoursByEmployeeDate = useMemo(() => buildHoursByEmployeeDate(filteredActualLogs), [filteredActualLogs]);
   const plannedHoursByEmployeeDate = useMemo(() => buildHoursByEmployeeDate(filteredPlannedLogs), [filteredPlannedLogs]);
   const leaveHoursByEmployeeDate = useMemo(
-    () => buildLeaveHoursByEmployeeDate(employeeLeaves.data?.items ?? [], employees.data?.items ?? [], calendarsById),
-    [employeeLeaves.data, employees.data, calendarsById],
+    () => buildLeaveHoursByEmployeeDate(leaves.data?.items ?? [], employees.data?.items ?? [], calendarsById),
+    [leaves.data, employees.data, calendarsById],
   );
 
   // MQL aktifken tablo/grafik sadece filtreye uyan en az bir Actual/Planned kaydı olan
@@ -340,8 +340,8 @@ export function CapacityManagementPage() {
   const matchingEmployeeIds = useMemo(() => {
     if (!mqlAst) return null;
     const ids = new Set<string>();
-    for (const log of filteredActualLogs) ids.add(log.employeeId);
-    for (const log of filteredPlannedLogs) ids.add(log.employeeId);
+    for (const log of filteredActualLogs) ids.add(log.userId);
+    for (const log of filteredPlannedLogs) ids.add(log.userId);
     return ids;
   }, [mqlAst, filteredActualLogs, filteredPlannedLogs]);
 

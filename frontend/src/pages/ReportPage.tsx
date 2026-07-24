@@ -26,12 +26,12 @@ import { evaluateMql, type MqlNode } from '../lib/mql';
 import { pushErrorNotification } from '../lib/notifications';
 import { useWorkLogs } from '../hooks/useWorkLogs';
 import { useWorkLogApprovals } from '../hooks/useWorkLogApprovals';
-import { useEmployeeLeaves } from '../hooks/useEmployeeLeaves';
+import { useLeaves } from '../hooks/useLeaves';
 import { useEmployees } from '../hooks/useEmployees';
 import { useProjects } from '../hooks/useProjects';
 import { useAllActivities } from '../hooks/useActivities';
 import { useHolidays } from '../hooks/useHolidays';
-import type { EmployeeWorkLogDto } from '../api/types';
+import type { WorkLogDto } from '../api/types';
 
 interface ReportPageProps {
   // Belirtildiğinde sayfa tek bir projeye kilitlenir — Proje Detay sayfasının Timesheet
@@ -53,7 +53,7 @@ export function ReportPage({ projectId }: ReportPageProps = {}) {
   const [createModal, setCreateModal] = useState<{ initial: WorkLogFormInitialValues } | null>(null);
   const [isApprovalModalOpen, setIsApprovalModalOpen] = useState(false);
   const [cellModal, setCellModal] = useState<{
-    logs: EmployeeWorkLogDto[];
+    logs: WorkLogDto[];
     date: string;
     prefill: WorkLogFormInitialValues;
   } | null>(null);
@@ -64,7 +64,7 @@ export function ReportPage({ projectId }: ReportPageProps = {}) {
   );
   const workLogs = useWorkLogs(periodRange.startKey, periodRange.endKey);
   const workLogApprovals = useWorkLogApprovals();
-  const employeeLeaves = useEmployeeLeaves();
+  const leaves = useLeaves();
 
   const employees = useEmployees();
   const projects = useProjects();
@@ -82,26 +82,26 @@ export function ReportPage({ projectId }: ReportPageProps = {}) {
 
   // Çalışan bazlı onaylı [start,end] dönemleri — tabloda kaydı olmayan ama onaylı bir haftaya
   // denk gelen boş günleri de doğru renklendirebilmek için (bkz. WorkLogTable.cellApprovalStatus).
-  const approvedRangesByEmployee = useMemo(() => {
+  const approvedRangesByUser = useMemo(() => {
     const map = new Map<string, { start: string; end: string }[]>();
     for (const approval of workLogApprovals.data?.items ?? []) {
-      const list = map.get(approval.employeeId) ?? [];
+      const list = map.get(approval.userId) ?? [];
       list.push({ start: approval.periodStart, end: approval.periodEnd });
-      map.set(approval.employeeId, list);
+      map.set(approval.userId, list);
     }
     return map;
   }, [workLogApprovals.data]);
 
   // Çalışan bazlı izin dönemleri — tam gün veya saatlik (kısmi) olabilir.
-  const leaveRangesByEmployee = useMemo(() => {
+  const leaveRangesByUser = useMemo(() => {
     const map = new Map<string, LeaveRange[]>();
-    for (const leave of employeeLeaves.data?.items ?? []) {
-      const list = map.get(leave.employeeId) ?? [];
+    for (const leave of leaves.data?.items ?? []) {
+      const list = map.get(leave.userId) ?? [];
       list.push({ start: leave.startDate, end: leave.endDate, isFullDay: leave.isFullDay });
-      map.set(leave.employeeId, list);
+      map.set(leave.userId, list);
     }
     return map;
-  }, [employeeLeaves.data]);
+  }, [leaves.data]);
 
   // MQL otomatik tamamlama için alan bazlı bilinen değerler — mevcut work log'larla sınırlı
   // değil, tüm çalışan/proje/aktivite kataloğunu kapsar.
@@ -116,10 +116,10 @@ export function ReportPage({ projectId }: ReportPageProps = {}) {
   );
 
   const resolveDimension = useMemo(() => {
-    return (dimension: GroupByDimension, log: EmployeeWorkLogDto) => {
+    return (dimension: GroupByDimension, log: WorkLogDto) => {
       switch (dimension) {
         case 'employee':
-          return { key: log.employeeId, label: employeesById.get(log.employeeId) ?? 'Bilinmeyen kişi' };
+          return { key: log.userId, label: employeesById.get(log.userId) ?? 'Bilinmeyen kişi' };
         case 'project':
           return { key: log.projectId, label: projectsById.get(log.projectId) ?? 'Bilinmeyen proje' };
         case 'activityL1':
@@ -144,7 +144,7 @@ export function ReportPage({ projectId }: ReportPageProps = {}) {
     if (!mqlAst) return logs;
     return logs.filter((log) =>
       evaluateMql(mqlAst, {
-        employee: employeesById.get(log.employeeId) ?? '',
+        employee: employeesById.get(log.userId) ?? '',
         project: projectsById.get(log.projectId) ?? '',
         activityL1: activitiesById.get(log.activityL1Id) ?? '',
         activityL2: activitiesById.get(log.activityL2Id) ?? '',
@@ -172,7 +172,7 @@ export function ReportPage({ projectId }: ReportPageProps = {}) {
 
   const totalHours = filteredLogs.reduce((sum, l) => sum + l.hours, 0);
   const approvedHours = filteredLogs.filter((l) => l.isApproved).reduce((sum, l) => sum + l.hours, 0);
-  const activePeopleCount = new Set(filteredLogs.map((l) => l.employeeId)).size;
+  const activePeopleCount = new Set(filteredLogs.map((l) => l.userId)).size;
   const avgDailyHours = activePeopleCount > 0 ? totalHours / activePeopleCount : 0;
 
   // Widget trend grafikleri sadece bugüne kadar geçmiş olan sütunları kullanır — aksi halde
@@ -197,9 +197,9 @@ export function ReportPage({ projectId }: ReportPageProps = {}) {
       .filter((l) => l.isApproved && l.workDate >= c.startKey && l.workDate <= c.endKey)
       .reduce((sum, l) => sum + l.hours, 0),
   }));
-  const totalEmployeeCount = employees.data?.items.length ?? 0;
+  const totalUserCount = employees.data?.items.length ?? 0;
 
-  const resolveEmployee = (id: string) => employeesById.get(id) ?? 'Bilinmeyen kişi';
+  const resolveUser = (id: string) => employeesById.get(id) ?? 'Bilinmeyen kişi';
   const resolveProject = (id: string) => projectsById.get(id) ?? 'Bilinmeyen proje';
   const resolveActivity = (id: string) => activitiesById.get(id) ?? 'Bilinmeyen aktivite';
 
@@ -213,8 +213,8 @@ export function ReportPage({ projectId }: ReportPageProps = {}) {
 
       switch (dimension) {
         case 'employee':
-          prefill.employeeId = key;
-          prefill.employeeLabel = resolveEmployee(key);
+          prefill.userId = key;
+          prefill.userLabel = resolveUser(key);
           break;
         case 'project':
           prefill.projectId = key;
@@ -243,8 +243,8 @@ export function ReportPage({ projectId }: ReportPageProps = {}) {
   // hücreler dahil, çünkü backend onaylı bir haftaya yeni kayıt eklenmesine zaten izin vermiyor;
   // bu kontrol, kullanıcıyı zaten reddedilecek bir formu doldurmaktan kurtarır.
   const isRangeApprovedForRow = (row: GroupedRow, startKey: string, endKey: string): boolean => {
-    if (!row.employeeId) return false;
-    const ranges = approvedRangesByEmployee.get(row.employeeId);
+    if (!row.userId) return false;
+    const ranges = approvedRangesByUser.get(row.userId);
     if (!ranges || ranges.length === 0) return false;
     return eachDateKeyInRange(startKey, endKey).some((d) => ranges.some((r) => d >= r.start && d <= r.end));
   };
@@ -350,7 +350,7 @@ export function ReportPage({ projectId }: ReportPageProps = {}) {
           totalHours={totalHours}
           totalCount={filteredLogs.length}
           activePeopleCount={activePeopleCount}
-          totalEmployeeCount={totalEmployeeCount}
+          totalUserCount={totalUserCount}
           avgDailyHours={avgDailyHours}
           approvedHours={approvedHours}
           periodLabel={periodRange.label}
@@ -376,8 +376,8 @@ export function ReportPage({ projectId }: ReportPageProps = {}) {
           grandTotalByColumn={grouped.grandTotalByColumn}
           grandTotal={grouped.grandTotal}
           holidayDateKeys={holidayDateKeys}
-          approvedRangesByEmployee={approvedRangesByEmployee}
-          leaveRangesByEmployee={leaveRangesByEmployee}
+          approvedRangesByUser={approvedRangesByUser}
+          leaveRangesByUser={leaveRangesByUser}
           onCellClick={handleCellClick}
           onRangeSelect={handleRangeSelect}
           maxHeightClassName={projectId ? 'max-h-[40vh]' : undefined}
@@ -415,7 +415,7 @@ export function ReportPage({ projectId }: ReportPageProps = {}) {
         <CellWorkLogsModal
           logs={cellModal.logs}
           date={cellModal.date}
-          resolveEmployee={resolveEmployee}
+          resolveUser={resolveUser}
           resolveProject={resolveProject}
           resolveActivity={resolveActivity}
           addPrefill={cellModal.prefill}

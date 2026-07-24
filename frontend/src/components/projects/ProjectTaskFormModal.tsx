@@ -23,12 +23,12 @@ export function ProjectTaskFormModal({ projectId, task, onClose }: ProjectTaskFo
   const [endDate, setEndDate] = useState(task?.endDate ?? todayIso());
   const [estimatedEffortHours, setEstimatedEffortHours] = useState(String(task?.estimatedEffortHours ?? ''));
   const [isMilestone, setIsMilestone] = useState(task?.isMilestone ?? false);
-  const [assignedEmployeeId, setAssignedEmployeeId] = useState(task?.assignedEmployeeId ?? '');
+  const [assignedUserId, setAssignedEmployeeId] = useState(task?.assignedUserId ?? '');
   const [assigneeLabel, setAssigneeLabel] = useState('');
   const [assigneeQuery, setAssigneeQuery] = useState('');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const existingAssignee = useEmployeeById(task?.assignedEmployeeId ?? null);
+  const existingAssignee = useEmployeeById(task?.assignedUserId ?? null);
   const assigneeSearch = useEmployeeSearch(assigneeQuery);
   const resolvedAssigneeLabel = assigneeLabel || existingAssignee.data?.name || '';
 
@@ -58,7 +58,7 @@ export function ProjectTaskFormModal({ projectId, task, onClose }: ProjectTaskFo
             // olduğu gibi geri gönderip kazara sıfırlanmalarını önlüyoruz.
             parentTaskId: task.parentTaskId,
             dependsOnTaskId: task.dependsOnTaskId,
-            assignedEmployeeId: assignedEmployeeId || null,
+            assignedUserId: assignedUserId || null,
           },
         });
       } else {
@@ -69,7 +69,7 @@ export function ProjectTaskFormModal({ projectId, task, onClose }: ProjectTaskFo
           endDate,
           estimatedEffortHours: hours,
           isMilestone,
-          assignedEmployeeId: assignedEmployeeId || null,
+          assignedUserId: assignedUserId || null,
         });
       }
       onClose();

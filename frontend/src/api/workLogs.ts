@@ -1,10 +1,10 @@
 import { apiClient } from './client';
-import { WORK_LOG_ENTRY_TYPE, type EmployeeWorkLogDto, type PagedResult, type WorkLogEntryType } from './types';
+import { WORK_LOG_ENTRY_TYPE, type WorkLogDto, type PagedResult, type WorkLogEntryType } from './types';
 
 export interface GetWorkLogsParams {
   dateFrom?: string;
   dateTo?: string;
-  employeeId?: string;
+  userId?: string;
   projectId?: string;
   pageNumber?: number;
   pageSize?: number;
@@ -12,10 +12,10 @@ export interface GetWorkLogsParams {
 }
 
 export function getWorkLogs(params: GetWorkLogsParams) {
-  return apiClient.get<PagedResult<EmployeeWorkLogDto>>('/api/v1/employeeworklogs', {
+  return apiClient.get<PagedResult<WorkLogDto>>('/api/v1/worklogs', {
     dateFrom: params.dateFrom,
     dateTo: params.dateTo,
-    employeeId: params.employeeId,
+    userId: params.userId,
     projectId: params.projectId,
     pageNumber: params.pageNumber ?? 1,
     // Backend'in PaginationParams.MaxPageSize'ı (bkz. PaginationParams.cs) 5000 — sayfasız "tüm
@@ -28,7 +28,7 @@ export function getWorkLogs(params: GetWorkLogsParams) {
 }
 
 export interface LogWorkPayload {
-  employeeId: string;
+  userId: string;
   projectId: string;
   activityL1Id: string;
   activityL2Id: string;
@@ -40,11 +40,11 @@ export interface LogWorkPayload {
 }
 
 export function logWork(payload: LogWorkPayload) {
-  return apiClient.post<{ ids: string[] }>('/api/v1/employeeworklogs', payload);
+  return apiClient.post<{ ids: string[] }>('/api/v1/worklogs', payload);
 }
 
 export interface UpdateWorkLogPayload {
-  employeeId: string;
+  userId: string;
   projectId: string;
   activityL1Id: string;
   activityL2Id: string;
@@ -54,9 +54,9 @@ export interface UpdateWorkLogPayload {
 }
 
 export function updateWorkLog(id: string, payload: UpdateWorkLogPayload) {
-  return apiClient.put<void>(`/api/v1/employeeworklogs/${id}`, payload);
+  return apiClient.put<void>(`/api/v1/worklogs/${id}`, payload);
 }
 
 export function deleteWorkLog(id: string) {
-  return apiClient.delete<void>(`/api/v1/employeeworklogs/${id}`);
+  return apiClient.delete<void>(`/api/v1/worklogs/${id}`);
 }

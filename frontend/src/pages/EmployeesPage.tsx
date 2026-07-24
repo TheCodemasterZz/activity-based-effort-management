@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useEmployees } from '../hooks/useEmployees';
-import { EmployeeLeaveScheduleModal } from '../components/employees/EmployeeLeaveScheduleModal';
+import { LeaveScheduleModal } from '../components/leaves/LeaveScheduleModal';
 import { ErrorState } from '../components/common/ErrorState';
 
 export function EmployeesPage() {
@@ -68,9 +68,9 @@ export function EmployeesPage() {
       )}
 
       {selectedEmployee && (
-        <EmployeeLeaveScheduleModal
-          employeeId={selectedEmployee.id}
-          employeeName={selectedEmployee.name}
+        <LeaveScheduleModal
+          userId={selectedEmployee.id}
+          userName={selectedEmployee.name}
           onClose={() => setSelectedEmployee(null)}
         />
       )}

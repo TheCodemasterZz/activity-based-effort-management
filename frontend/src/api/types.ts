@@ -27,7 +27,7 @@ export interface ProjectDto {
   endDate: string | null;
   healthStatus: string;
   sponsor: string | null;
-  projectManagerEmployeeId: string | null;
+  projectManagerUserId: string | null;
   priority: string;
   strategicGoal: string | null;
 }
@@ -57,7 +57,7 @@ export interface ProjectTaskDto {
   baselineEndDate: string;
   parentTaskId: string | null;
   dependsOnTaskId: string | null;
-  assignedEmployeeId: string | null;
+  assignedUserId: string | null;
 }
 
 export const PROJECT_RISK_STATUS = { Open: 1, Mitigating: 2, Closed: 3 } as const;
@@ -72,7 +72,7 @@ export interface ProjectRiskDto {
   impact: number;
   status: string;
   mitigationPlan: string | null;
-  ownerEmployeeId: string | null;
+  ownerUserId: string | null;
   identifiedDate: string;
 }
 
@@ -89,7 +89,7 @@ export interface ProjectIssueDto {
   description: string | null;
   priority: string;
   status: string;
-  ownerEmployeeId: string | null;
+  ownerUserId: string | null;
   dueDate: string | null;
   resolution: string | null;
 }
@@ -99,7 +99,7 @@ export interface CustomerSummaryDto {
   name: string;
 }
 
-export interface EmployeeSummaryDto {
+export interface UserSummaryDto {
   id: string;
   name: string;
 }
@@ -113,11 +113,11 @@ export interface ProjectDetailDto {
   endDate: string | null;
   healthStatus: string;
   sponsor: string | null;
-  projectManagerEmployeeId: string | null;
+  projectManagerUserId: string | null;
   priority: string;
   strategicGoal: string | null;
   customers: CustomerSummaryDto[];
-  employees: EmployeeSummaryDto[];
+  users: UserSummaryDto[];
 }
 
 export interface ActivityDto {
@@ -149,9 +149,9 @@ export interface ValueStreamDetailDto extends ValueStreamDto {
 export const WORK_LOG_ENTRY_TYPE = { Actual: 0, Planned: 1 } as const;
 export type WorkLogEntryType = (typeof WORK_LOG_ENTRY_TYPE)[keyof typeof WORK_LOG_ENTRY_TYPE];
 
-export interface EmployeeWorkLogDto {
+export interface WorkLogDto {
   id: string;
-  employeeId: string;
+  userId: string;
   projectId: string;
   activityL1Id: string;
   activityL2Id: string;

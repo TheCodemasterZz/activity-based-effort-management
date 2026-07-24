@@ -21,7 +21,7 @@ export interface SaveProjectRiskPayload {
   probability: number;
   impact: number;
   mitigationPlan?: string | null;
-  ownerEmployeeId?: string | null;
+  ownerUserId?: string | null;
   identifiedDate: string;
 }
 

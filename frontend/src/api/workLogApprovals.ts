@@ -2,7 +2,7 @@ import { apiClient } from './client';
 import { WORK_LOG_ENTRY_TYPE, type ApprovalPeriodType, type PagedResult, type WorkLogEntryType } from './types';
 
 export interface CreateWorkLogApprovalPayload {
-  employeeId: string;
+  userId: string;
   periodType: ApprovalPeriodType;
   periodStart: string;
   periodEnd: string;
@@ -16,7 +16,7 @@ export function createWorkLogApproval(payload: CreateWorkLogApprovalPayload) {
 
 export interface WorkLogApprovalDto {
   id: string;
-  employeeId: string;
+  userId: string;
   periodStart: string;
   periodEnd: string;
   description?: string | null;

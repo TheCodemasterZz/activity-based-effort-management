@@ -1,4 +1,4 @@
-import type { EmployeeWorkLogDto } from '../api/types';
+import type { WorkLogDto } from '../api/types';
 import type { PeriodColumn } from './dateUtils';
 import type { GroupByDimension, ResolveDimension } from './groupWorkLogs';
 
@@ -16,7 +16,7 @@ export interface AccuracyRow {
   totalActual: number;
   totalPlanned: number;
   children?: AccuracyRow[];
-  employeeId?: string;
+  userId?: string;
 }
 
 export interface AccuracyResult {
@@ -32,26 +32,26 @@ function findColumn(columns: PeriodColumn[], workDate: string): PeriodColumn | u
 }
 
 function buildLevel(
-  actualLogs: EmployeeWorkLogDto[],
-  plannedLogs: EmployeeWorkLogDto[],
+  actualLogs: WorkLogDto[],
+  plannedLogs: WorkLogDto[],
   dimensions: GroupByDimension[],
   levelIndex: number,
   columns: PeriodColumn[],
   resolveDimension: ResolveDimension,
   depth: number,
   parentPath: string,
-  employeeRoster?: { id: string; name: string }[],
+  userRoster?: { id: string; name: string }[],
 ): AccuracyRow[] {
   const dimension = dimensions[levelIndex];
-  const groups = new Map<string, { label: string; actual: EmployeeWorkLogDto[]; planned: EmployeeWorkLogDto[] }>();
+  const groups = new Map<string, { label: string; actual: WorkLogDto[]; planned: WorkLogDto[] }>();
 
-  if (employeeRoster && dimension === 'employee') {
-    for (const employee of employeeRoster) {
+  if (userRoster && dimension === 'employee') {
+    for (const employee of userRoster) {
       groups.set(employee.id, { label: employee.name, actual: [], planned: [] });
     }
   }
 
-  const ensureGroup = (log: EmployeeWorkLogDto) => {
+  const ensureGroup = (log: WorkLogDto) => {
     const resolved = resolveDimension(dimension, log);
     if (!resolved) return null;
     let group = groups.get(resolved.key);
@@ -103,7 +103,7 @@ function buildLevel(
       totalActual,
       totalPlanned,
     };
-    if (dimension === 'employee') row.employeeId = key;
+    if (dimension === 'employee') row.userId = key;
 
     if (!isLeafLevel) {
       row.children = buildLevel(
@@ -125,16 +125,16 @@ function buildLevel(
 }
 
 export function groupWorkLogsAccuracy(
-  actualLogs: EmployeeWorkLogDto[],
-  plannedLogs: EmployeeWorkLogDto[],
+  actualLogs: WorkLogDto[],
+  plannedLogs: WorkLogDto[],
   columns: PeriodColumn[],
   dimensions: GroupByDimension[],
   resolveDimension: ResolveDimension,
-  employeeRoster?: { id: string; name: string }[],
+  userRoster?: { id: string; name: string }[],
 ): AccuracyResult {
   const rows =
     dimensions.length > 0
-      ? buildLevel(actualLogs, plannedLogs, dimensions, 0, columns, resolveDimension, 0, 'root', employeeRoster)
+      ? buildLevel(actualLogs, plannedLogs, dimensions, 0, columns, resolveDimension, 0, 'root', userRoster)
       : [];
 
   const grandTotalActualByColumn: Record<string, number> = {};

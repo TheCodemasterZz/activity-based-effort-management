@@ -77,14 +77,14 @@ export function ProjectDetailPage({ projectId, onBack }: ProjectDetailPageProps)
   const milestones = tasks.filter((t) => t.isMilestone);
 
   const employeesById = useMemo(() => new Map(employees.data?.items.map((e) => [e.id, e.name])), [employees.data]);
-  const resolveEmployee = (id: string | null) => (id ? employeesById.get(id) ?? 'Bilinmeyen kişi' : '—');
+  const resolveUser = (id: string | null) => (id ? employeesById.get(id) ?? 'Bilinmeyen kişi' : '—');
 
   const projectActualLogs = useMemo(
     () => (actualLogsQuery.data?.items ?? []).filter((l) => l.projectId === projectId),
     [actualLogsQuery.data, projectId],
   );
   const actualHours90d = projectActualLogs.reduce((sum, l) => sum + l.hours, 0);
-  const activeEmployeeCount = new Set(projectActualLogs.map((l) => l.employeeId)).size;
+  const activeEmployeeCount = new Set(projectActualLogs.map((l) => l.userId)).size;
 
   // Son 30 günün günlük gerçekleşen efor trendi — Overview'daki StatCardShell'in "chart" sahasında.
   const hoursTrend = useMemo<ChartPoint[]>(() => {
@@ -136,16 +136,16 @@ export function ProjectDetailPage({ projectId, onBack }: ProjectDetailPageProps)
                 actualHours90d={actualHours90d}
                 activeEmployeeCount={activeEmployeeCount}
                 hoursTrend={hoursTrend}
-                resolveEmployee={resolveEmployee}
+                resolveUser={resolveUser}
                 risks={risks}
                 issues={issues}
               />
             )}
-            {activeTab === 'schedule' && <ScheduleTab tasks={tasks} resolveEmployee={resolveEmployee} />}
+            {activeTab === 'schedule' && <ScheduleTab tasks={tasks} resolveUser={resolveUser} />}
             {activeTab === 'tasks' && (
               <TasksTab
                 tasks={tasks}
-                resolveEmployee={resolveEmployee}
+                resolveUser={resolveUser}
                 onAddTask={() => setTaskModal({})}
                 onEditTask={(task) => setTaskModal({ task })}
               />
@@ -154,7 +154,7 @@ export function ProjectDetailPage({ projectId, onBack }: ProjectDetailPageProps)
             {activeTab === 'risks' && (
               <RisksTab
                 risks={risks}
-                resolveEmployee={resolveEmployee}
+                resolveUser={resolveUser}
                 onAdd={() => setRiskModal({})}
                 onEdit={(risk) => setRiskModal({ risk })}
               />
@@ -162,7 +162,7 @@ export function ProjectDetailPage({ projectId, onBack }: ProjectDetailPageProps)
             {activeTab === 'issues' && (
               <IssuesTab
                 issues={issues}
-                resolveEmployee={resolveEmployee}
+                resolveUser={resolveUser}
                 onAdd={() => setIssueModal({})}
                 onEdit={(issue) => setIssueModal({ issue })}
               />

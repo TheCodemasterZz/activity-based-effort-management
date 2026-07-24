@@ -2,7 +2,7 @@ import { getWorkLogs } from '../api/workLogs';
 import { WORK_LOG_ENTRY_TYPE, type WorkCalendarDetailDto, type WorkLogEntryType } from '../api/types';
 
 export interface OvertimeCheckParams {
-  employeeId: string;
+  userId: string;
   calendar: WorkCalendarDetailDto;
   startDate: string;
   endDate: string;
@@ -46,7 +46,7 @@ export async function findOvertimeDates(params: OvertimeCheckParams): Promise<st
   const dates = eachDateInRange(params.startDate, params.endDate);
 
   const existing = await getWorkLogs({
-    employeeId: params.employeeId,
+    userId: params.userId,
     dateFrom: params.startDate,
     dateTo: params.endDate,
     pageSize: 5000,

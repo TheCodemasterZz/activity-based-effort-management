@@ -16,8 +16,8 @@ import { pushSuccessNotification } from '../../lib/notifications';
 import { WORK_LOG_ENTRY_TYPE, type WorkLogEntryType } from '../../api/types';
 
 export interface WorkLogFormInitialValues {
-  employeeId?: string;
-  employeeLabel?: string;
+  userId?: string;
+  userLabel?: string;
   projectId?: string;
   projectLabel?: string;
   activityL1Id?: string;
@@ -93,8 +93,8 @@ export function WorkLogForm({
   cancelLabel = 'Vazgeç',
 }: WorkLogFormProps) {
   const isPlanned = entryType === WORK_LOG_ENTRY_TYPE.Planned;
-  const [employeeId, setEmployeeId] = useState(initialValues?.employeeId ?? '');
-  const [employeeLabel, setEmployeeLabel] = useState(initialValues?.employeeLabel ?? '');
+  const [userId, setUserId] = useState(initialValues?.userId ?? '');
+  const [userLabel, setUserLabel] = useState(initialValues?.userLabel ?? '');
   const [projectId, setProjectId] = useState(initialValues?.projectId ?? '');
   const [projectLabel, setProjectLabel] = useState(initialValues?.projectLabel ?? '');
   const [activityL1Id, setActivityL1Id] = useState(initialValues?.activityL1Id ?? '');
@@ -114,11 +114,11 @@ export function WorkLogForm({
 
   const markTouched = (field: FieldName) => setTouched((prev) => ({ ...prev, [field]: true }));
 
-  const [employeeQuery, setEmployeeQuery] = useState('');
-  const employeeSearch = useEmployeeSearch(employeeQuery);
+  const [userQuery, setEmployeeQuery] = useState('');
+  const userSearch = useEmployeeSearch(userQuery);
 
   const [projectQuery, setProjectQuery] = useState('');
-  const projectSearch = useProjectSearch(projectQuery, employeeId || null);
+  const projectSearch = useProjectSearch(projectQuery, userId || null);
 
   const topLevelActivities = useTopLevelActivities();
   const subActivities = useSubActivities(activityL1Id || null);
@@ -135,7 +135,7 @@ export function WorkLogForm({
   const parsedHours = parseDuration(hoursText);
 
   const fieldErrors: Partial<Record<FieldName, string>> = {
-    employee: employeeId ? undefined : 'Kişi seçilmeli.',
+    employee: userId ? undefined : 'Kişi seçilmeli.',
     project: projectId ? undefined : 'Proje seçilmeli.',
     activityL1: activityL1Id ? undefined : 'Activity L1 seçilmeli.',
     activityL2: activityL2Id ? undefined : 'Activity L2 seçilmeli.',
@@ -191,10 +191,10 @@ export function WorkLogForm({
 
     try {
       setIsCheckingOvertime(true);
-      const employee = await getEmployeeById(employeeId);
+      const employee = await getEmployeeById(userId);
       const calendar = await getWorkCalendarById(employee.workCalendarId);
       const exceededDates = await findOvertimeDates({
-        employeeId,
+        userId,
         calendar,
         startDate: rangeStart,
         endDate: rangeEnd,
@@ -221,7 +221,7 @@ export function WorkLogForm({
         await updateMutation.mutateAsync({
           id: workLogId,
           payload: {
-            employeeId,
+            userId,
             projectId,
             activityL1Id,
             activityL2Id,
@@ -232,7 +232,7 @@ export function WorkLogForm({
         });
       } else {
         await logWorkMutation.mutateAsync({
-          employeeId,
+          userId,
           projectId,
           activityL1Id,
           activityL2Id,
@@ -279,13 +279,13 @@ export function WorkLogForm({
             Kişi <span className="text-red-500">*</span>
           </label>
           <AsyncSearchSelect
-            selectedLabel={employeeLabel || null}
+            selectedLabel={userLabel || null}
             onSearch={setEmployeeQuery}
-            options={(employeeSearch.data?.items ?? []).map((e) => ({ id: e.id, label: e.name }))}
-            isLoading={employeeSearch.isLoading}
+            options={(userSearch.data?.items ?? []).map((e) => ({ id: e.id, label: e.name }))}
+            isLoading={userSearch.isLoading}
             onSelect={(option) => {
-              setEmployeeId(option.id);
-              setEmployeeLabel(option.label);
+              setUserId(option.id);
+              setUserLabel(option.label);
               setProjectId('');
               setProjectLabel('');
               markTouched('employee');
@@ -310,7 +310,7 @@ export function WorkLogForm({
               markTouched('project');
             }}
             placeholder="Proje ara…"
-            disabled={!employeeId}
+            disabled={!userId}
             disabledMessage="Önce kişi seçin"
           />
           {showError('project') && <p className="mt-1 text-xs text-red-600">{showError('project')}</p>}

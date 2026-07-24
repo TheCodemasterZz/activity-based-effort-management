@@ -10,15 +10,15 @@ export function useWorkLogs(dateFrom: string, dateTo: string, entryType: WorkLog
 }
 
 /** Tek bir çalışanın belirli bir tarih aralığındaki kayıtları — onay modalındaki önizleme için. */
-export function useEmployeeWorkLogs(
-  employeeId: string | null,
+export function useUserWorkLogs(
+  userId: string | null,
   dateFrom: string,
   dateTo: string,
   entryType: WorkLogEntryType = WORK_LOG_ENTRY_TYPE.Actual,
 ) {
   return useQuery({
-    queryKey: ['workLogs', 'byEmployee', employeeId, dateFrom, dateTo, entryType],
-    queryFn: () => getWorkLogs({ employeeId: employeeId as string, dateFrom, dateTo, pageSize: 100, entryType }),
-    enabled: employeeId !== null,
+    queryKey: ['workLogs', 'byUser', userId, dateFrom, dateTo, entryType],
+    queryFn: () => getWorkLogs({ userId: userId as string, dateFrom, dateTo, pageSize: 100, entryType }),
+    enabled: userId !== null,
   });
 }

@@ -32,12 +32,12 @@ export function ProjectFormModal({ mode, project, onClose, onDeleted }: ProjectF
     PROJECT_PRIORITY[(project?.priority as keyof typeof PROJECT_PRIORITY) ?? 'Medium'] ?? PROJECT_PRIORITY.Medium,
   );
   const [strategicGoal, setStrategicGoal] = useState(project?.strategicGoal ?? '');
-  const [projectManagerId, setProjectManagerId] = useState(project?.projectManagerEmployeeId ?? '');
+  const [projectManagerId, setProjectManagerId] = useState(project?.projectManagerUserId ?? '');
   const [projectManagerLabel, setProjectManagerLabel] = useState('');
   const [pmQuery, setPmQuery] = useState('');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const existingPm = useEmployeeById(project?.projectManagerEmployeeId ?? null);
+  const existingPm = useEmployeeById(project?.projectManagerUserId ?? null);
   const pmSearch = useEmployeeSearch(pmQuery);
   const pmLabel = projectManagerLabel || existingPm.data?.name || '';
 
@@ -59,7 +59,7 @@ export function ProjectFormModal({ mode, project, onClose, onDeleted }: ProjectF
         startDate: startDate || null,
         endDate: endDate || null,
         sponsor: sponsor.trim() || null,
-        projectManagerEmployeeId: projectManagerId || null,
+        projectManagerUserId: projectManagerId || null,
         priority,
         strategicGoal: strategicGoal.trim() || null,
       };

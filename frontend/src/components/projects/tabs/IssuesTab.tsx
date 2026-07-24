@@ -21,12 +21,12 @@ function formatDateTr(date: string): string {
 
 interface IssuesTabProps {
   issues: ProjectIssueDto[];
-  resolveEmployee: (id: string | null) => string;
+  resolveUser: (id: string | null) => string;
   onAdd: () => void;
   onEdit: (issue: ProjectIssueDto) => void;
 }
 
-export function IssuesTab({ issues, resolveEmployee, onAdd, onEdit }: IssuesTabProps) {
+export function IssuesTab({ issues, resolveUser, onAdd, onEdit }: IssuesTabProps) {
   const statusMutation = useUpdateProjectIssueStatusMutation();
   const deleteMutation = useDeleteProjectIssueMutation();
   const todayKey = new Date().toISOString().slice(0, 10);
@@ -75,7 +75,7 @@ export function IssuesTab({ issues, resolveEmployee, onAdd, onEdit }: IssuesTabP
                       {issue.priority}
                     </span>
                   </td>
-                  <td className="px-4 py-2 text-slate-500">{resolveEmployee(issue.ownerEmployeeId)}</td>
+                  <td className="px-4 py-2 text-slate-500">{resolveUser(issue.ownerUserId)}</td>
                   <td className={`whitespace-nowrap px-4 py-2 ${isOverdue ? 'font-semibold text-red-600' : 'text-slate-500'}`}>
                     {issue.dueDate ? formatDateTr(issue.dueDate) : '—'}
                     {isOverdue && ' ⚠'}

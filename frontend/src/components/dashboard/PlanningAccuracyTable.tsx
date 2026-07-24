@@ -12,8 +12,8 @@ interface PlanningAccuracyTableProps {
   grandTotalPlanned: number;
   holidayDateKeys: Set<string>;
   todayKey: string;
-  /** employeeId'ye göre izin dönemleri — WorkLogTable ile aynı kaynak/format (bkz. ReportPage). */
-  leaveRangesByEmployee?: Map<string, LeaveRange[]>;
+  /** userId'ye göre izin dönemleri — WorkLogTable ile aynı kaynak/format (bkz. ReportPage). */
+  leaveRangesByUser?: Map<string, LeaveRange[]>;
 }
 
 function formatHours(value: number): string {
@@ -89,10 +89,10 @@ interface RowsProps {
   onToggle: (path: string) => void;
   holidayDateKeys: Set<string>;
   todayKey: string;
-  leaveRangesByEmployee?: Map<string, LeaveRange[]>;
+  leaveRangesByUser?: Map<string, LeaveRange[]>;
 }
 
-function TableRows({ rows, columns, collapsed, onToggle, holidayDateKeys, todayKey, leaveRangesByEmployee }: RowsProps) {
+function TableRows({ rows, columns, collapsed, onToggle, holidayDateKeys, todayKey, leaveRangesByUser }: RowsProps) {
   return (
     <>
       {rows.map((row) => {
@@ -101,7 +101,7 @@ function TableRows({ rows, columns, collapsed, onToggle, holidayDateKeys, todayK
         // WorkLogTable ile aynı kural: hafta sonu/tatil/izin renklendirmesi sadece gerçek bir
         // çalışana (Kişi boyutu) karşılık gelen satırlarda görünür — Proje gibi başka
         // boyutlardaki satırlarda hiç görünmez.
-        const hasEmployeeContext = !!row.employeeId;
+        const hasUserContext = !!row.userId;
 
         return (
           <Fragment key={row.path}>
@@ -122,8 +122,8 @@ function TableRows({ rows, columns, collapsed, onToggle, holidayDateKeys, todayK
                 {row.rowLabel}
               </td>
               {columns.map((column) => {
-                const leave = hasEmployeeContext
-                  ? cellLeaveStatus(row.employeeId, column, leaveRangesByEmployee)
+                const leave = hasUserContext
+                  ? cellLeaveStatus(row.userId, column, leaveRangesByUser)
                   : 'none';
                 const isHoliday = isHolidayColumn(column, holidayDateKeys);
                 const dayBgClass =
@@ -155,7 +155,7 @@ function TableRows({ rows, columns, collapsed, onToggle, holidayDateKeys, todayK
                 onToggle={onToggle}
                 holidayDateKeys={holidayDateKeys}
                 todayKey={todayKey}
-                leaveRangesByEmployee={leaveRangesByEmployee}
+                leaveRangesByUser={leaveRangesByUser}
               />
             )}
           </Fragment>
@@ -190,7 +190,7 @@ export function PlanningAccuracyTable({
   grandTotalPlanned,
   holidayDateKeys,
   todayKey,
-  leaveRangesByEmployee,
+  leaveRangesByUser,
 }: PlanningAccuracyTableProps) {
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
   // Diğer tablolarda olduğu gibi her zaman A-Z sıralı başlar — başlığa tıklayarak değiştirilebilir.
@@ -260,7 +260,7 @@ export function PlanningAccuracyTable({
             onToggle={toggle}
             holidayDateKeys={holidayDateKeys}
             todayKey={todayKey}
-            leaveRangesByEmployee={leaveRangesByEmployee}
+            leaveRangesByUser={leaveRangesByUser}
           />
         </tbody>
         <tfoot>

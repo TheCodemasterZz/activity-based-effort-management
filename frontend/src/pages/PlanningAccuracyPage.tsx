@@ -22,9 +22,9 @@ import { useEmployees } from '../hooks/useEmployees';
 import { useProjects } from '../hooks/useProjects';
 import { useAllActivities } from '../hooks/useActivities';
 import { useHolidays } from '../hooks/useHolidays';
-import { useEmployeeLeaves } from '../hooks/useEmployeeLeaves';
+import { useLeaves } from '../hooks/useLeaves';
 import type { LeaveRange } from '../components/dashboard/WorkLogTable';
-import { WORK_LOG_ENTRY_TYPE, type EmployeeWorkLogDto } from '../api/types';
+import { WORK_LOG_ENTRY_TYPE, type WorkLogDto } from '../api/types';
 
 function PlanningAccuracyLegend() {
   return (
@@ -71,7 +71,7 @@ export function PlanningAccuracyPage() {
   const projects = useProjects();
   const activities = useAllActivities();
   const holidays = useHolidays();
-  const employeeLeaves = useEmployeeLeaves();
+  const leaves = useLeaves();
 
   const holidayDateKeys = useMemo(
     () => new Set(holidays.data?.items.map((h) => h.date) ?? []),
@@ -79,15 +79,15 @@ export function PlanningAccuracyPage() {
   );
 
   // Çalışan bazlı izin dönemleri — ReportPage/PlanWorkPage'deki WorkLogTable ile aynı kaynak.
-  const leaveRangesByEmployee = useMemo(() => {
+  const leaveRangesByUser = useMemo(() => {
     const map = new Map<string, LeaveRange[]>();
-    for (const leave of employeeLeaves.data?.items ?? []) {
-      const list = map.get(leave.employeeId) ?? [];
+    for (const leave of leaves.data?.items ?? []) {
+      const list = map.get(leave.userId) ?? [];
       list.push({ start: leave.startDate, end: leave.endDate, isFullDay: leave.isFullDay });
-      map.set(leave.employeeId, list);
+      map.set(leave.userId, list);
     }
     return map;
-  }, [employeeLeaves.data]);
+  }, [leaves.data]);
 
   const employeesById = useMemo(() => new Map(employees.data?.items.map((e) => [e.id, e.name])), [employees.data]);
   const projectsById = useMemo(() => new Map(projects.data?.items.map((p) => [p.id, p.name])), [projects.data]);
@@ -104,10 +104,10 @@ export function PlanningAccuracyPage() {
   );
 
   const resolveDimension = useMemo(() => {
-    return (dimension: GroupByDimension, log: EmployeeWorkLogDto) => {
+    return (dimension: GroupByDimension, log: WorkLogDto) => {
       switch (dimension) {
         case 'employee':
-          return { key: log.employeeId, label: employeesById.get(log.employeeId) ?? 'Bilinmeyen kişi' };
+          return { key: log.userId, label: employeesById.get(log.userId) ?? 'Bilinmeyen kişi' };
         case 'project':
           return { key: log.projectId, label: projectsById.get(log.projectId) ?? 'Bilinmeyen proje' };
         case 'activityL1':
@@ -120,11 +120,11 @@ export function PlanningAccuracyPage() {
     };
   }, [employeesById, projectsById, activitiesById]);
 
-  const filterLogs = (logs: EmployeeWorkLogDto[]) => {
+  const filterLogs = (logs: WorkLogDto[]) => {
     if (!mqlAst) return logs;
     return logs.filter((log) =>
       evaluateMql(mqlAst, {
-        employee: employeesById.get(log.employeeId) ?? '',
+        employee: employeesById.get(log.userId) ?? '',
         project: projectsById.get(log.projectId) ?? '',
         activityL1: activitiesById.get(log.activityL1Id) ?? '',
         activityL2: activitiesById.get(log.activityL2Id) ?? '',
@@ -224,7 +224,7 @@ export function PlanningAccuracyPage() {
               grandTotalPlanned={accuracy.grandTotalPlanned}
               holidayDateKeys={holidayDateKeys}
               todayKey={todayKey}
-              leaveRangesByEmployee={leaveRangesByEmployee}
+              leaveRangesByUser={leaveRangesByUser}
             />
           </div>
         )}

@@ -55,7 +55,7 @@ interface SummaryCardsProps {
   totalHours: number;
   totalCount: number;
   activePeopleCount: number;
-  totalEmployeeCount: number;
+  totalUserCount: number;
   avgDailyHours: number;
   approvedHours: number;
   periodLabel: string;
@@ -69,7 +69,7 @@ export function SummaryCards({
   totalHours,
   totalCount,
   activePeopleCount,
-  totalEmployeeCount,
+  totalUserCount,
   avgDailyHours,
   approvedHours,
   periodLabel,
@@ -78,7 +78,7 @@ export function SummaryCards({
   avgSeries,
   approvedHoursSeries,
 }: SummaryCardsProps) {
-  const activeRatio = totalEmployeeCount > 0 ? (activePeopleCount / totalEmployeeCount) * 100 : 0;
+  const activeRatio = totalUserCount > 0 ? (activePeopleCount / totalUserCount) * 100 : 0;
   const approvedRatio = totalHours > 0 ? (approvedHours / totalHours) * 100 : 0;
 
   return (
@@ -106,9 +106,9 @@ export function SummaryCards({
         iconBg="bg-emerald-50 text-emerald-600"
         label="Aktif Kişi"
         value={String(activePeopleCount)}
-        caption={totalEmployeeCount > 0 ? `${totalEmployeeCount} kişiden` : 'Log giren kişi sayısı'}
+        caption={totalUserCount > 0 ? `${totalUserCount} kişiden` : 'Log giren kişi sayısı'}
         chart={
-          totalEmployeeCount > 0 ? (
+          totalUserCount > 0 ? (
             <RatioGaugeWidget percent={activeRatio} color="#059669" label="Aktif kişi oranı" size={44} />
           ) : undefined
         }

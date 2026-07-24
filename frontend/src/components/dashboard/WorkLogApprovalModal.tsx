@@ -4,8 +4,8 @@ import { tr } from 'date-fns/locale/tr';
 import { AsyncSearchSelect } from '../common/AsyncSearchSelect';
 import { useEmployeeSearch } from '../../hooks/useEmployees';
 import { useEmployeeById } from '../../hooks/useEmployeeById';
-import { useEmployeeWorkLogs } from '../../hooks/useWorkLogs';
-import { useEmployeeLeaves } from '../../hooks/useEmployeeLeaves';
+import { useUserWorkLogs } from '../../hooks/useWorkLogs';
+import { useLeaves } from '../../hooks/useLeaves';
 import { useHolidays } from '../../hooks/useHolidays';
 import { useWorkCalendar } from '../../hooks/useWorkCalendar';
 import { useCreateWorkLogApprovalMutation } from '../../hooks/useCreateWorkLogApprovalMutation';
@@ -65,10 +65,10 @@ export function WorkLogApprovalModal({
   entryType = WORK_LOG_ENTRY_TYPE.Actual,
 }: WorkLogApprovalModalProps) {
   const isPlanned = entryType === WORK_LOG_ENTRY_TYPE.Planned;
-  const [employeeId, setEmployeeId] = useState('');
-  const [employeeLabel, setEmployeeLabel] = useState('');
-  const [employeeQuery, setEmployeeQuery] = useState('');
-  const employeeSearch = useEmployeeSearch(employeeQuery);
+  const [userId, setUserId] = useState('');
+  const [userLabel, setUserLabel] = useState('');
+  const [userQuery, setEmployeeQuery] = useState('');
+  const userSearch = useEmployeeSearch(userQuery);
 
   const [weekOffset, setWeekOffset] = useState(0);
   const [description, setDescription] = useState('');
@@ -87,21 +87,21 @@ export function WorkLogApprovalModal({
     };
   }, [weekOffset]);
 
-  const previewLogs = useEmployeeWorkLogs(employeeId || null, week.startKey, week.endKey, entryType);
+  const previewLogs = useUserWorkLogs(userId || null, week.startKey, week.endKey, entryType);
   const previewItems = previewLogs.data?.items ?? [];
   const previewTotalHours = previewItems.reduce((sum, l) => sum + l.hours, 0);
   const previewApprovedCount = previewItems.filter((l) => l.isApproved).length;
 
   // Güvenilirlik skoru — sadece Efor Onayı (Actual) için, Plan Onayı'nda anlamsız.
-  const confidenceContext = useConfidenceScoreContext(!isPlanned ? employeeId || null : null);
+  const confidenceContext = useConfidenceScoreContext(!isPlanned ? userId || null : null);
   const confidenceSettings = useConfidenceScoreSettings();
 
-  const employee = useEmployeeById(employeeId || null);
+  const employee = useEmployeeById(userId || null);
   const calendar = useWorkCalendar(employee.data?.workCalendarId ?? null);
   const holidays = useHolidays();
-  const weekLeaves = useEmployeeLeaves(
-    employeeId ? { employeeId, dateFrom: week.startKey, dateTo: week.endKey } : undefined,
-    { enabled: !!employeeId },
+  const weekLeaves = useLeaves(
+    userId ? { userId, dateFrom: week.startKey, dateTo: week.endKey } : undefined,
+    { enabled: !!userId },
   );
 
   const weekDays = useMemo<WeekDayInfo[]>(() => {
@@ -110,12 +110,12 @@ export function WorkLogApprovalModal({
     return eachDayOfInterval({ start, end }).map((d) => {
       const key = dateKey(d);
       const holiday = holidays.data?.items.find((h) => h.date === key) ?? null;
-      // employeeId eşleşmesi burada da ayrıca kontrol edilir: employeeId boşken react-query
-      // aynı ("employeeLeaves", null, null, null) cache anahtarını ReportPage'in filtresiz genel
+      // userId eşleşmesi burada da ayrıca kontrol edilir: userId boşken react-query
+      // aynı ("leaves", null, null, null) cache anahtarını ReportPage'in filtresiz genel
       // izin sorgusuyla paylaşabiliyor — bu da kişi seçilmeden önce başka çalışanların izin
       // günlerinin yanlışlıkla gösterilmesine yol açardı.
-      const leave = employeeId
-        ? (weekLeaves.data?.items.find((l) => l.employeeId === employeeId && key >= l.startDate && key <= l.endDate) ?? null)
+      const leave = userId
+        ? (weekLeaves.data?.items.find((l) => l.userId === userId && key >= l.startDate && key <= l.endDate) ?? null)
         : null;
       const calendarDay = calendar.data?.days.find((c) => c.dayOfWeek === d.getDay());
       // Tam günlük izinde, o günün çalışan takvimine göre beklenen mesai saati kadar izin
@@ -142,13 +142,13 @@ export function WorkLogApprovalModal({
           : null,
       };
     });
-  }, [week.startKey, week.endKey, employeeId, holidays.data, weekLeaves.data, calendar.data]);
+  }, [week.startKey, week.endKey, userId, holidays.data, weekLeaves.data, calendar.data]);
 
   const weekHolidayCount = weekDays.filter((d) => d.holidayName).length;
   const weekLeaveCount = weekDays.filter((d) => d.leave).length;
 
   const descriptionError = description.trim().length === 0 ? 'Onay açıklaması zorunludur.' : undefined;
-  const canSubmit = !!employeeId && !descriptionError;
+  const canSubmit = !!userId && !descriptionError;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -157,26 +157,26 @@ export function WorkLogApprovalModal({
 
     if (previewItems.length === 0) {
       const proceedEmpty = window.confirm(
-        `${employeeLabel} için ${week.label} haftasında hiç efor kaydı yok. Yine de bu haftayı onaylamak istiyor musunuz?`,
+        `${userLabel} için ${week.label} haftasında hiç efor kaydı yok. Yine de bu haftayı onaylamak istiyor musunuz?`,
       );
       if (!proceedEmpty) return;
     } else {
       const confirmed = window.confirm(
-        `${employeeLabel} için ${week.label} haftasını (${previewTotalHours.toFixed(1)}h, ${previewItems.length} kayıt) onaylamak istediğinize emin misiniz? Onaylandıktan sonra bu kayıtlar değiştirilemez/silinemez.`,
+        `${userLabel} için ${week.label} haftasını (${previewTotalHours.toFixed(1)}h, ${previewItems.length} kayıt) onaylamak istediğinize emin misiniz? Onaylandıktan sonra bu kayıtlar değiştirilemez/silinemez.`,
       );
       if (!confirmed) return;
     }
 
     try {
       await approveMutation.mutateAsync({
-        employeeId,
+        userId,
         periodType: 1,
         periodStart: week.startKey,
         periodEnd: week.endKey,
         description: description.trim(),
         entryType,
       });
-      pushSuccessNotification(`${employeeLabel} için ${week.label} haftası onaylandı.`);
+      pushSuccessNotification(`${userLabel} için ${week.label} haftası onaylandı.`);
       onClose();
     } catch {
       // Hata zaten global mutationCache.onError üzerinden sağ üstte bildirim olarak gösteriliyor.
@@ -201,13 +201,13 @@ export function WorkLogApprovalModal({
                   Kişi <span className="text-red-500">*</span>
                 </label>
                 <AsyncSearchSelect
-                  selectedLabel={employeeLabel || null}
+                  selectedLabel={userLabel || null}
                   onSearch={setEmployeeQuery}
-                  options={(employeeSearch.data?.items ?? []).map((e) => ({ id: e.id, label: e.name }))}
-                  isLoading={employeeSearch.isLoading}
+                  options={(userSearch.data?.items ?? []).map((e) => ({ id: e.id, label: e.name }))}
+                  isLoading={userSearch.isLoading}
                   onSelect={(option) => {
-                    setEmployeeId(option.id);
-                    setEmployeeLabel(option.label);
+                    setUserId(option.id);
+                    setUserLabel(option.label);
                   }}
                   placeholder="Kişi ara…"
                 />
@@ -290,7 +290,7 @@ export function WorkLogApprovalModal({
                   })}
                 </div>
                 <p className="mt-1.5 h-4 text-xs text-slate-400">
-                  {!employeeId
+                  {!userId
                     ? 'Kayıtları görmek için önce bir kişi seçin.'
                     : weekHolidayCount === 0 && weekLeaveCount === 0
                       ? 'Bu hafta resmi tatil veya izin yok.'
@@ -329,10 +329,10 @@ export function WorkLogApprovalModal({
 
             <div>
               <label className="mb-1 block text-xs font-medium text-slate-500">
-                Bu Haftanın Kayıtları {employeeId && previewLogs.isLoading ? '(yükleniyor…)' : employeeId ? `(${previewItems.length})` : ''}
+                Bu Haftanın Kayıtları {userId && previewLogs.isLoading ? '(yükleniyor…)' : userId ? `(${previewItems.length})` : ''}
               </label>
               <div className="max-h-[26rem] overflow-y-auto rounded-lg border border-slate-200">
-                {!employeeId ? (
+                {!userId ? (
                   <div className="p-4 text-center text-xs text-slate-400">
                     Kayıtları görmek için önce bir kişi seçin.
                   </div>
@@ -345,7 +345,7 @@ export function WorkLogApprovalModal({
                         !isPlanned && confidenceSettings.data
                           ? computeConfidenceScore(
                               {
-                                employeeId: log.employeeId,
+                                userId: log.userId,
                                 workDate: log.workDate,
                                 hours: log.hours,
                                 description: log.description,

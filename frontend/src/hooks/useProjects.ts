@@ -14,10 +14,10 @@ export function useProjectDetail(projectId: string | null) {
 }
 
 /** Yazdıkça arama — seçili çalışana atanmış projeler arasından, küçük sayfa boyutuyla sunucu taraflı arar. */
-export function useProjectSearch(nameFilter: string, employeeId: string | null) {
+export function useProjectSearch(nameFilter: string, userId: string | null) {
   return useQuery({
-    queryKey: ['projects', 'search', nameFilter, employeeId],
-    queryFn: () => getProjects({ nameFilter, employeeId: employeeId ?? undefined, pageSize: 10 }),
-    enabled: employeeId !== null,
+    queryKey: ['projects', 'search', nameFilter, userId],
+    queryFn: () => getProjects({ nameFilter, userId: userId ?? undefined, pageSize: 10 }),
+    enabled: userId !== null,
   });
 }

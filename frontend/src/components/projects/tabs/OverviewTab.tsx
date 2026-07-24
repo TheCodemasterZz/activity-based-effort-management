@@ -30,7 +30,7 @@ interface OverviewTabProps {
   actualHours90d: number;
   activeEmployeeCount: number;
   hoursTrend: ChartPoint[];
-  resolveEmployee: (id: string | null) => string;
+  resolveUser: (id: string | null) => string;
   risks: ProjectRiskDto[];
   issues: ProjectIssueDto[];
 }
@@ -52,7 +52,7 @@ function RagIndicator({ label, rag }: { label: string; rag: RagResult }) {
 }
 
 export function OverviewTab({
-  project, tasks, evm, milestones, actualHours90d, activeEmployeeCount, hoursTrend, resolveEmployee, risks, issues,
+  project, tasks, evm, milestones, actualHours90d, activeEmployeeCount, hoursTrend, resolveUser, risks, issues,
 }: OverviewTabProps) {
   const todayKey = new Date().toISOString().slice(0, 10);
   const elapsedPct = timeElapsedPercent(project.startDate, project.endDate);
@@ -79,7 +79,7 @@ export function OverviewTab({
         </div>
         <div>
           <div className="text-xs font-medium uppercase tracking-wide text-slate-400">Proje Yöneticisi</div>
-          <div className="text-sm font-medium text-slate-700">{resolveEmployee(project.projectManagerEmployeeId)}</div>
+          <div className="text-sm font-medium text-slate-700">{resolveUser(project.projectManagerUserId)}</div>
         </div>
         <div>
           <div className="text-xs font-medium uppercase tracking-wide text-slate-400">Öncelik</div>
@@ -152,12 +152,12 @@ export function OverviewTab({
         </div>
 
         <div className="rounded-xl border border-slate-200 bg-white p-4">
-          <div className="mb-2 text-sm font-semibold text-slate-700">Çalışanlar ({project.employees.length})</div>
+          <div className="mb-2 text-sm font-semibold text-slate-700">Çalışanlar ({project.users.length})</div>
           <div className="flex flex-wrap gap-1.5">
-            {project.employees.length === 0 ? (
+            {project.users.length === 0 ? (
               <span className="text-sm text-slate-400">Atanmış çalışan yok</span>
             ) : (
-              project.employees.map((e) => (
+              project.users.map((e) => (
                 <span key={e.id} className="rounded-full bg-slate-100 px-2.5 py-1 text-xs text-slate-600">
                   {e.name}
                 </span>

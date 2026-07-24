@@ -62,7 +62,7 @@ const PROJECT_MQL_EXAMPLE = 'health = "AT RISK" AND spi < 1';
 function buildProjectMqlRecord(
   project: ProjectDto,
   tasks: ProjectTaskDto[],
-  stats: { actualHours: number; employeeIds: Set<string> } | undefined,
+  stats: { actualHours: number; userIds: Set<string> } | undefined,
 ): MqlRecord {
   const evm = computeProjectEvmSummary(tasks);
   const milestoneCount = tasks.filter((t) => t.isMilestone).length;
@@ -76,7 +76,7 @@ function buildProjectMqlRecord(
     spi: evm.spi ?? 0,
     completion: evm.percentComplete,
     actualHours: stats?.actualHours ?? 0,
-    employeeCount: stats?.employeeIds.size ?? 0,
+    employeeCount: stats?.userIds.size ?? 0,
     taskCount: tasks.length,
     milestoneCount,
   };
@@ -133,14 +133,14 @@ export function ProjectsPage() {
     () => new Map(employees.data?.items.map((e) => [e.id, e.name])),
     [employees.data],
   );
-  const resolveEmployee = (id: string | null) => (id ? employeesById.get(id) ?? 'Bilinmeyen kişi' : '—');
+  const resolveUser = (id: string | null) => (id ? employeesById.get(id) ?? 'Bilinmeyen kişi' : '—');
 
   const projectStatsById = useMemo(() => {
-    const map = new Map<string, { actualHours: number; employeeIds: Set<string> }>();
+    const map = new Map<string, { actualHours: number; userIds: Set<string> }>();
     for (const log of recentActualLogs.data?.items ?? []) {
-      const entry = map.get(log.projectId) ?? { actualHours: 0, employeeIds: new Set<string>() };
+      const entry = map.get(log.projectId) ?? { actualHours: 0, userIds: new Set<string>() };
       entry.actualHours += log.hours;
-      entry.employeeIds.add(log.employeeId);
+      entry.userIds.add(log.userId);
       map.set(log.projectId, entry);
     }
     return map;
@@ -299,7 +299,7 @@ export function ProjectsPage() {
             tasksByProject={tasksByProject}
             risksByProject={risksByProject}
             issuesByProject={issuesByProject}
-            resolveEmployee={resolveEmployee}
+            resolveUser={resolveUser}
             onView={(project) => setViewingProjectId(project.id)}
             onEdit={(project) => setEditingProject(project)}
             onDeactivate={handleDeactivate}

@@ -21,12 +21,12 @@ function formatDateTr(date: string): string {
 
 interface RisksTabProps {
   risks: ProjectRiskDto[];
-  resolveEmployee: (id: string | null) => string;
+  resolveUser: (id: string | null) => string;
   onAdd: () => void;
   onEdit: (risk: ProjectRiskDto) => void;
 }
 
-export function RisksTab({ risks, resolveEmployee, onAdd, onEdit }: RisksTabProps) {
+export function RisksTab({ risks, resolveUser, onAdd, onEdit }: RisksTabProps) {
   const statusMutation = useUpdateProjectRiskStatusMutation();
   const deleteMutation = useDeleteProjectRiskMutation();
 
@@ -77,7 +77,7 @@ export function RisksTab({ risks, resolveEmployee, onAdd, onEdit }: RisksTabProp
                       O:{risk.probability} × E:{risk.impact}
                     </div>
                   </td>
-                  <td className="px-4 py-2 text-slate-500">{resolveEmployee(risk.ownerEmployeeId)}</td>
+                  <td className="px-4 py-2 text-slate-500">{resolveUser(risk.ownerUserId)}</td>
                   <td className="whitespace-nowrap px-4 py-2 text-slate-500">{formatDateTr(risk.identifiedDate)}</td>
                   <td className="px-4 py-2 text-center">
                     <select

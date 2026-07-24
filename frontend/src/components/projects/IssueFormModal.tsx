@@ -28,12 +28,12 @@ export function IssueFormModal({ projectId, issue, onClose }: IssueFormModalProp
   );
   const [dueDate, setDueDate] = useState(issue?.dueDate ?? '');
   const [resolution, setResolution] = useState(issue?.resolution ?? '');
-  const [ownerId, setOwnerId] = useState(issue?.ownerEmployeeId ?? '');
+  const [ownerId, setOwnerId] = useState(issue?.ownerUserId ?? '');
   const [ownerLabel, setOwnerLabel] = useState('');
   const [ownerQuery, setOwnerQuery] = useState('');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const existingOwner = useEmployeeById(issue?.ownerEmployeeId ?? null);
+  const existingOwner = useEmployeeById(issue?.ownerUserId ?? null);
   const ownerSearch = useEmployeeSearch(ownerQuery);
   const resolvedOwnerLabel = ownerLabel || existingOwner.data?.name || '';
 
@@ -56,7 +56,7 @@ export function IssueFormModal({ projectId, issue, onClose }: IssueFormModalProp
             title: title.trim(),
             description: description.trim() || null,
             priority,
-            ownerEmployeeId: ownerId || null,
+            ownerUserId: ownerId || null,
             dueDate: dueDate || null,
             resolution: resolution.trim() || null,
           },
@@ -67,7 +67,7 @@ export function IssueFormModal({ projectId, issue, onClose }: IssueFormModalProp
           title: title.trim(),
           description: description.trim() || null,
           priority,
-          ownerEmployeeId: ownerId || null,
+          ownerUserId: ownerId || null,
           dueDate: dueDate || null,
         });
       }

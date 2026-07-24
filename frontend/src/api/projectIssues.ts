@@ -18,7 +18,7 @@ export interface SaveProjectIssuePayload {
   title: string;
   description?: string | null;
   priority: ProjectIssuePriorityValue;
-  ownerEmployeeId?: string | null;
+  ownerUserId?: string | null;
   dueDate?: string | null;
   resolution?: string | null;
 }

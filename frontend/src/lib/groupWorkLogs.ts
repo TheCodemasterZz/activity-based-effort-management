@@ -1,4 +1,4 @@
-import type { EmployeeWorkLogDto } from '../api/types';
+import type { WorkLogDto } from '../api/types';
 import type { PeriodColumn } from './dateUtils';
 
 export type GroupByDimension = 'employee' | 'project' | 'activityL1' | 'activityL2';
@@ -18,12 +18,12 @@ export interface GroupedRow {
   depth: number;
   cellHours: Record<string, number>;
   /** Sadece yaprak satırlarda dolu — hücre tıklama (ekle/görüntüle/düzenle/sil) için ham kayıtlar. */
-  cellLogs: Record<string, EmployeeWorkLogDto[]>;
+  cellLogs: Record<string, WorkLogDto[]>;
   total: number;
   children?: GroupedRow[];
   /** Bu satır 'employee' boyutuna göre oluşturulduysa doldurulur (o boyuttaki key, yani çalışan id'si) —
    * hiç kaydı olmayan ama onaylı bir haftaya denk gelen boş günleri de doğru renklendirebilmek için. */
-  employeeId?: string;
+  userId?: string;
 }
 
 export interface GroupedResult {
@@ -34,7 +34,7 @@ export interface GroupedResult {
 
 export type ResolveDimension = (
   dimension: GroupByDimension,
-  log: EmployeeWorkLogDto,
+  log: WorkLogDto,
 ) => { key: string; label: string } | null;
 
 function findColumn(columns: PeriodColumn[], workDate: string): PeriodColumn | undefined {
@@ -42,7 +42,7 @@ function findColumn(columns: PeriodColumn[], workDate: string): PeriodColumn | u
 }
 
 function buildLevel(
-  logs: EmployeeWorkLogDto[],
+  logs: WorkLogDto[],
   dimensions: GroupByDimension[],
   levelIndex: number,
   columns: PeriodColumn[],
@@ -54,13 +54,13 @@ function buildLevel(
    * listeye eklensin diye tüm çalışan kadrosu burada önceden gruplara tohumlanır — böylece
    * kullanıcı, o kişi için o dönemde hiç log girilmemiş olsa bile satırı görüp hücreye
    * tıklayarak yeni kayıt ekleyebilir. */
-  employeeRoster?: { id: string; name: string }[],
+  userRoster?: { id: string; name: string }[],
 ): GroupedRow[] {
   const dimension = dimensions[levelIndex];
-  const groups = new Map<string, { label: string; logs: EmployeeWorkLogDto[] }>();
+  const groups = new Map<string, { label: string; logs: WorkLogDto[] }>();
 
-  if (employeeRoster && dimension === 'employee') {
-    for (const employee of employeeRoster) {
+  if (userRoster && dimension === 'employee') {
+    for (const employee of userRoster) {
       groups.set(employee.id, { label: employee.name, logs: [] });
     }
   }
@@ -82,7 +82,7 @@ function buildLevel(
   const rows: GroupedRow[] = Array.from(groups.entries()).map(([key, group]) => {
     const path = `${parentPath}/${key}`;
     const cellHours: Record<string, number> = {};
-    const cellLogs: Record<string, EmployeeWorkLogDto[]> = {};
+    const cellLogs: Record<string, WorkLogDto[]> = {};
     let total = 0;
 
     for (const log of group.logs) {
@@ -98,7 +98,7 @@ function buildLevel(
     }
 
     const row: GroupedRow = { path, rowKey: key, rowLabel: group.label, depth, cellHours, cellLogs, total };
-    if (dimension === 'employee') row.employeeId = key;
+    if (dimension === 'employee') row.userId = key;
 
     if (!isLeafLevel) {
       row.children = buildLevel(group.logs, dimensions, levelIndex + 1, columns, resolveDimension, depth + 1, path);
@@ -111,16 +111,16 @@ function buildLevel(
 }
 
 export function groupWorkLogs(
-  logs: EmployeeWorkLogDto[],
+  logs: WorkLogDto[],
   columns: PeriodColumn[],
   dimensions: GroupByDimension[],
   resolveDimension: ResolveDimension,
   /** Görüntülenen dönemde hiç kaydı olmasa bile satır listesinde görünmesi gereken çalışan
-   * kadrosu — bkz. buildLevel'daki employeeRoster açıklaması. */
-  employeeRoster?: { id: string; name: string }[],
+   * kadrosu — bkz. buildLevel'daki userRoster açıklaması. */
+  userRoster?: { id: string; name: string }[],
 ): GroupedResult {
   const rows = dimensions.length > 0
-    ? buildLevel(logs, dimensions, 0, columns, resolveDimension, 0, 'root', employeeRoster)
+    ? buildLevel(logs, dimensions, 0, columns, resolveDimension, 0, 'root', userRoster)
     : [];
 
   const grandTotalByColumn: Record<string, number> = {};

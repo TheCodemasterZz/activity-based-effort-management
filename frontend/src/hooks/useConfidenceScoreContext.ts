@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { useEmployeeWorkLogs } from './useWorkLogs';
+import { useUserWorkLogs } from './useWorkLogs';
 import { useHolidays } from './useHolidays';
 import { WORK_LOG_ENTRY_TYPE } from '../api/types';
 import type { ConfidenceScoreContext } from '../lib/confidenceScore';
@@ -18,8 +18,8 @@ function todayKey(): string {
  * resmi tatiller) toplar — ayarlardaki lookback pencereleri bunun İÇİNDE kalacak şekilde geniş
  * tutulur, asıl daraltma motorun kendisinde yapılır. `excludeWorkLogId` düzenleme modunda kaydın
  * kendisiyle karşılaştırılmasını önler. */
-export function useConfidenceScoreContext(employeeId: string | null, excludeWorkLogId?: string): ConfidenceScoreContext {
-  const logs = useEmployeeWorkLogs(employeeId, dateKeyDaysAgo(90), todayKey(), WORK_LOG_ENTRY_TYPE.Actual);
+export function useConfidenceScoreContext(userId: string | null, excludeWorkLogId?: string): ConfidenceScoreContext {
+  const logs = useUserWorkLogs(userId, dateKeyDaysAgo(90), todayKey(), WORK_LOG_ENTRY_TYPE.Actual);
   const holidays = useHolidays();
 
   return useMemo(

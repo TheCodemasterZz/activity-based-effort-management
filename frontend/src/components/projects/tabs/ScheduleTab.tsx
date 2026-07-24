@@ -13,13 +13,13 @@ function formatDateTr(date: string): string {
 
 interface ScheduleTabProps {
   tasks: ProjectTaskDto[];
-  resolveEmployee: (id: string | null) => string;
+  resolveUser: (id: string | null) => string;
 }
 
 /** Görevlerin ParentTaskId'ye göre basit 2 seviyeli WBS ağacı (Schedule sekmesi) — gerçek bir
  * Gantt/CPM motoru değil, sadece hiyerarşi + bağımlılık + baseline-vs-güncel karşılaştırması
  * gösterir. Kilometre taşları (IsMilestone) da aynı listede ◆ ile işaretlenir. */
-export function ScheduleTab({ tasks, resolveEmployee }: ScheduleTabProps) {
+export function ScheduleTab({ tasks, resolveUser }: ScheduleTabProps) {
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
 
   const byParent = useMemo(() => {
@@ -69,7 +69,7 @@ export function ScheduleTab({ tasks, resolveEmployee }: ScheduleTabProps) {
             </div>
             <div className="text-xs text-slate-400">
               {formatDateTr(task.startDate)} – {formatDateTr(task.endDate)} · {task.estimatedEffortHours}h ·{' '}
-              {resolveEmployee(task.assignedEmployeeId)}
+              {resolveUser(task.assignedUserId)}
               {dependsOn && <span> · ← "{dependsOn.name}"e bağımlı</span>}
             </div>
             {baselineDiffers && (

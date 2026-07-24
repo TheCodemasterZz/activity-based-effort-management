@@ -6,7 +6,7 @@ import { WORK_LOG_ENTRY_TYPE } from '../api/types';
 
 /**
  * Uygulamanın geri kalanından bağımsız, chrome'suz (header/menü yok) tek başına açılabilen
- * "widget" sayfası — ör. Jira'daki "Log Work" butonundan `?widget=log-work&employeeId=...`
+ * "widget" sayfası — ör. Jira'daki "Log Work" butonundan `?widget=log-work&userId=...`
  * gibi bir URL ile derin bağlantı (deep link) olarak açılması hedeflenir. `widget=plan-work`
  * ile aynı sayfa Planned (Plan Work) modunda açılır. Bu uygulamada gerçek bir router yok;
  * App.tsx bu sayfayı `window.location.search`'teki `widget` parametresine bakarak normal
@@ -20,16 +20,16 @@ export function WidgetLogWorkPage() {
   // (Test Mode'da böyle bir altyapı yok), sadece linkte bir token parametresinin bulunması
   // zorunlu kılınıyor; token'sız açılan bir link doğrudan reddedilir.
   const tokenParam = params.get('token');
-  // employeeId ve projectId zorunlu request alanlarıdır — widget'ın "kimin, hangi proje için"
+  // userId ve projectId zorunlu request alanlarıdır — widget'ın "kimin, hangi proje için"
   // log gireceği belli olmadan açılamaz. date/hours/description ise BİLEREK request'ten
   // alınmıyor: bunlar formda kullanıcının kendisinin dolduracağı alanlardır, URL üzerinden
   // önceden doldurulmaları istenmiyor.
-  const employeeIdParam = params.get('employeeId');
+  const userIdParam = params.get('userId');
   const projectIdParam = params.get('projectId');
   const activityL1IdParam = params.get('activityL1Id') ?? undefined;
   const activityL2IdParam = params.get('activityL2Id') ?? undefined;
 
-  const employee = useEmployeeById(employeeIdParam);
+  const employee = useEmployeeById(userIdParam);
   const project = useProjectDetail(projectIdParam);
 
   const [closed, setClosed] = useState(false);
@@ -49,14 +49,14 @@ export function WidgetLogWorkPage() {
     );
   }
 
-  if (!employeeIdParam || !projectIdParam) {
+  if (!userIdParam || !projectIdParam) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-slate-50 p-6">
         <div className="max-w-sm rounded-xl border border-red-200 bg-white p-8 text-center shadow-sm">
           <div className="mb-2 text-3xl">⚠</div>
           <p className="text-sm font-semibold text-red-700">Eksik parametre</p>
           <p className="mt-2 text-sm text-slate-500">
-            Bu widget için <code className="rounded bg-slate-100 px-1 py-0.5 text-xs">employeeId</code> ve{' '}
+            Bu widget için <code className="rounded bg-slate-100 px-1 py-0.5 text-xs">userId</code> ve{' '}
             <code className="rounded bg-slate-100 px-1 py-0.5 text-xs">projectId</code> parametrelerinin ikisi de
             zorunludur. Lütfen bu widget'ı size sağlanan tam linkle açın.
           </p>
@@ -87,8 +87,8 @@ export function WidgetLogWorkPage() {
   }
 
   const initialValues: WorkLogFormInitialValues = {
-    employeeId: employee.data?.id,
-    employeeLabel: employee.data?.name,
+    userId: employee.data?.id,
+    userLabel: employee.data?.name,
     projectId: project.data?.id,
     projectLabel: project.data?.name,
     activityL1Id: activityL1IdParam,

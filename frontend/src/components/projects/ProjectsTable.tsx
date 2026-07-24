@@ -17,7 +17,7 @@ interface ProjectsTableProps {
   tasksByProject: Map<string, ProjectTaskDto[]>;
   risksByProject: Map<string, ProjectRiskDto[]>;
   issuesByProject: Map<string, ProjectIssueDto[]>;
-  resolveEmployee: (id: string | null) => string;
+  resolveUser: (id: string | null) => string;
   onView: (project: ProjectDto) => void;
   onEdit: (project: ProjectDto) => void;
   onDeactivate: (project: ProjectDto) => void;
@@ -152,7 +152,7 @@ function SortableTh({
  * dağılım çubuğu ve RAG sağlık göstergeleri (Genel Sağlık/Zaman/Performans/Risk). Her sütun
  * başlığına tıklayarak artan/azalan/doğal sırada (A-Z / Z-A / eklenme sırası) sıralanabilir. */
 export function ProjectsTable({
-  projects, tasksByProject, risksByProject, issuesByProject, resolveEmployee, onView, onEdit, onDeactivate,
+  projects, tasksByProject, risksByProject, issuesByProject, resolveUser, onView, onEdit, onDeactivate,
 }: ProjectsTableProps) {
   const [sortKey, setSortKey] = useState<SortKey>('name');
   const [sortDir, setSortDir] = useState<SortDir>('asc');
@@ -276,7 +276,7 @@ export function ProjectsTable({
                     {project.name}
                   </button>
                   <div className="mt-0.5 max-w-[14rem] truncate text-xs text-slate-400">
-                    {resolveEmployee(project.projectManagerEmployeeId)}
+                    {resolveUser(project.projectManagerUserId)}
                   </div>
                 </td>
                 <td className="px-3 py-1.5">

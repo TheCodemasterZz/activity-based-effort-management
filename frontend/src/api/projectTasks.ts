@@ -23,7 +23,7 @@ export interface SaveProjectTaskPayload {
   isMilestone: boolean;
   parentTaskId?: string | null;
   dependsOnTaskId?: string | null;
-  assignedEmployeeId?: string | null;
+  assignedUserId?: string | null;
 }
 
 export function createProjectTask(payload: SaveProjectTaskPayload) {

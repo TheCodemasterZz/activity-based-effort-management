@@ -1,7 +1,7 @@
 import { Fragment, useEffect, useState, type CSSProperties } from 'react';
 import { eachDateKeyInRange, isCurrentColumn, type PeriodColumn } from '../../lib/dateUtils';
 import type { GroupedRow } from '../../lib/groupWorkLogs';
-import type { EmployeeWorkLogDto } from '../../api/types';
+import type { WorkLogDto } from '../../api/types';
 
 interface WorkLogTableProps {
   columns: PeriodColumn[];
@@ -9,11 +9,11 @@ interface WorkLogTableProps {
   grandTotalByColumn: Record<string, number>;
   grandTotal: number;
   holidayDateKeys: Set<string>;
-  /** employeeId'ye göre onaylı [start,end] dönemleri — kaydı olmayan ama onaylı bir haftaya
+  /** userId'ye göre onaylı [start,end] dönemleri — kaydı olmayan ama onaylı bir haftaya
    * denk gelen boş günleri de doğru renklendirebilmek için (bkz. cellApprovalStatus). */
-  approvedRangesByEmployee?: Map<string, { start: string; end: string }[]>;
-  /** employeeId'ye göre izin dönemleri — tam gün veya saatlik (kısmi) olabilir. */
-  leaveRangesByEmployee?: Map<string, LeaveRange[]>;
+  approvedRangesByUser?: Map<string, { start: string; end: string }[]>;
+  /** userId'ye göre izin dönemleri — tam gün veya saatlik (kısmi) olabilir. */
+  leaveRangesByUser?: Map<string, LeaveRange[]>;
   onCellClick: (row: GroupedRow, column: PeriodColumn) => void;
   /** Aynı satırda birden fazla hücre sürüklenerek seçildiğinde tetiklenir (toplu tarih aralığı ekleme). */
   onRangeSelect: (row: GroupedRow, startColumn: PeriodColumn, endColumn: PeriodColumn) => void;
@@ -56,12 +56,12 @@ export type LeaveStatus = 'none' | 'partial' | 'full';
 /** Bir hücrenin kapsadığı gün(ler) içinde çalışanın tam günlük veya kısmi (saatlik) izni var mı.
  * Tam gün izin varsa 'full', sadece kısmi izin varsa 'partial' döner. */
 export function cellLeaveStatus(
-  employeeId: string | undefined,
+  userId: string | undefined,
   column: PeriodColumn,
-  leaveRangesByEmployee: Map<string, LeaveRange[]> | undefined,
+  leaveRangesByUser: Map<string, LeaveRange[]> | undefined,
 ): LeaveStatus {
-  if (!employeeId || !leaveRangesByEmployee) return 'none';
-  const ranges = leaveRangesByEmployee.get(employeeId);
+  if (!userId || !leaveRangesByUser) return 'none';
+  const ranges = leaveRangesByUser.get(userId);
   if (!ranges || ranges.length === 0) return 'none';
 
   const days = eachDateKeyInRange(column.startKey, column.endKey);
@@ -93,13 +93,13 @@ function isDateWithinRanges(dateKeyValue: string, ranges: { start: string; end: 
  * boş günler de doğru renklenir (yalnızca satır tek bir çalışana karşılık geliyorsa, ör. "Kişi"
  * boyutuna göre gruplanmışsa). Bu bilgi yoksa, var olan kayıtların isApproved bayrağına döner. */
 function cellApprovalStatus(
-  logs: EmployeeWorkLogDto[] | undefined,
-  employeeId: string | undefined,
+  logs: WorkLogDto[] | undefined,
+  userId: string | undefined,
   column: PeriodColumn,
-  approvedRangesByEmployee: Map<string, { start: string; end: string }[]> | undefined,
+  approvedRangesByUser: Map<string, { start: string; end: string }[]> | undefined,
 ): ApprovalStatus {
-  if (employeeId && approvedRangesByEmployee) {
-    const ranges = approvedRangesByEmployee.get(employeeId);
+  if (userId && approvedRangesByUser) {
+    const ranges = approvedRangesByUser.get(userId);
     const days = eachDateKeyInRange(column.startKey, column.endKey);
     const approvedDays = days.filter((d) => isDateWithinRanges(d, ranges)).length;
     if (approvedDays > 0) return approvedDays === days.length ? 'full' : 'partial';
@@ -153,8 +153,8 @@ interface RowsProps {
   onCellMouseEnter: (row: GroupedRow, columnIndex: number) => void;
   holidayDateKeys: Set<string>;
   todayKey: string;
-  approvedRangesByEmployee?: Map<string, { start: string; end: string }[]>;
-  leaveRangesByEmployee?: Map<string, LeaveRange[]>;
+  approvedRangesByUser?: Map<string, { start: string; end: string }[]>;
+  leaveRangesByUser?: Map<string, LeaveRange[]>;
 }
 
 function TableRows({
@@ -167,8 +167,8 @@ function TableRows({
   onCellMouseEnter,
   holidayDateKeys,
   todayKey,
-  approvedRangesByEmployee,
-  leaveRangesByEmployee,
+  approvedRangesByUser,
+  leaveRangesByUser,
 }: RowsProps) {
   return (
     <>
@@ -203,15 +203,15 @@ function TableRows({
                   index >= Math.min(drag.anchorIndex, drag.currentIndex) &&
                   index <= Math.max(drag.anchorIndex, drag.currentIndex);
                 // İzin/tatil/onay renklendirmesi kasıtlı olarak 'clickable'a değil, satırın kendi
-                // 'employeeId'sine bağlı: sadece Group by'daki gerçek Kişi (employee) satırında
+                // 'userId'sine bağlı: sadece Group by'daki gerçek Kişi (employee) satırında
                 // görünsün istendi — Kişi satırı çocuklu (parent/non-leaf) olsa bile renklenir,
                 // ama altındaki Proje gibi farklı boyuttaki satırlarda hiç görünmez.
-                const hasEmployeeContext = !!row.employeeId;
-                const approval = hasEmployeeContext
-                  ? cellApprovalStatus(row.cellLogs[column.key], row.employeeId, column, approvedRangesByEmployee)
+                const hasUserContext = !!row.userId;
+                const approval = hasUserContext
+                  ? cellApprovalStatus(row.cellLogs[column.key], row.userId, column, approvedRangesByUser)
                   : 'none';
-                const leave = hasEmployeeContext
-                  ? cellLeaveStatus(row.employeeId, column, leaveRangesByEmployee)
+                const leave = hasUserContext
+                  ? cellLeaveStatus(row.userId, column, leaveRangesByUser)
                   : 'none';
                 const isHoliday = isHolidayColumn(column, holidayDateKeys);
 
@@ -273,8 +273,8 @@ function TableRows({
                 onCellMouseEnter={onCellMouseEnter}
                 holidayDateKeys={holidayDateKeys}
                 todayKey={todayKey}
-                approvedRangesByEmployee={approvedRangesByEmployee}
-                leaveRangesByEmployee={leaveRangesByEmployee}
+                approvedRangesByUser={approvedRangesByUser}
+                leaveRangesByUser={leaveRangesByUser}
               />
             )}
           </Fragment>
@@ -290,8 +290,8 @@ export function WorkLogTable({
   grandTotalByColumn,
   grandTotal,
   holidayDateKeys,
-  approvedRangesByEmployee,
-  leaveRangesByEmployee,
+  approvedRangesByUser,
+  leaveRangesByUser,
   onCellClick,
   onRangeSelect,
   maxHeightClassName = 'max-h-[60vh]',
@@ -396,8 +396,8 @@ export function WorkLogTable({
             onCellMouseEnter={handleCellMouseEnter}
             holidayDateKeys={holidayDateKeys}
             todayKey={todayKey}
-            approvedRangesByEmployee={approvedRangesByEmployee}
-            leaveRangesByEmployee={leaveRangesByEmployee}
+            approvedRangesByUser={approvedRangesByUser}
+            leaveRangesByUser={leaveRangesByUser}
           />
         </tbody>
         <tfoot>

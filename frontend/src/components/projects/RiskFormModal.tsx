@@ -24,12 +24,12 @@ export function RiskFormModal({ projectId, risk, onClose }: RiskFormModalProps) 
   const [impact, setImpact] = useState(risk?.impact ?? 3);
   const [mitigationPlan, setMitigationPlan] = useState(risk?.mitigationPlan ?? '');
   const [identifiedDate, setIdentifiedDate] = useState(risk?.identifiedDate ?? todayIso());
-  const [ownerId, setOwnerId] = useState(risk?.ownerEmployeeId ?? '');
+  const [ownerId, setOwnerId] = useState(risk?.ownerUserId ?? '');
   const [ownerLabel, setOwnerLabel] = useState('');
   const [ownerQuery, setOwnerQuery] = useState('');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const existingOwner = useEmployeeById(risk?.ownerEmployeeId ?? null);
+  const existingOwner = useEmployeeById(risk?.ownerUserId ?? null);
   const ownerSearch = useEmployeeSearch(ownerQuery);
   const resolvedOwnerLabel = ownerLabel || existingOwner.data?.name || '';
 
@@ -51,7 +51,7 @@ export function RiskFormModal({ projectId, risk, onClose }: RiskFormModalProps) 
         probability,
         impact,
         mitigationPlan: mitigationPlan.trim() || null,
-        ownerEmployeeId: ownerId || null,
+        ownerUserId: ownerId || null,
         identifiedDate,
       };
       if (isEdit && risk) {

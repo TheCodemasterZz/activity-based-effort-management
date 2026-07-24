@@ -19,7 +19,7 @@ const PARAM_ROWS: { param: string; description: string; required: boolean }[] = 
       'gerçek imza/JWT doğrulaması backend tarafında henüz yok, prod öncesi eklenmesi gerekir.)',
     required: true,
   },
-  { param: 'employeeId', description: 'Kişinin GUID\'i — widget\'ın kimin adına açılacağını belirler.', required: true },
+  { param: 'userId', description: 'Kişinin GUID\'i — widget\'ın kimin adına açılacağını belirler.', required: true },
   { param: 'projectId', description: 'Projenin GUID\'i — widget\'ın hangi proje için açılacağını belirler.', required: true },
   { param: 'activityL1Id', description: 'Önceden seçili Activity L1 GUID\'i.', required: false },
   { param: 'activityL2Id', description: 'Önceden seçili Activity L2 GUID\'i.', required: false },
@@ -51,24 +51,24 @@ function generateDemoToken(): string {
 export function WidgetsPage() {
   const [mode, setMode] = useState<WidgetMode>('log-work');
   const [token, setToken] = useState(generateDemoToken);
-  const [employeeId, setEmployeeId] = useState('');
-  const [employeeLabel, setEmployeeLabel] = useState('');
-  const [employeeQuery, setEmployeeQuery] = useState('');
-  const employeeSearch = useEmployeeSearch(employeeQuery);
+  const [userId, setUserId] = useState('');
+  const [userLabel, setUserLabel] = useState('');
+  const [userQuery, setEmployeeQuery] = useState('');
+  const userSearch = useEmployeeSearch(userQuery);
 
   const [projectId, setProjectId] = useState('');
   const [projectLabel, setProjectLabel] = useState('');
   const [projectQuery, setProjectQuery] = useState('');
-  const projectSearch = useProjectSearch(projectQuery, employeeId || null);
+  const projectSearch = useProjectSearch(projectQuery, userId || null);
 
   const generatedUrl = useMemo(
-    () => buildWidgetUrl(mode, { token, employeeId, projectId }),
-    [mode, token, employeeId, projectId],
+    () => buildWidgetUrl(mode, { token, userId, projectId }),
+    [mode, token, userId, projectId],
   );
 
   const exampleUrl = buildWidgetUrl(mode, {
     token: '<erişim-token\'ınız>',
-    employeeId: '00000000-0000-0000-0000-000000000000',
+    userId: '00000000-0000-0000-0000-000000000000',
     projectId: '00000000-0000-0000-0000-000000000000',
   });
 
@@ -174,13 +174,13 @@ export function WidgetsPage() {
           <div>
             <label className="mb-1 block text-xs font-medium text-slate-500">Kişi</label>
             <AsyncSearchSelect
-              selectedLabel={employeeLabel || null}
+              selectedLabel={userLabel || null}
               onSearch={setEmployeeQuery}
-              options={(employeeSearch.data?.items ?? []).map((e) => ({ id: e.id, label: e.name }))}
-              isLoading={employeeSearch.isLoading}
+              options={(userSearch.data?.items ?? []).map((e) => ({ id: e.id, label: e.name }))}
+              isLoading={userSearch.isLoading}
               onSelect={(option) => {
-                setEmployeeId(option.id);
-                setEmployeeLabel(option.label);
+                setUserId(option.id);
+                setUserLabel(option.label);
                 setProjectId('');
                 setProjectLabel('');
               }}
@@ -199,7 +199,7 @@ export function WidgetsPage() {
                 setProjectLabel(option.label);
               }}
               placeholder="Proje ara…"
-              disabled={!employeeId}
+              disabled={!userId}
               disabledMessage="Önce kişi seçin"
             />
           </div>

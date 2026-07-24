@@ -1,8 +1,8 @@
 import { useMemo, useState } from 'react';
-import { WORK_LOG_ENTRY_TYPE, type EmployeeWorkLogDto, type WorkLogEntryType } from '../../api/types';
+import { WORK_LOG_ENTRY_TYPE, type WorkLogDto, type WorkLogEntryType } from '../../api/types';
 import { useDeleteWorkLogMutation } from '../../hooks/useDeleteWorkLogMutation';
 import { useHolidays } from '../../hooks/useHolidays';
-import { useEmployeeLeaves } from '../../hooks/useEmployeeLeaves';
+import { useLeaves } from '../../hooks/useLeaves';
 import { WorkLogForm, type WorkLogFormInitialValues } from './WorkLogForm';
 
 function formatTimeShort(time: string): string {
@@ -11,9 +11,9 @@ function formatTimeShort(time: string): string {
 }
 
 interface CellWorkLogsModalProps {
-  logs: EmployeeWorkLogDto[];
+  logs: WorkLogDto[];
   date: string;
-  resolveEmployee: (id: string) => string;
+  resolveUser: (id: string) => string;
   resolveProject: (id: string) => string;
   resolveActivity: (id: string) => string;
   addPrefill: WorkLogFormInitialValues;
@@ -29,29 +29,29 @@ interface CellWorkLogsModalProps {
 export function CellWorkLogsModal({
   logs,
   date,
-  resolveEmployee,
+  resolveUser,
   resolveProject,
   resolveActivity,
   addPrefill,
   entryType = WORK_LOG_ENTRY_TYPE.Actual,
   onClose,
 }: CellWorkLogsModalProps) {
-  const [editingLog, setEditingLog] = useState<EmployeeWorkLogDto | null>(null);
+  const [editingLog, setEditingLog] = useState<WorkLogDto | null>(null);
   const deleteMutation = useDeleteWorkLogMutation();
 
   const holidays = useHolidays();
-  const employeeLeaves = useEmployeeLeaves();
+  const leaves = useLeaves();
   const holiday = holidays.data?.items.find((h) => h.date === date) ?? null;
 
   // Onay formundaki İzin/Tatil paneliyle aynı mantık: bu hücredeki kayıtlara ait çalışanlardan
   // hangileri bu tarihte izinliymiş, listelenir (birden fazla çalışan olabilir — ör. Proje'ye
   // göre gruplanmış bir hücre).
   const leavesForDate = useMemo(() => {
-    const distinctEmployeeIds = [...new Set(logs.map((l) => l.employeeId))];
-    return (employeeLeaves.data?.items ?? []).filter(
-      (l) => distinctEmployeeIds.includes(l.employeeId) && date >= l.startDate && date <= l.endDate,
+    const distinctUserIds = [...new Set(logs.map((l) => l.userId))];
+    return (leaves.data?.items ?? []).filter(
+      (l) => distinctUserIds.includes(l.userId) && date >= l.startDate && date <= l.endDate,
     );
-  }, [logs, employeeLeaves.data, date]);
+  }, [logs, leaves.data, date]);
 
   const handleDelete = async (logId: string) => {
     if (!window.confirm('Bu efor kaydını silmek istediğinize emin misiniz?')) return;
@@ -84,7 +84,7 @@ export function CellWorkLogsModal({
               >
                 <span>🟣</span>
                 <span>
-                  {resolveEmployee(leave.employeeId)} —{' '}
+                  {resolveUser(leave.userId)} —{' '}
                   {leave.isFullDay
                     ? 'İzinli (Tam Gün)'
                     : `İzinli: ${formatTimeShort(leave.startTime!)}–${formatTimeShort(leave.endTime!)}`}
@@ -104,8 +104,8 @@ export function CellWorkLogsModal({
               initialValues={
                 editingLog
                   ? {
-                      employeeId: editingLog.employeeId,
-                      employeeLabel: resolveEmployee(editingLog.employeeId),
+                      userId: editingLog.userId,
+                      userLabel: resolveUser(editingLog.userId),
                       projectId: editingLog.projectId,
                       projectLabel: resolveProject(editingLog.projectId),
                       activityL1Id: editingLog.activityL1Id,
@@ -152,7 +152,7 @@ export function CellWorkLogsModal({
                         <div className="text-xs text-slate-500">
                           {resolveActivity(log.activityL1Id)} / {resolveActivity(log.activityL2Id)}
                         </div>
-                        <div className="text-xs text-slate-400">{resolveEmployee(log.employeeId)}</div>
+                        <div className="text-xs text-slate-400">{resolveUser(log.userId)}</div>
                         <div className="mt-1 text-xs text-slate-500">{log.description}</div>
                       </div>
                       <div className="text-right">

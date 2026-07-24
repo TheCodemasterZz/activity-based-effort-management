@@ -76,8 +76,8 @@ export function HomePage() {
   const todayKey = new Date().toISOString().slice(0, 10);
 
   const totalHours = logs.reduce((sum, l) => sum + l.hours, 0);
-  const activeEmployeeCount = new Set(logs.map((l) => l.employeeId)).size;
-  const totalEmployeeCount = employees.data?.items.length ?? 0;
+  const activeEmployeeCount = new Set(logs.map((l) => l.userId)).size;
+  const totalUserCount = employees.data?.items.length ?? 0;
   const totalProjectCount = projects.data?.items.length ?? 0;
   const totalCustomerCount = customers.data?.items.length ?? 0;
 
@@ -106,7 +106,7 @@ export function HomePage() {
     [logs, projectsById],
   );
   const topEmployees = useMemo(
-    () => rankBy((id) => employeesById.get(id), (l) => l.employeeId),
+    () => rankBy((id) => employeesById.get(id), (l) => l.userId),
     [logs, employeesById],
   );
   const topActivities = useMemo(
@@ -138,7 +138,7 @@ export function HomePage() {
         ) : (
           <div className="flex flex-1 flex-col gap-4 overflow-hidden">
             <div className="flex shrink-0 flex-col gap-3 sm:flex-row">
-              <KpiCard icon="👥" iconBg="bg-indigo-50 text-indigo-600" label="Toplam Çalışan" value={String(totalEmployeeCount)} caption="Sistemde kayıtlı" />
+              <KpiCard icon="👥" iconBg="bg-indigo-50 text-indigo-600" label="Toplam Çalışan" value={String(totalUserCount)} caption="Sistemde kayıtlı" />
               <KpiCard icon="📁" iconBg="bg-blue-50 text-blue-600" label="Toplam Proje" value={String(totalProjectCount)} caption="Aktif ve tamamlanan" />
               <KpiCard icon="🏢" iconBg="bg-emerald-50 text-emerald-600" label="Toplam Müşteri" value={String(totalCustomerCount)} caption="Sistemde kayıtlı" />
               <KpiCard icon="⏱" iconBg="bg-amber-50 text-amber-600" label="Bu Ay Toplam Efor" value={`${totalHours.toFixed(1)}h`} caption={`${activeEmployeeCount} kişi log girdi`} />

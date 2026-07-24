@@ -93,18 +93,18 @@ export function issueRag(issues: ProjectIssueDto[], todayKey: string): RagResult
  * Overview alanlarının doluluğu + görevlerin kişi ataması tutarlılığı + yakın zamanda efor
  * girişi aktivitesi olup olmadığının birleşik bir kontrol listesi. */
 export function dataQualityRag(
-  project: Pick<ProjectDto | ProjectDetailDto, 'description' | 'sponsor' | 'projectManagerEmployeeId' | 'strategicGoal' | 'startDate' | 'endDate'>,
+  project: Pick<ProjectDto | ProjectDetailDto, 'description' | 'sponsor' | 'projectManagerUserId' | 'strategicGoal' | 'startDate' | 'endDate'>,
   tasks: ProjectTaskDto[],
   hasRecentActualActivity: boolean,
 ): RagResult {
   const checks: { label: string; passed: boolean }[] = [
     { label: 'Açıklama girilmiş', passed: !!project.description },
     { label: 'Sponsor tanımlı', passed: !!project.sponsor },
-    { label: 'Proje yöneticisi tanımlı', passed: !!project.projectManagerEmployeeId },
+    { label: 'Proje yöneticisi tanımlı', passed: !!project.projectManagerUserId },
     { label: 'Stratejik hedef tanımlı', passed: !!project.strategicGoal },
     { label: 'Başlangıç/bitiş tarihi girilmiş', passed: !!project.startDate && !!project.endDate },
     { label: 'En az bir görev var', passed: tasks.length > 0 },
-    { label: 'Görevler kişiye atanmış', passed: tasks.length > 0 && tasks.every((t) => !!t.assignedEmployeeId) },
+    { label: 'Görevler kişiye atanmış', passed: tasks.length > 0 && tasks.every((t) => !!t.assignedUserId) },
     { label: 'Yakın zamanda efor girişi var', passed: hasRecentActualActivity },
   ];
 

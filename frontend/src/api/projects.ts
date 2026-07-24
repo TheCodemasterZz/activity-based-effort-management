@@ -1,10 +1,10 @@
 import { apiClient } from './client';
 import type { PagedResult, ProjectDetailDto, ProjectDto, ProjectHealthStatusValue, ProjectPriorityValue } from './types';
 
-export function getProjects(options?: { nameFilter?: string; employeeId?: string; pageSize?: number }) {
+export function getProjects(options?: { nameFilter?: string; userId?: string; pageSize?: number }) {
   return apiClient.get<PagedResult<ProjectDto>>('/api/v1/projects', {
     nameFilter: options?.nameFilter,
-    employeeId: options?.employeeId,
+    userId: options?.userId,
     pageSize: options?.pageSize ?? 100,
   });
 }
@@ -19,7 +19,7 @@ export interface SaveProjectPayload {
   startDate?: string | null;
   endDate?: string | null;
   sponsor?: string | null;
-  projectManagerEmployeeId?: string | null;
+  projectManagerUserId?: string | null;
   priority?: ProjectPriorityValue;
   strategicGoal?: string | null;
 }

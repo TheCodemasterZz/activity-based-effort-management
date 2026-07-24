@@ -1,7 +1,7 @@
 import type { ConfidenceScoreSettingsDto } from '../api/types';
 
 export interface ConfidenceScoreInput {
-  employeeId: string;
+  userId: string;
   workDate: string; // yyyy-MM-dd
   hours: number;
   description: string;
@@ -97,8 +97,8 @@ export function computeConfidenceScore(
   const todayKey = today.toISOString().slice(0, 10);
   const description = input.description.trim();
 
-  const sameEmployeeLogs = context.siblingLogs;
-  const sameDayLogs = sameEmployeeLogs.filter((l) => l.workDate === input.workDate);
+  const sameUserLogs = context.siblingLogs;
+  const sameDayLogs = sameUserLogs.filter((l) => l.workDate === input.workDate);
   const dailyTotal = sameDayLogs.reduce((sum, l) => sum + l.hours, 0) + input.hours;
 
   const signals: ConfidenceSignalResult[] = [];
@@ -175,7 +175,7 @@ export function computeConfidenceScore(
 
   // B1 — Tekrar tespiti (son N gün içindeki kayıtlarla metin benzerliği).
   {
-    const recentLogs = sameEmployeeLogs.filter((l) => dateKeysAreWithinDays(l.workDate, todayKey, settings.duplicateLookbackDays));
+    const recentLogs = sameUserLogs.filter((l) => dateKeysAreWithinDays(l.workDate, todayKey, settings.duplicateLookbackDays));
     let maxSimilarity = 0;
     for (const log of recentLogs) {
       const sim = textSimilarity(description, log.description);
@@ -265,7 +265,7 @@ export function computeConfidenceScore(
 
   // E1 — Kişi bazlı baseline sapması.
   {
-    const historicalLogs = sameEmployeeLogs.filter((l) => dateKeysAreWithinDays(l.workDate, todayKey, settings.baselineLookbackDays));
+    const historicalLogs = sameUserLogs.filter((l) => dateKeysAreWithinDays(l.workDate, todayKey, settings.baselineLookbackDays));
     if (historicalLogs.length < 3) {
       signals.push({
         key: 'E1',
