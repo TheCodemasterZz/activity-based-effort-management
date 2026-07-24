@@ -83,6 +83,19 @@ public class SyncDirectoryCommandHandlerTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task Handle_WhenUsersHaveNoWorkCalendar_CreatesNotification()
+    {
+        var directory = ValidAd();
+        _directoryRepository.GetByIdAsync(directory.Id, Arg.Any<CancellationToken>()).Returns(directory);
+        _ldapService.SearchUsersAsync(directory, Arg.Any<IReadOnlyCollection<string>>(), Arg.Any<IReadOnlyCollection<string>>(), Arg.Any<CancellationToken>())
+            .Returns(new List<LdapUser> { LdapUserOf("serkan.gultepe", "guid-1") });
+
+        await CreateHandler().Handle(new SyncDirectoryCommand(directory.Id), CancellationToken.None);
+
+        _db.Notifications.Should().ContainSingle(n => n.Message.Contains("mesai takvimi atanmamış"));
+    }
+
+    [Fact]
     public async Task Handle_ExistingUser_UpdatesInsteadOfDuplicating()
     {
         var directory = ValidAd();
